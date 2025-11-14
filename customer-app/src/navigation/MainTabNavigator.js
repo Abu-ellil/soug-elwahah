@@ -6,6 +6,7 @@ import { View, Text } from 'react-native';
 import { useCart } from '../context/CartContext';
 import HomeScreen from '../screens/Home/HomeScreen';
 import StoreDetailsScreen from '../screens/Home/StoreDetailsScreen';
+import CategoryStoresScreen from '../screens/Categories/CategoryStoresScreen';
 import COLORS from '../constants/colors';
 import SIZES from '../constants/sizes';
 
