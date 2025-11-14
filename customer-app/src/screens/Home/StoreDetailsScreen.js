@@ -160,7 +160,7 @@ const StoreDetailsScreen = ({ navigation, route }) => {
         onLeftPress={() => navigation.goBack()}
         rightComponent={
           <TouchableOpacity onPress={() => navigation.navigate('Cart')}>
-            <Icon name="shopping-cart" size={24} color={COLORS.text} />
+            <MaterialIcons name="shopping-cart" size={24} color={COLORS.text} />
             {getCartItemsCount() > 0 && (
               <View style={styles.cartBadge}>
                 <Text style={styles.badgeText}>{getCartItemsCount()}</Text>

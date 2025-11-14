@@ -267,7 +267,7 @@ const OrdersScreen = ({ navigation }) => {
           />
         ) : (
           <EmptyState
-            icon="receipt-long"
+            icon="document-outline"
             title="لا توجد طلبات"
             message={
               selectedFilter === 'current' 

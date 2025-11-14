@@ -12,6 +12,8 @@ import OrdersScreen from '../screens/Orders/OrdersScreen';
 import OrderDetailsScreen from '../screens/Orders/OrderDetailsScreen';
 import COLORS from '../constants/colors';
 import SIZES from '../constants/sizes';
+import SettingsScreen from '../screens/Settings/SettingsScreen';
+import AddressesScreen from '../screens/Profile/AddressesScreen';
 
 // Placeholder screens - will be replaced with actual screens
 const CategoriesScreen = () => (
@@ -19,8 +21,6 @@ const CategoriesScreen = () => (
     <Text>Categories Screen</Text>
   </View>
 );
-import SettingsScreen from '../screens/Settings/SettingsScreen';
-import AddressesScreen from '../screens/Profile/AddressesScreen';
 
 // Home Stack Navigator
 const HomeStack = createNativeStackNavigator();

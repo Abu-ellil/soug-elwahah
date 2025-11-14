@@ -799,17 +799,20 @@ const CustomerSearchScreen = ({
         {searchSuggestions.length > 0 && !showFilterSelector && (
           <View style={styles.suggestionsContainer}>
             <Text style={styles.suggestionsTitle}>اقتراحات:</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {searchSuggestions.map((suggestion, index) => (
+            <FlatList
+              horizontal
+              data={searchSuggestions}
+              renderItem={({ item, index }) => (
                 <TouchableOpacity
-                  key={index}
                   style={styles.suggestion}
-                  onPress={() => handleSuggestionSelect(suggestion)}
+                  onPress={() => handleSuggestionSelect(item)}
                 >
-                  <Text style={styles.suggestionText}>{suggestion}</Text>
+                  <Text style={styles.suggestionText}>{item}</Text>
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
+              )}
+              keyExtractor={(item, index) => index.toString()}
+              showsHorizontalScrollIndicator={false}
+            />
           </View>
         )}
 

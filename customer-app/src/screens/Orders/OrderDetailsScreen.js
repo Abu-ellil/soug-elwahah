@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
@@ -27,7 +27,7 @@ const OrderDetailsScreen = () => {
         </View>
         <View style={styles.timelineDetails}>
           <RTLText style={styles.statusTitle}>{item.status}</RTLText>
-          <RTLText style={styles.statusDate}>{new Date(item.date).toLocaleString('ar-AE')}</RTLText>
+          <RTLText style={styles.statusDate}>{new Date(item.date).toLocaleString('ar-AE')}</RTLText> 
         </View>
       </View>
     );
@@ -40,12 +40,11 @@ const OrderDetailsScreen = () => {
         {/* Order Timeline */}
         <View style={styles.section}>
           <RTLText style={styles.sectionTitle}>تتبع الطلب</RTLText>
-          <FlatList
-            data={order.statusHistory}
-            renderItem={renderTimelineStep}
-            keyExtractor={(item) => item.status}
-            scrollEnabled={false}
-          />
+          {order.statusHistory.map((item, index) => (
+            <View key={item.status}>
+              {renderTimelineStep({ item, index })}
+            </View>
+          ))}
         </View>
 
         {/* Items List */}
@@ -59,6 +58,12 @@ const OrderDetailsScreen = () => {
         {/* Order Summary */}
         <View style={styles.section}>
           <RTLText style={styles.sectionTitle}>ملخص الطلب</RTLText>
+          {order.storeName && (
+            <View style={styles.summaryRow}>
+              <RTLText style={styles.summaryLabel}>المتجر</RTLText>
+              <RTLText style={styles.summaryValue}>{order.storeName}</RTLText>
+            </View>
+          )}
           <View style={styles.summaryRow}>
             <RTLText style={styles.summaryLabel}>المجموع الفرعي</RTLText>
             <RTLText style={styles.summaryValue}>د.إ {order.subtotal.toFixed(2)}</RTLText>
@@ -67,11 +72,37 @@ const OrderDetailsScreen = () => {
             <RTLText style={styles.summaryLabel}>رسوم التوصيل</RTLText>
             <RTLText style={styles.summaryValue}>د.إ {order.deliveryFee.toFixed(2)}</RTLText>
           </View>
+          <View style={styles.summaryRow}>
+            <RTLText style={styles.summaryLabel}>طريقة الدفع</RTLText>
+            <RTLText style={styles.summaryValue}>
+              {order.paymentMethod === 'cash' ? 'الدفع عند الاستلام' :
+               order.paymentMethod === 'fawry' ? 'فوري' :
+               order.paymentMethod === 'vodafone_cash' ? 'فودافون كاش' :
+               order.paymentMethod === 'orange_money' ? 'أورانج ماني' : order.paymentMethod}
+            </RTLText>
+          </View>
+          {order.deliverySlot && (
+            <View style={styles.summaryRow}>
+              <RTLText style={styles.summaryLabel}>وقت التوصيل</RTLText>
+              <RTLText style={styles.summaryValue}>{order.deliverySlot.name}</RTLText>
+            </View>
+          )}
           <View style={styles.summaryRowTotal}>
             <RTLText style={styles.summaryLabelTotal}>المجموع الكلي</RTLText>
             <RTLText style={styles.summaryValueTotal}>د.إ {order.total.toFixed(2)}</RTLText>
           </View>
         </View>
+
+         {/* Customer Information */}
+         {order.customerInfo && (
+           <View style={styles.section}>
+            <RTLText style={styles.sectionTitle}>معلومات العميل</RTLText>
+            <View style={styles.infoContainer}>
+              <RTLText style={styles.infoText}>الاسم: {order.customerInfo.name}</RTLText>
+              <RTLText style={styles.infoText}>الهاتف: {order.customerInfo.phone}</RTLText>
+            </View>
+          </View>
+         )}
 
          {/* Delivery Address */}
          <View style={styles.section}>
@@ -81,6 +112,14 @@ const OrderDetailsScreen = () => {
             <RTLText style={styles.addressText}>{order.deliveryAddress.village}</RTLText>
           </View>
         </View>
+
+         {/* Order Notes */}
+         {order.notes && order.notes.trim() !== '' && (
+           <View style={styles.section}>
+            <RTLText style={styles.sectionTitle}>ملاحظات</RTLText>
+            <RTLText style={styles.notesText}>{order.notes}</RTLText>
+          </View>
+         )}
 
       </ScrollView>
     </SafeAreaView>
@@ -186,6 +225,22 @@ const styles = StyleSheet.create({
     fontSize: SIZES.body3,
     color: COLORS.dark,
     marginBottom: SIZES.base / 2,
+  },
+  // Customer Info
+  infoContainer: {
+    alignItems: 'flex-end',
+  },
+  infoText: {
+    fontSize: SIZES.body3,
+    color: COLORS.dark,
+    marginBottom: SIZES.base / 2,
+  },
+  // Notes
+  notesText: {
+    fontSize: SIZES.body3,
+    color: COLORS.dark,
+    textAlign: 'right',
+    lineHeight: SIZES.body3 * 1.5,
   },
 });
 

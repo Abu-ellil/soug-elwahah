@@ -9,9 +9,11 @@ import {
   Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import Toast from 'react-native-toast-message';
 import { useCart } from '../../context/CartContext';
 import { useLocation } from '../../context/LocationProvider';
 import { DELIVERY_SLOTS } from '../../data/villages';
+import { STORES } from '../../data/stores';
 import Header from '../../components/Header';
 import VillagePicker from '../../components/VillagePicker';
 import COLORS from '../../constants/colors';
@@ -22,9 +24,9 @@ const CheckoutScreen = ({ navigation }) => {
   const {
     cartItems,
     getCartSubtotal,
-    getDeliveryFee,
     getTotalWithDelivery,
     clearCart,
+    addOrder,
   } = useCart();
 
   const { selectedVillage, selectVillage } = useLocation();
@@ -87,10 +89,20 @@ const CheckoutScreen = ({ navigation }) => {
   const handlePlaceOrder = () => {
     if (!validateForm()) return;
 
+    // Generate a more unique order ID
+    const timestamp = Date.now();
+    const randomNum = Math.floor(Math.random() * 1000);
+    const orderId = `ord${timestamp}${randomNum}`;
+
     const newOrder = {
-        id: `ord${Math.floor(Math.random() * 1000)}`,
+        id: orderId,
         userId: 'user1', // Assuming a logged-in user
         storeId: cartItems[0].storeId, // Assuming all items are from the same store
+        storeName: STORES.find(store => store.id === cartItems[0].storeId)?.name || 'متجر غير معروف',
+        customerInfo: {
+            name: customerInfo.name,
+            phone: customerInfo.phone,
+        },
         items: cartItems,
         subtotal: subtotal,
         deliveryFee: deliveryFee,
@@ -100,6 +112,7 @@ const CheckoutScreen = ({ navigation }) => {
             street: customerInfo.address,
             village: selectedVillage.name,
         },
+        deliverySlot: deliveryInfo.selectedSlot,
         paymentMethod: paymentMethod,
         notes: customerInfo.notes,
         createdAt: new Date().toISOString(),

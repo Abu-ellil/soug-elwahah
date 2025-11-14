@@ -8,15 +8,18 @@ import AppNavigator from './src/navigation/AppNavigator';
 import { AuthProvider } from './src/context/AuthContext';
 import { CartProvider } from './src/context/CartContext';
 import { LocationProvider } from './src/context/LocationProvider';
+import { LocalizationProvider } from './src/context/LocalizationContext';
 
 export default function App() {
   return (
     <AuthProvider>
       <CartProvider>
         <LocationProvider>
-          <AppNavigator />
-          <StatusBar style="auto" />
-          <Toast />
+          <LocalizationProvider>
+            <AppNavigator />
+            <StatusBar style="auto" />
+            <Toast />
+          </LocalizationProvider>
         </LocationProvider>
       </CartProvider>
     </AuthProvider>

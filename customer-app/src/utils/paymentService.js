@@ -1,8 +1,8 @@
 // Egyptian Payment Methods Integration Service
 
 import { Alert, Linking, Platform } from 'react-native';
-import { t } from './arabicLocalization';
-import { formatEGPCurrency } from './arabicLocalization';
+import { t , formatEGPCurrency } from './arabicLocalization';
+
 
 // Egyptian Payment Providers Configuration
 export const PAYMENT_PROVIDERS = {
