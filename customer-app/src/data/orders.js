@@ -129,9 +129,7 @@ export const MOCK_ORDERS = [
     paymentMethod: 'cash',
     notes: '',
     createdAt: '2025-01-18T09:45:00',
-    timeline: [
-      { time: '2025-01-18T09:45:00', status: 'pending', note: 'تم استلام الطلب' },
-    ],
+    timeline: [{ time: '2025-01-18T09:45:00', status: 'pending', note: 'تم استلام الطلب' }],
     statusHistory: [{ status: 'تم استلام الطلب', date: '2025-01-18T09:45:00', icon: 'clipboard' }],
   },
   {

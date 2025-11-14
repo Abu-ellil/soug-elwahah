@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, Dimensions } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import { COLORS } from '../constants/colors';
+import COLORS from '../constants/colors';
 import RTLText from './RTLText';
 
 const DriverLocationMap = ({ driverLocation, deliveryAddress, orderStatus }) => {
@@ -16,15 +16,15 @@ const DriverLocationMap = ({ driverLocation, deliveryAddress, orderStatus }) => 
   // Calculate region to show both driver and delivery locations
   const getRegionForCoordinates = () => {
     const coordinates = [driverLocation, deliveryAddress.coordinates];
-    
-    let minLat = Math.min(...coordinates.map(coord => coord.lat));
-    let maxLat = Math.max(...coordinates.map(coord => coord.lat));
-    let minLng = Math.min(...coordinates.map(coord => coord.lng));
-    let maxLng = Math.max(...coordinates.map(coord => coord.lng));
-    
+
+    let minLat = Math.min(...coordinates.map((coord) => coord.lat));
+    let maxLat = Math.max(...coordinates.map((coord) => coord.lat));
+    let minLng = Math.min(...coordinates.map((coord) => coord.lng));
+    let maxLng = Math.max(...coordinates.map((coord) => coord.lng));
+
     const latDelta = Math.max(maxLat - minLat, 0.01) * 1.5;
     const lngDelta = Math.max(maxLng - minLng, 0.01) * 1.5;
-    
+
     return {
       latitude: (minLat + maxLat) / 2,
       longitude: (minLng + maxLng) / 2,
@@ -44,8 +44,7 @@ const DriverLocationMap = ({ driverLocation, deliveryAddress, orderStatus }) => 
         showsUserLocation={false}
         showsMyLocationButton={false}
         zoomEnabled={true}
-        scrollEnabled={true}
-      >
+        scrollEnabled={true}>
         {/* Driver Location Marker */}
         <Marker
           coordinate={{
@@ -54,8 +53,7 @@ const DriverLocationMap = ({ driverLocation, deliveryAddress, orderStatus }) => 
           }}
           title="موقع السائق"
           description="السائق في الطريق إليك"
-          pinColor={COLORS.primary}
-        >
+          pinColor={COLORS.primary}>
           <View style={styles.driverMarker}>
             <View style={styles.driverMarkerInner} />
           </View>
@@ -69,14 +67,13 @@ const DriverLocationMap = ({ driverLocation, deliveryAddress, orderStatus }) => 
           }}
           title="عنوان التوصيل"
           description={deliveryAddress.street}
-          pinColor={COLORS.success}
-        >
+          pinColor={COLORS.success}>
           <View style={styles.deliveryMarker}>
             <View style={styles.deliveryMarkerInner} />
           </View>
         </Marker>
       </MapView>
-      
+
       <View style={styles.legend}>
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: COLORS.primary }]} />

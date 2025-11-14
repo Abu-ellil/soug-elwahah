@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  TouchableOpacity,
-  RefreshControl,
-} from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { STORES } from '../../data/stores';
 import { PRODUCTS } from '../../data/products';
@@ -73,7 +66,7 @@ const OrdersScreen = ({ navigation }) => {
   useEffect(() => {
     console.log('🔄 OrdersScreen - Orders changed, triggering filter');
     console.log('📋 OrdersScreen - New orders count:', orders.length);
-    
+
     if (orders.length > 0) {
       console.log('✅ OrdersScreen - Calling filterOrders with new orders');
       filterOrders();
@@ -87,7 +80,7 @@ const OrdersScreen = ({ navigation }) => {
     console.log('🔄 OrdersScreen - Filter changed, re-filtering');
     console.log('🎯 OrdersScreen - New selectedFilter:', selectedFilter);
     console.log('📋 OrdersScreen - Current orders count:', orders.length);
-    
+
     if (orders.length > 0) {
       console.log('✅ OrdersScreen - Calling filterOrders with new filter');
       filterOrders();
@@ -105,50 +98,53 @@ const OrdersScreen = ({ navigation }) => {
     try {
       console.log('🔄 OrdersScreen - Starting to load orders...');
       console.log('📋 OrdersScreen - cartOrders data:', cartOrders);
-      
+
       // Use orders from CartContext instead of mock data
       setTimeout(() => {
         console.log('⚡ OrdersScreen - Processing orders in setTimeout');
-        
+
         if (!cartOrders || !Array.isArray(cartOrders)) {
           console.log('⚠️ OrdersScreen - cartOrders is not an array or is undefined');
           setOrders([]);
           setLoading(false);
           return;
         }
-        
-        const enrichedOrders = cartOrders.map((order, index) => {
-          console.log(`📝 Processing order ${index}:`, order);
-          
-          if (!order || typeof order !== 'object') {
-            console.log(`⚠️ Order ${index} is invalid:`, order);
-            return null;
-          }
-          
-          const store = STORES.find((s) => s.id === order.storeId);
-          const enrichedItems = order.items?.map((item) => {
-            const product = PRODUCTS.find((p) => p.id === item.productId);
-            return {
-              ...item,
-              name: product?.name || 'منتج غير معروف',
-              image: product?.image || '',
-            };
-          }) || [];
 
-          return {
-            ...order,
-            storeName: store?.name || 'متجر غير معروف',
-            storeImage: store?.image || '',
-            items: enrichedItems,
-          };
-        }).filter(Boolean); // Remove null entries
+        const enrichedOrders = cartOrders
+          .map((order, index) => {
+            console.log(`📝 Processing order ${index}:`, order);
+
+            if (!order || typeof order !== 'object') {
+              console.log(`⚠️ Order ${index} is invalid:`, order);
+              return null;
+            }
+
+            const store = STORES.find((s) => s.id === order.storeId);
+            const enrichedItems =
+              order.items?.map((item) => {
+                const product = PRODUCTS.find((p) => p.id === item.productId);
+                return {
+                  ...item,
+                  name: product?.name || 'منتج غير معروف',
+                  image: product?.image || '',
+                };
+              }) || [];
+
+            return {
+              ...order,
+              storeName: store?.name || 'متجر غير معروف',
+              storeImage: store?.image || '',
+              items: enrichedItems,
+            };
+          })
+          .filter(Boolean); // Remove null entries
 
         console.log('✅ OrdersScreen - Enriched orders:', enrichedOrders);
         console.log('📊 OrdersScreen - Final orders count:', enrichedOrders.length);
-        
+
         setOrders(enrichedOrders);
         setLoading(false);
-        
+
         // Debug: Check if filterOrders will be triggered after setting orders
         console.log('🔄 OrdersScreen - Orders set, should trigger filterOrders useEffect');
         console.log('📊 OrdersScreen - Enriched orders count after set:', enrichedOrders.length);
@@ -169,13 +165,13 @@ const OrdersScreen = ({ navigation }) => {
     console.log('🔍 OrdersScreen - Filtering orders...');
     console.log('📋 OrdersScreen - All orders count:', orders.length);
     console.log('🎯 OrdersScreen - Selected filter:', selectedFilter);
-    
+
     if (!orders || orders.length === 0) {
       console.log('⚠️ OrdersScreen - No orders to filter');
       setFilteredOrders([]);
       return;
     }
-    
+
     let filtered = [];
 
     switch (selectedFilter) {
@@ -202,7 +198,7 @@ const OrdersScreen = ({ navigation }) => {
 
     console.log('✅ OrdersScreen - Filtered orders count:', filtered.length);
     console.log('📊 OrdersScreen - First 3 filtered orders:', filtered.slice(0, 3));
-    
+
     setFilteredOrders(filtered);
   }, [orders, selectedFilter]);
 
@@ -292,10 +288,9 @@ const OrdersScreen = ({ navigation }) => {
 
         {/* Driver Location Button - Only show for delivering orders */}
         {item.status === 'delivering' && item.driverLocation && (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.driverLocationButton}
-            onPress={() => handleShowDriverLocation(item)}
-          >
+            onPress={() => handleShowDriverLocation(item)}>
             <MaterialIcons name="location-on" size={16} color={COLORS.white} />
             <Text style={styles.driverLocationButtonText}>عرض موقع السائق</Text>
           </TouchableOpacity>

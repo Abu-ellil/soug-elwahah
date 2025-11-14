@@ -15,18 +15,12 @@ const OrderDetailsScreen = () => {
   const route = useRoute();
   const { order, focusOnDriverLocation } = route.params;
   const scrollViewRef = useRef(null);
-  const mapSectionRef = useRef(null);
 
   useEffect(() => {
-    if (focusOnDriverLocation && mapSectionRef.current && scrollViewRef.current) {
-      // Scroll to the map section after a short delay to ensure components are rendered
+    if (focusOnDriverLocation && scrollViewRef.current) {
+      // Scroll to the map section after components are rendered
       setTimeout(() => {
-        mapSectionRef.current?.measureLayout(
-          scrollViewRef.current.getInnerViewNode(),
-          (x, y) => {
-            scrollViewRef.current?.scrollTo({ y: y, animated: true });
-          }
-        );
+        scrollViewRef.current?.scrollTo({ y: 400, animated: true });
       }, 500);
     }
   }, [focusOnDriverLocation]);
@@ -67,7 +61,7 @@ const OrderDetailsScreen = () => {
         {order.status === 'delivering' && order.driverLocation && (
           <View style={styles.section}>
             <RTLText style={styles.sectionTitle}>موقع السائق</RTLText>
-            <DriverLocationMap 
+            <DriverLocationMap
               driverLocation={order.driverLocation}
               deliveryAddress={order.deliveryAddress}
               orderStatus={order.status}
