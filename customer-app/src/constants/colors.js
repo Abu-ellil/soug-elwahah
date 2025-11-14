@@ -19,6 +19,10 @@ const COLORS = {
   lightGray: '#E0E0E0',
   gray: '#9E9E9E',
   white: '#FFFFFF',
+  
+  // Light variants for backgrounds
+  primaryLight: '#FFF3E0',
+  warningLight: '#FFF8E1',
 };
 
 export default COLORS;

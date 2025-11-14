@@ -15,6 +15,7 @@ import CartItem from '../../components/CartItem';
 import Header from '../../components/Header';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
+import VillagePicker from '../../components/VillagePicker';
 import COLORS from '../../constants/colors';
 import SIZES from '../../constants/sizes';
 import { formatPrice } from '../../utils/helpers';
@@ -31,8 +32,9 @@ const CartScreen = ({ navigation }) => {
     getTotalWithDelivery,
   } = useCart();
 
-  const { selectedVillage } = useLocation();
+  const { selectedVillage, selectVillage } = useLocation();
   const [stores, setStores] = useState([]);
+  const [villagePickerVisible, setVillagePickerVisible] = useState(false);
 
   useEffect(() => {
     loadStores();
@@ -69,13 +71,13 @@ const CartScreen = ({ navigation }) => {
         'يرجى تحديد موقع التوصيل أولاً',
         [
           { text: 'إلغاء', style: 'cancel' },
-          { text: 'تحديد الموقع', onPress: () => navigation.navigate('Home') }
+          { text: 'تحديد الموقع', onPress: () => setVillagePickerVisible(true) }
         ]
       );
       return;
     }
 
-    navigation.navigate('Checkout');
+    navigation.navigate('Home', { screen: 'Checkout' });
   };
 
   const getStoreName = (storeId) => {
@@ -126,18 +128,33 @@ const CartScreen = ({ navigation }) => {
           title="السلة فارغة"
           message="أضف منتجات إلى السلة لبدء التسوق"
           actionText="تسوق الآن"
-          onActionPress={() => navigation.navigate('Home')}
+          onActionPress={() => navigation.navigate('Home', { screen: 'HomeMain' })}
         />
       ) : (
         <View style={styles.content}>
           {/* Delivery Info */}
-          {selectedVillage && (
-            <View style={styles.deliveryInfo}>
+          {selectedVillage ? (
+            <TouchableOpacity 
+              style={styles.deliveryInfo}
+              onPress={() => setVillagePickerVisible(true)}
+            >
               <MaterialIcons name="location-on" size={20} color={COLORS.primary} />
               <Text style={styles.deliveryText}>
                 التوصيل إلى: {selectedVillage.name}
               </Text>
-            </View>
+              <MaterialIcons name="edit" size={16} color={COLORS.primary} style={{ marginRight: 'auto' }} />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity 
+              style={[styles.deliveryInfo, { backgroundColor: COLORS.warningLight }]}
+              onPress={() => setVillagePickerVisible(true)}
+            >
+              <MaterialIcons name="location-off" size={20} color={COLORS.warning} />
+              <Text style={[styles.deliveryText, { color: COLORS.warning }]}>
+                اختر موقع التوصيل
+              </Text>
+              <MaterialIcons name="add" size={20} color={COLORS.warning} style={{ marginRight: 'auto' }} />
+            </TouchableOpacity>
           )}
 
           {/* Stores Summary */}
@@ -219,6 +236,18 @@ const CartScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
       )}
+
+      {/* Village Picker Modal */}
+      <VillagePicker
+        visible={villagePickerVisible}
+        onClose={() => setVillagePickerVisible(false)}
+        onSelect={(village) => {
+          selectVillage(village);
+          setVillagePickerVisible(false);
+        }}
+        currentLocation={null}
+        title="اختر منطقة التوصيل"
+      />
     </View>
   );
 };

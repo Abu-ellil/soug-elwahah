@@ -14,6 +14,7 @@ import COLORS from '../constants/colors';
 import SIZES from '../constants/sizes';
 import SettingsScreen from '../screens/Settings/SettingsScreen';
 import AddressesScreen from '../screens/Profile/AddressesScreen';
+import CheckoutScreen from '../screens/Checkout/CheckoutScreen';
 
 // Placeholder screens - will be replaced with actual screens
 const CategoriesScreen = () => (
@@ -28,6 +29,7 @@ const HomeStackNavigator = () => (
   <HomeStack.Navigator screenOptions={{ headerShown: false, statusBarStyle: 'dark', animation: 'slide_from_right' }}>
     <HomeStack.Screen name="HomeMain" component={HomeScreen} />
     <HomeStack.Screen name="StoreDetails" component={StoreDetailsScreen} />
+    <HomeStack.Screen name="Checkout" component={CheckoutScreen} />
   </HomeStack.Navigator>
 );
 
