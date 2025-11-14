@@ -7,35 +7,75 @@ import {
   RefreshControl,
   FlatList,
   StyleSheet,
+  Alert,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useLocation } from '../../context/LocationContext';
-import { CATEGORIES } from '../../data';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import { useLocation } from '../../context/LocationProvider';
+import { STORES } from '../../data/stores';
+import { CATEGORIES } from '../../data/categories';
 import StoreCard from '../../components/StoreCard';
 import CategoryCard from '../../components/CategoryCard';
 import SearchBar from '../../components/SearchBar';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
+import VillagePicker from '../../components/VillagePicker';
 import COLORS from '../../constants/colors';
+import SIZES from '../../constants/sizes';
+import HomeScreenSkeleton from '../../components/HomeScreenSkeleton';
+import { formatDistance } from '../../utils/distance';
+import { getStoresByVillage } from '../../utils/locationHelpers';
 
 const HomeScreen = ({ navigation }) => {
   const {
-    currentVillage,
-    nearbyStores,
-    isLoading: locationLoading,
-    error: locationError,
+    userLocation,
+    selectedVillage,
+    availableVillages,
+    loading,
+    error,
     getCurrentLocation,
+    selectVillage,
   } = useLocation();
 
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [villagePickerVisible, setVillagePickerVisible] = useState(false);
+  const [nearbyStores, setNearbyStores] = useState([]);
 
   useEffect(() => {
-    if (!currentVillage && !locationLoading) {
-      getCurrentLocation();
+    loadStores();
+  }, [selectedVillage]);
+
+  const loadStores = () => {
+    let stores = STORES;
+    
+    // Filter by selected village
+    if (selectedVillage) {
+      stores = getStoresByVillage(stores, selectedVillage.id);
     }
-  }, [currentVillage, locationLoading]);
+    
+    // Calculate distances if user location is available
+    if (userLocation) {
+      stores = stores.map(store => ({
+        ...store,
+        distance: userLocation ? 
+          calculateDistance(userLocation, store.coordinates) : 0
+      })).sort((a, b) => a.distance - b.distance);
+    }
+    
+    setNearbyStores(stores);
+  };
+
+  const calculateDistance = (loc1, loc2) => {
+    const R = 6371; // Earth's radius in km
+    const dLat = (loc2.lat - loc1.lat) * Math.PI / 180;
+    const dLng = (loc2.lng - loc1.lng) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(loc1.lat * Math.PI / 180) * Math.cos(loc2.lat * Math.PI / 180) *
+      Math.sin(dLng/2) * Math.sin(dLng/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -44,7 +84,7 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const handleStorePress = (store) => {
-    navigation.navigate('StoreDetails', { store });
+    navigation.navigate('StoreDetails', { storeId: store.id });
   };
 
   const handleCategoryPress = (category) => {
@@ -52,60 +92,55 @@ const HomeScreen = ({ navigation }) => {
       setSelectedCategory(null);
     } else {
       setSelectedCategory(category);
-      navigation.navigate('CategoryStores', { category });
+      navigation.navigate('CategoryStores', { categoryId: category.id });
     }
   };
 
   const handleLocationPress = () => {
-    // Navigate to location selection screen
-    // For now, just refresh location
-    getCurrentLocation();
+    setVillagePickerVisible(true);
+  };
+
+  const handleVillageSelect = (village) => {
+    selectVillage(village);
+    setVillagePickerVisible(false);
   };
 
   const filteredStores = nearbyStores.filter((store) => {
-    if (searchQuery) {
-      return store.name.toLowerCase().includes(searchQuery.toLowerCase());
-    }
-    return true;
+    const matchesSearch = searchQuery === '' || 
+      store.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = !selectedCategory || 
+      store.categoryId === selectedCategory.id;
+    return matchesSearch && matchesCategory;
   });
 
-  if (locationLoading && !currentVillage) {
-    return <LoadingSpinner fullScreen text="جاري تحديد موقعك..." />;
-  }
-
-  if (locationError) {
-    return (
-      <EmptyState
-        icon="location-outline"
-        title="خطأ في تحديد الموقع"
-        message="يرجى السماح بالوصول للموقع لعرض المحلات القريبة"
-        actionText="إعادة المحاولة"
-        onActionPress={getCurrentLocation}
-      />
-    );
+  if (loading && !userLocation && !selectedVillage) {
+    return <HomeScreenSkeleton />;
   }
 
   return (
-    <View className="flex-1 bg-white">
+    <View style={styles.container}>
       {/* Header */}
-      <View className="border-b border-gray-200 bg-white px-4 py-3">
-        <View className="mb-3 flex-row items-center justify-between">
-          <TouchableOpacity onPress={handleLocationPress} className="flex-row items-center">
-            <Ionicons name="location-outline" size={20} color={COLORS.primary} />
-            <Text
-              className="mr-2 text-lg font-bold"
-              style={{ color: COLORS.text }}
-              numberOfLines={1}
-              ellipsizeMode="tail">
-              {currentVillage?.name || 'تحديد الموقع'}
-            </Text>
-            <Ionicons name="chevron-down" size={16} color={COLORS.textSecondary} />
-          </TouchableOpacity>
-          <TouchableOpacity>
-            <Ionicons name="notifications-outline" size={24} color={COLORS.text} />
-          </TouchableOpacity>
-        </View>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={handleLocationPress} style={styles.locationContainer}>
+          <Icon name="location-on" size={20} color={COLORS.primary} />
+          <Text style={styles.locationText} numberOfLines={1}>
+            {selectedVillage?.name || 'اختر المنطقة'}
+          </Text>
+          <Icon name="keyboard-arrow-down" size={20} color={COLORS.gray} />
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.notificationButton}>
+          <Icon name="notifications-none" size={24} color={COLORS.text} />
+          {availableVillages && availableVillages.length > 0 && (
+            <View style={styles.notificationBadge}>
+              <Text style={styles.badgeText}>{availableVillages.length}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
 
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
         <SearchBar
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -113,16 +148,14 @@ const HomeScreen = ({ navigation }) => {
         />
       </View>
 
-      <ScrollView refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}>
+      <ScrollView 
+        style={styles.content}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Categories */}
-        <View className="px-4 py-4">
-          <Text
-            className="mb-3 text-lg font-bold"
-            style={{ color: COLORS.text }}
-            numberOfLines={1}
-            ellipsizeMode="tail">
-            الفئات
-          </Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>الفئات</Text>
           <FlatList
             data={CATEGORIES}
             horizontal
@@ -135,35 +168,206 @@ const HomeScreen = ({ navigation }) => {
                 onPress={() => handleCategoryPress(item)}
               />
             )}
-            ItemSeparatorComponent={() => <View className="w-2" />}
+            contentContainerStyle={styles.categoriesList}
           />
         </View>
 
-        {/* Nearby Stores */}
-        <View className="px-4 pb-4">
-          <Text
-            className="mb-3 text-lg font-bold"
-            style={{ color: COLORS.text }}
-            numberOfLines={1}
-            ellipsizeMode="tail">
-            المحلات القريبة منك
+        {/* Stores Section Header */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>
+            {selectedCategory ? 
+              `${selectedCategory.name} في ${selectedVillage?.name || 'المنطقة المختارة'}` :
+              'المتاجر المتاحة'
+            }
           </Text>
+          <Text style={styles.storesCountText}>
+            {filteredStores.length} متجر
+          </Text>
+        </View>
 
-          {filteredStores.length > 0 ? (
-            filteredStores.map((store) => (
-              <StoreCard key={store.id} store={store} onPress={() => handleStorePress(store)} />
-            ))
-          ) : (
-            <EmptyState
-              icon="storefront-outline"
-              title="لا توجد محلات"
-              message="لا توجد محلات متاحة في منطقتك حالياً"
-            />
-          )}
+        {/* Stores List */}
+        {error ? (
+          <EmptyState
+            icon="error-outline"
+            title="خطأ في تحميل البيانات"
+            message={error}
+            actionText="إعادة المحاولة"
+            onActionPress={getCurrentLocation}
+          />
+        ) : filteredStores.length > 0 ? (
+          <FlatList
+            data={filteredStores}
+            renderItem={({ item }) => (
+              <StoreCard 
+                store={item} 
+                onPress={() => handleStorePress(item)}
+                userLocation={userLocation}
+              />
+            )}
+            keyExtractor={(item) => item.id}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.storesList}
+          />
+        ) : searchQuery || selectedCategory ? (
+          <EmptyState
+            icon="search-off"
+            title="لا توجد نتائج"
+            message={
+              searchQuery ? 
+                `لا توجد متاجر تحتوي على "${searchQuery}"` :
+                'لا توجد متاجر في هذه الفئة'
+            }
+            actionText="مسح البحث"
+            onActionPress={() => {
+              setSearchQuery('');
+              setSelectedCategory(null);
+            }}
+          />
+        ) : (
+          <EmptyState
+            icon="storefront"
+            title="لا توجد متاجر"
+            message="لا توجد متاجر متاحة في هذه المنطقة حالياً"
+            actionText="تغيير المنطقة"
+            onActionPress={handleLocationPress}
+          />
+        )}
+
+        {/* Quick Actions */}
+        <View style={styles.quickActions}>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => navigation.navigate('Orders')}
+          >
+            <Icon name="history" size={24} color={COLORS.primary} />
+            <Text style={styles.actionText}>طلباتي</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => navigation.navigate('Cart')}
+          >
+            <Icon name="shopping-cart" size={24} color={COLORS.primary} />
+            <Text style={styles.actionText}>السلة</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Village Picker */}
+      <VillagePicker
+        visible={villagePickerVisible}
+        onClose={() => setVillagePickerVisible(false)}
+        onSelect={handleVillageSelect}
+        currentLocation={userLocation}
+      />
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.lightGray,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SIZES.padding,
+    paddingVertical: SIZES.base,
+    backgroundColor: COLORS.card,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.lightGray,
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  locationText: {
+    fontSize: SIZES.h6,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginHorizontal: SIZES.base,
+    textAlign: 'right',
+  },
+  notificationButton: {
+    padding: SIZES.base,
+    position: 'relative',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: COLORS.danger,
+    borderRadius: 8,
+    minWidth: 16,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: {
+    color: COLORS.card,
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  searchContainer: {
+    padding: SIZES.padding,
+    backgroundColor: COLORS.card,
+  },
+  content: {
+    flex: 1,
+  },
+  section: {
+    marginTop: SIZES.base,
+    paddingVertical: SIZES.base,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: SIZES.padding,
+    marginBottom: SIZES.base,
+  },
+  sectionTitle: {
+    fontSize: SIZES.h5,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    textAlign: 'right',
+  },
+  storesCountText: {
+    fontSize: SIZES.body3,
+    color: COLORS.gray,
+    textAlign: 'right',
+  },
+  categoriesList: {
+    paddingHorizontal: SIZES.padding,
+  },
+  storesList: {
+    paddingHorizontal: SIZES.padding,
+  },
+  quickActions: {
+    flexDirection: 'row',
+    padding: SIZES.padding,
+    gap: SIZES.base,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: SIZES.base,
+    backgroundColor: COLORS.card,
+    borderRadius: SIZES.borderRadius,
+    borderWidth: 1,
+    borderColor: COLORS.lightGray,
+  },
+  actionText: {
+    fontSize: SIZES.body2,
+    fontWeight: '600',
+    color: COLORS.primary,
+    marginRight: SIZES.base,
+  },
+});
 
 export default HomeScreen;

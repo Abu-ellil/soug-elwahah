@@ -1,76 +1,179 @@
-import React from 'react';
-import { View, Text, Image, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useCart } from '../context/CartContext';
+import React, { useRef } from 'react';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import * as Haptics from 'expo-haptics';
 import { formatPrice } from '../utils/helpers';
 import COLORS from '../constants/colors';
+import SIZES from '../constants/sizes';
 
-const ProductCard = ({ product, onPress }) => {
-  const { addToCart } = useCart();
+const ProductCard = ({ product, onPress, onAddToCart }) => {
+  const animation = useRef(new Animated.Value(0)).current;
 
-  const handleAddToCart = () => {
-    addToCart(product, 1);
-    // يمكن إضافة animation هنا
+  const handleAddToCart = (e) => {
+    e.stopPropagation();
+    if (onAddToCart) {
+      onAddToCart(product);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      // Trigger animation
+      Animated.timing(animation, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        Animated.timing(animation, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+      });
+    }
+  };
+
+  const animatedStyle = {
+    transform: [
+      {
+        scale: animation.interpolate({
+          inputRange: [0, 1],
+          outputRange: [1, 1.2],
+        }),
+      },
+    ],
+    opacity: animation.interpolate({
+      inputRange: [0, 1],
+      outputRange: [1, 0.5],
+    }),
   };
 
   return (
     <TouchableOpacity
       onPress={onPress}
-      className="mx-2 my-2 overflow-hidden rounded-xl bg-white shadow-sm"
-      style={{
-        width: 160,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-      }}>
-      <View className="relative">
-        <Image source={{ uri: product.image }} className="h-24 w-full" resizeMode="cover" />
+      style={styles.container}
+    >
+      <View style={styles.imageContainer}>
+        <Image source={{ uri: product.image }} style={styles.image} resizeMode="cover" />
         {!product.isAvailable && (
-          <View className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50">
-            <Text className="text-sm font-bold text-white">غير متوفر</Text>
+          <View style={styles.unavailableOverlay}>
+            <Text style={styles.unavailableText}>غير متوفر</Text>
           </View>
         )}
       </View>
 
-      <View className="p-3">
-        <Text className="mb-1 text-sm font-bold" style={{ color: COLORS.text }} numberOfLines={2}>
+      <View style={styles.content}>
+        <Text style={styles.name} numberOfLines={2}>
           {product.name}
         </Text>
 
-        <Text
-          className="mb-2 text-lg font-bold"
-          style={{ color: COLORS.primary }}
-          numberOfLines={1}
-          ellipsizeMode="tail">
+        <Text style={styles.description} numberOfLines={1}>
+          {product.description}
+        </Text>
+
+        <Text style={styles.price} numberOfLines={1}>
           {formatPrice(product.price)}
         </Text>
 
         {product.isAvailable ? (
-          <TouchableOpacity
-            onPress={handleAddToCart}
-            className="flex-row items-center justify-center rounded-lg py-2"
-            style={{ backgroundColor: COLORS.primary }}>
-            <Ionicons name="add" size={16} color="white" />
-            <Text className="mr-1 text-sm font-medium text-white">أضف للسلة</Text>
-          </TouchableOpacity>
+          <Animated.View style={animatedStyle}>
+            <TouchableOpacity
+              onPress={handleAddToCart}
+              style={styles.addButton}
+            >
+              <Icon name="add-shopping-cart" size={16} color={COLORS.card} />
+              <Text style={styles.addButtonText}>أضف للسلة</Text>
+            </TouchableOpacity>
+          </Animated.View>
         ) : (
-          <View
-            className="flex-row items-center justify-center rounded-lg py-2"
-            style={{ backgroundColor: COLORS.border }}>
-            <Text
-              className="text-sm font-medium"
-              style={{ color: COLORS.textSecondary }}
-              numberOfLines={1}
-              ellipsizeMode="tail">
-              غير متوفر
-            </Text>
+          <View style={styles.unavailableButton}>
+            <Text style={styles.unavailableButtonText}>غير متوفر</Text>
           </View>
         )}
       </View>
     </TouchableOpacity>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: COLORS.card,
+    borderRadius: SIZES.borderRadius,
+    marginBottom: SIZES.base,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    overflow: 'hidden',
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  imageContainer: {
+    position: 'relative',
+  },
+  image: {
+    width: '100%',
+    height: 100,
+    resizeMode: 'cover',
+  },
+  unavailableOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  unavailableText: {
+    color: COLORS.card,
+    fontSize: SIZES.caption,
+    fontWeight: 'bold',
+  },
+  content: {
+    padding: SIZES.base,
+  },
+  name: {
+    fontSize: SIZES.body2,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginBottom: 4,
+    textAlign: 'right',
+  },
+  description: {
+    fontSize: SIZES.caption,
+    color: COLORS.textSecondary,
+    marginBottom: 8,
+    textAlign: 'right',
+  },
+  price: {
+    fontSize: SIZES.h6,
+    fontWeight: 'bold',
+    color: COLORS.primary,
+    marginBottom: SIZES.base,
+    textAlign: 'right',
+  },
+  addButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: SIZES.borderRadius,
+    paddingVertical: SIZES.base / 2,
+    paddingHorizontal: SIZES.base,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  addButtonText: {
+    color: COLORS.card,
+    fontSize: SIZES.caption,
+    fontWeight: 'bold',
+    marginRight: 4,
+  },
+  unavailableButton: {
+    backgroundColor: COLORS.lightGray,
+    borderRadius: SIZES.borderRadius,
+    paddingVertical: SIZES.base / 2,
+    paddingHorizontal: SIZES.base,
+    alignItems: 'center',
+  },
+  unavailableButtonText: {
+    color: COLORS.gray,
+    fontSize: SIZES.caption,
+    fontWeight: 'bold',
+  },
+});
 
 export default ProductCard;

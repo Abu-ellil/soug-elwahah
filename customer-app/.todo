@@ -1,0 +1,75 @@
+# Soug Elwahah Customer App - To-Do List
+
+## ✅ Done
+
+### Core Setup & Structure
+- [x] Project initialized with React Native Expo.
+- [x] Nativewind and Tailwind CSS integrated.
+- [x] Project structure created (`src`, `components`, `screens`, etc.).
+- [x] Mock data files created in `src/data/`.
+- [x] Navigation setup with React Navigation (`AppNavigator`, `MainTabNavigator`, `AuthNavigator`).
+- [x] State management with React Context (`AuthContext`, `CartContext`, `LocationProvider`).
+- [x] Basic RTL and localization support (`RTLText`, `LocalizationContext`).
+
+### Implemented Screens
+- [x] **Auth:** `LoginScreen`, `RegisterScreen`.
+- [x] **Home:** `HomeScreen`, `StoreDetailsScreen`.
+- [x] **Categories:** `CategoryStoresScreen`.
+- [x] **Cart & Checkout:** `CartScreen`, `CheckoutScreen`.
+- [x] **Orders:** `OrdersScreen`.
+- [x] **Profile/Settings:** `SettingsScreen` (initial version).
+- [x] **Bonus Screens:** `CustomerSearchScreen`, `DashboardScreen`.
+
+### UI Components
+- [x] `StoreCard`, `ProductCard`, `CategoryCard`.
+- [x] `CartItem`, `OrderCard`.
+- [x] `Header`, `SearchBar`.
+- [x] `EmptyState`, `LoadingSpinner`.
+- [x] `VillagePicker`, `RTLText`.
+
+### Core Logic
+- [x] Mock authentication flow.
+- [x] Cart management (add, remove, update).
+- [x] Basic location and distance calculation.
+- [x] Data fetching from mock data files.
+
+---
+
+## ⏳ To Do
+
+### Missing Screens
+- [ ] **Orders:** Implement `OrderDetailsScreen` to show order timeline, item list, and actions.
+- [ ] **Profile:** Implement `AddressesScreen` for managing user addresses.
+- [ ] **Profile:** Enhance `ProfileScreen` (`SettingsScreen`) to match all features from the prompt (Addresses, Notifications, etc.).
+
+### UI/UX Enhancements
+- [ ] **Animations:**
+  - [ ] Add to Cart: Scale + Fade animation on the "Add" button.
+  - [ ] Cart Badge: Bounce animation in the tab bar when items are added.
+  - [ ] Screen Transitions: Ensure all transitions are smooth slides.
+  - [ ] Tab Bar: Animate the active tab indicator.
+  - [ ] Empty States: Add fade-in animations.
+  - [ ] Skeleton Loaders: Implement for `HomeScreen` and `StoreDetailsScreen` while data is "loading".
+- [ ] **User Feedback:**
+  - [ ] Add Haptic Feedback on button presses.
+  - [ ] Implement Toast Messages for success/error actions (e.g., "Item added to cart").
+  - [ ] Create a clear "Offline" indicator/message.
+
+### Functionality & Logic
+- [ ] **Orders:** Simulate order status updates in `OrderDetailsScreen`.
+- [ ] **Checkout:** Finalize the order creation logic and clear the cart.
+- [ ] **Error Handling:** Implement robust error handling across the app (e.g., failed login, invalid data).
+- [ ] **Pull to Refresh:** Implement the pull-to-refresh functionality on `HomeScreen`.
+
+### Code Quality & Documentation
+- [ ] **Code Comments:** Add Arabic comments to complex logic, especially in context files and utility functions.
+- [ ] **README.md:** Create a comprehensive `README.md` file explaining:
+  - [ ] How to run the project.
+  - [ ] A summary of all features.
+  - [ ] The mock data structure.
+  - [ ] Screenshots of the main screens.
+
+### Final Polish
+- [ ] **Testing:** Thoroughly test all user flows from login to checkout.
+- [ ] **Design Review:** Ensure the UI matches the vibrant and colorful design system specified in the prompt.
+- [ ] **Performance:** Check for any performance bottlenecks.

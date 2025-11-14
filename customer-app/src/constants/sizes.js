@@ -8,7 +8,23 @@ const SIZES = {
   xxl: 24,
   xxxl: 32,
 
+  // Typography
+  h1: 32,
+  h2: 28,
+  h3: 24,
+  h4: 20,
+  h5: 18,
+  h6: 16,
+  body1: 16,
+  body2: 14,
+  body3: 12,
+  caption: 12,
+
   // Spacing
+  base: 8,
+  padding: 16,
+  borderRadius: 8,
+
   spacing: {
     xs: 4,
     sm: 8,

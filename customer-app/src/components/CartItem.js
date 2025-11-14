@@ -1,87 +1,201 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useCart } from '../context/CartContext';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import { formatPrice } from '../utils/helpers';
 import COLORS from '../constants/colors';
+import SIZES from '../constants/sizes';
 
-const CartItem = ({ item }) => {
-  const { updateQuantity, removeFromCart } = useCart();
-
+const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
   const handleIncrease = () => {
-    updateQuantity(item.productId, item.quantity + 1);
+    onUpdateQuantity(item.productId, item.quantity + 1);
   };
 
   const handleDecrease = () => {
     if (item.quantity > 1) {
-      updateQuantity(item.productId, item.quantity - 1);
+      onUpdateQuantity(item.productId, item.quantity - 1);
     } else {
-      removeFromCart(item.productId);
+      Alert.alert(
+        'تأكيد الحذف',
+        'هل تريد حذف هذا المنتج من السلة؟',
+        [
+          { text: 'إلغاء', style: 'cancel' },
+          { 
+            text: 'حذف', 
+            style: 'destructive',
+            onPress: () => onRemove(item.productId)
+          }
+        ]
+      );
     }
   };
 
   const handleRemove = () => {
-    removeFromCart(item.productId);
+    Alert.alert(
+      'حذف المنتج',
+      `هل تريد حذف "${item.name}" من السلة؟`,
+      [
+        { text: 'إلغاء', style: 'cancel' },
+        { 
+          text: 'حذف', 
+          style: 'destructive',
+          onPress: () => onRemove(item.productId)
+        }
+      ]
+    );
   };
 
-  return (
-    <View className="bg-white rounded-xl p-4 mx-4 my-2 flex-row items-center">
-      <Image
-        source={{ uri: item.image }}
-        className="w-16 h-16 rounded-lg mr-4"
-        resizeMode="cover"
-      />
+  const itemTotal = item.price * item.quantity;
 
-      <View className="flex-1">
-        <Text
-          className="text-base font-bold mb-1"
-          style={{ color: COLORS.text }}
-          numberOfLines={2}
-        >
-          {item.name}
-        </Text>
-        <Text
-          className="text-lg font-bold"
-          style={{ color: COLORS.primary }}
-        >
-          {formatPrice(item.price)}
-        </Text>
+  return (
+    <View style={styles.container}>
+      <View style={styles.imageContainer}>
+        <Image source={{ uri: item.image }} style={styles.image} resizeMode="cover" />
       </View>
 
-      <View className="flex-row items-center">
-        <TouchableOpacity
-          onPress={handleDecrease}
-          className="w-8 h-8 rounded-full items-center justify-center mr-2"
-          style={{ backgroundColor: COLORS.border }}
-        >
-          <Ionicons name="remove" size={16} color={COLORS.text} />
-        </TouchableOpacity>
+      <View style={styles.content}>
+        <View style={styles.header}>
+          <Text style={styles.name} numberOfLines={2}>
+            {item.name}
+          </Text>
+          <TouchableOpacity 
+            onPress={handleRemove} 
+            style={styles.removeButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Icon name="close" size={20} color={COLORS.gray} />
+          </TouchableOpacity>
+        </View>
 
-        <Text
-          className="text-lg font-bold mx-3 min-w-8 text-center"
-          style={{ color: COLORS.text }}
-        >
-          {item.quantity}
+        <Text style={styles.price} numberOfLines={1}>
+          {formatPrice(item.price)}
         </Text>
 
-        <TouchableOpacity
-          onPress={handleIncrease}
-          className="w-8 h-8 rounded-full items-center justify-center mr-2"
-          style={{ backgroundColor: COLORS.primary }}
-        >
-          <Ionicons name="add" size={16} color="white" />
-        </TouchableOpacity>
+        <View style={styles.footer}>
+          <View style={styles.quantityControls}>
+            <TouchableOpacity 
+              onPress={handleDecrease} 
+              style={styles.quantityButton}
+              disabled={item.quantity <= 1}
+            >
+              <Icon 
+                name="remove" 
+                size={16} 
+                color={item.quantity <= 1 ? COLORS.gray : COLORS.text} 
+              />
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={handleRemove}
-          className="w-8 h-8 rounded-full items-center justify-center"
-          style={{ backgroundColor: COLORS.danger + '20' }}
-        >
-          <Ionicons name="trash-outline" size={16} color={COLORS.danger} />
-        </TouchableOpacity>
+            <Text style={styles.quantity} numberOfLines={1}>
+              {item.quantity}
+            </Text>
+
+            <TouchableOpacity 
+              onPress={handleIncrease} 
+              style={[styles.quantityButton, styles.increaseButton]}
+            >
+              <Icon name="add" size={16} color={COLORS.card} />
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.totalPrice}>
+            {formatPrice(itemTotal)}
+          </Text>
+        </View>
       </View>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: COLORS.card,
+    borderRadius: SIZES.borderRadius,
+    marginBottom: SIZES.base,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    overflow: 'hidden',
+  },
+  imageContainer: {
+    width: '100%',
+    height: 120,
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  content: {
+    padding: SIZES.padding,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: SIZES.base / 2,
+  },
+  name: {
+    fontSize: SIZES.body2,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    flex: 1,
+    textAlign: 'right',
+    marginRight: SIZES.base,
+  },
+  removeButton: {
+    padding: SIZES.base / 2,
+    borderRadius: SIZES.borderRadius / 2,
+  },
+  price: {
+    fontSize: SIZES.body2,
+    fontWeight: '600',
+    color: COLORS.primary,
+    marginBottom: SIZES.base,
+    textAlign: 'right',
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  quantityControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.lightGray,
+    borderRadius: SIZES.borderRadius,
+    padding: 4,
+  },
+  quantityButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.card,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  increaseButton: {
+    backgroundColor: COLORS.primary,
+  },
+  quantity: {
+    fontSize: SIZES.body1,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    minWidth: 32,
+    textAlign: 'center',
+    paddingHorizontal: SIZES.base,
+  },
+  totalPrice: {
+    fontSize: SIZES.h6,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    textAlign: 'right',
+  },
+});
 
 export default CartItem;

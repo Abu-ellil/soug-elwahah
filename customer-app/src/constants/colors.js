@@ -11,7 +11,6 @@ const COLORS = {
   text: '#2D3436',         // رمادي غامق
   textSecondary: '#636E72',
   border: '#DFE6E9',
-  
   gradientStart: '#FF6B35',
   gradientEnd: '#F7931E',
 };

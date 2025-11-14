@@ -1,190 +1,167 @@
-# تطبيق العملاء (Customer App)
+# Soug Elwahah Customer App
 
-تطبيق توصيل طلبات من المحلات للقرى المصرية باستخدام React Native Expo.
+## Overview
 
-## 🚀 الميزات
+The Soug Elwahah Customer App is a mobile application built with React Native and Expo, designed to provide a seamless shopping experience for customers. It features product browsing, cart management, order placement, and user profile management, all with a focus on a vibrant and user-friendly interface.
 
-- **تسجيل الدخول والتسجيل**: نظام مصادقة كامل مع تخزين البيانات محلياً
-- **تحديد الموقع**: تحديد القرية الحالية وإيجاد المحلات القريبة
-- **استعراض المحلات**: عرض المحلات حسب الفئات والقرب
-- **تفاصيل المحل**: عرض المنتجات مع إمكانية إضافة للسلة
-- **السلة**: إدارة المنتجات في السلة مع حساب المجموع
-- **الطلبات**: متابعة حالة الطلبات
-- **الملف الشخصي**: إدارة العناوين والمعلومات الشخصية
-- **دعم اللغة العربية**: RTL كامل مع خطوط عربية
+## Features
 
-## 🛠️ التقنيات المستخدمة
+-   **Authentication:** User login and registration.
+-   **Home Screen:** Displays available stores, categories, and a search bar.
+-   **Store Details:** View products from a specific store, filter by category, and add items to the cart.
+-   **Cart Management:** Add, remove, and update product quantities in the cart.
+-   **Checkout Process:** Place orders with customer information, delivery details, and payment method selection.
+-   **Order Tracking:** View past and current orders with status updates.
+-   **User Profile/Settings:** Manage addresses and other application settings.
+-   **Localization:** Full Arabic language support with RTL (Right-to-Left) layout.
+-   **UI/UX Enhancements:**
+    -   "Add to Cart" button scale and fade animation.
+    -   Cart badge bounce animation in the tab bar.
+    -   Smooth slide screen transitions.
+    -   Fade-in animations for empty states.
+    -   Skeleton loaders for `HomeScreen` and `StoreDetailsScreen`.
+    -   Haptic feedback on button presses.
+    -   Toast messages for success/error actions.
 
-- **React Native 0.81.5**
-- **Expo SDK 50**
-- **React Navigation v6**
-- **Context API** لإدارة الحالة
-- **AsyncStorage** للتخزين المحلي
-- **Expo Location** لتحديد الموقع
+## Getting Started
 
-## 📱 الشاشات
+### Prerequisites
 
-### 1. شاشة تسجيل الدخول
-- إدخال رقم الموبايل وكلمة المرور
-- رابط للتسجيل
+-   Node.js (LTS version recommended)
+-   npm or Yarn
+-   Expo CLI (`npm install -g expo-cli`)
 
-### 2. شاشة التسجيل
-- إدخال الاسم ورقم الموبايل وكلمة المرور
-- تأكيد كلمة المرور
+### Installation
 
-### 3. الشاشة الرئيسية
-- عرض القرية الحالية
-- شريط البحث
-- فئات المنتجات
-- المحلات القريبة
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/your-username/soug-elwahah-customer-app.git
+    cd soug-elwahah-customer-app
+    ```
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    # or
+    yarn install
+    ```
 
-### 4. تفاصيل المحل
-- صورة المحل
-- تبويبات المنتجات حسب الفئة
-- عرض المنتجات في شبكة
-- زر السلة العائم
+### Running the Project
 
-### 5. السلة
-- قائمة المنتجات
-- تعديل الكميات
-- حساب المجموع
-- زر إتمام الطلب
+1.  **Start the Expo development server:**
+    ```bash
+    npm start
+    # or
+    yarn start
+    ```
+2.  **Open on your device/emulator:**
+    -   Scan the QR code with the Expo Go app on your physical device (iOS or Android).
+    -   Run on an Android emulator or iOS simulator.
 
-### 6. إتمام الطلب
-- اختيار العنوان
-- طريقة الدفع
-- ملاحظات
-- تأكيد الطلب
+## Mock Data Structure
 
-### 7. الطلبات
-- تبويبات الطلبات (حالية، مكتملة، ملغية)
-- تفاصيل كل طلب
+The application uses mock data for stores, products, categories, users, orders, and addresses. These are located in the `src/data/` directory.
 
-### 8. الملف الشخصي
-- معلومات المستخدم
-- العناوين المحفوظة
-- إعدادات التطبيق
+-   `categories.js`: Defines product categories.
+-   `customers.js`: Mock customer data.
+-   `orders.js`: Mock order history, including `statusHistory` and `deliveryAddress`.
+-   `products.js`: Mock product listings with details like price, image, and availability.
+-   `stores.js`: Mock store information, including coordinates and delivery details.
+-   `users.js`: Mock user accounts for authentication.
+-   `villages.js`: Defines available villages with delivery fees and times.
+-   `addresses.js`: Mock user addresses.
 
-## 🗄️ بيانات تجريبية
+## Screenshots
 
-التطبيق يعتمد على بيانات تجريبية شاملة تشمل:
+*(Screenshots will be added here once the UI is fully developed and stable)*
 
-- **القرى**: 10 قرى مصرية مع إحداثيات GPS
-- **الفئات**: 10 فئات منتجات مختلفة
-- **المحلات**: 15 محل مع معلومات كاملة
-- **المنتجات**: 34 منتج موزع على المحلات
-- **المستخدمين**: 3 مستخدمين تجريبيين
-- **الطلبات**: 5 طلبات بمختلف الحالات
-
-## 🎨 التصميم
-
-- **الألوان**: لوحة ألوان نابضة بالحيوية
-- **الخطوط**: دعم كامل للخطوط العربية
-- **RTL**: دعم كامل للغة العربية من اليمين لليسار
-- **الرسوم المتحركة**: انتقالات سلسة وتفاعلات مستخدم جذابة
-
-## 🚀 كيفية التشغيل
-
-1. **تثبيت المتطلبات**:
-   ```bash
-   npm install
-   ```
-
-2. **تشغيل التطبيق**:
-   ```bash
-   npm start
-   ```
-
-3. **فتح التطبيق**:
-   - استخدم تطبيق Expo Go على الهاتف
-   - أو شغل المحاكي
-
-## 📱 بيانات تسجيل الدخول التجريبية
-
-- **رقم الموبايل**: 01012345678
-- **كلمة المرور**: 123456
-
-## 📂 هيكل المشروع
+## Project Structure
 
 ```
-customer-app/
-├── App.js                    # نقطة دخول التطبيق
-├── app.json                  # إعدادات Expo
-├── babel.config.js           # إعدادات Babel
-├── package.json              # التبعيات
-├── global.css                # الأنماط العامة
-├── src/
-│   ├── components/           # المكونات القابلة لإعادة الاستخدام
-│   │   ├── StoreCard.js
-│   │   ├── ProductCard.js
-│   │   ├── CategoryCard.js
-│   │   ├── CartItem.js
-│   │   ├── OrderCard.js
-│   │   ├── Header.js
-│   │   ├── SearchBar.js
-│   │   ├── EmptyState.js
-│   │   └── LoadingSpinner.js
-│   ├── context/              # Context APIs
-│   │   ├── AuthContext.js
-│   │   ├── CartContext.js
-│   │   └── LocationContext.js
-│   ├── data/                 # البيانات التجريبية
-│   │   ├── index.js
-│   │   ├── villages.js
-│   │   ├── categories.js
-│   │   ├── stores.js
-│   │   ├── products.js
-│   │   ├── users.js
-│   │   └── orders.js
-│   ├── navigation/           # إعدادات التنقل
-│   │   ├── AppNavigator.js
-│   │   ├── MainTabNavigator.js
-│   │   └── AuthNavigator.js
-│   ├── screens/              # شاشات التطبيق
-│   │   ├── Auth/
-│   │   │   ├── LoginScreen.js
-│   │   │   └── RegisterScreen.js
-│   │   └── Home/
-│   │       ├── HomeScreen.js
-│   │       └── StoreDetailsScreen.js
-│   ├── constants/            # الثوابت
-│   │   ├── colors.js
-│   │   └── sizes.js
-│   └── utils/                # الأدوات المساعدة
-│       ├── storage.js
-│       ├── distance.js
-│       └── helpers.js
+.
+├── App.tsx
+├── app.json
+├── babel.config.js
+├── global.css
+├── index.js
+├── metro.config.js
+├── package.json
+├── tailwind.config.js
+├── tsconfig.json
+└── src/
+    ├── components/
+    │   ├── CartItem.js
+    │   ├── CategoryCard.js
+    │   ├── EmptyState.js
+    │   ├── Header.js
+    │   ├── LoadingSpinner.js
+    │   ├── OrderCard.js
+    │   ├── ProductCard.js
+    │   ├── RTLText.js
+    │   ├── SearchBar.js
+    │   ├── SkeletonLoader.js
+    │   ├── HomeScreenSkeleton.js
+    │   ├── StoreDetailsScreenSkeleton.js
+    │   ├── StoreCard.js
+    │   └── VillagePicker.js
+    ├── constants/
+    │   ├── colors.js
+    │   └── sizes.js
+    ├── context/
+    │   ├── AuthContext.js
+    │   ├── CartContext.js
+    │   ├── LocalizationContext.js
+    │   └── LocationProvider.js
+    ├── data/
+    │   ├── addresses.js
+    │   ├── categories.js
+    │   ├── customers.js
+    │   ├── index.js
+    │   ├── orders.js
+    │   ├── products.js
+    │   ├── stores.js
+    │   ├── users.js
+    │   └── villages.js
+    ├── navigation/
+    │   ├── AppNavigator.js
+    │   ├── AuthNavigator.js
+    │   └── MainTabNavigator.js
+    ├── screens/
+    │   ├── Auth/
+    │   │   ├── LoginScreen.js
+    │   │   └── RegisterScreen.js
+    │   ├── Cart/
+    │   │   └── CartScreen.js
+    │   ├── Categories/
+    │   │   └── CategoryStoresScreen.js
+    │   ├── Checkout/
+    │   │   └── CheckoutScreen.js
+    │   ├── Customers/
+    │   │   └── CustomerSearchScreen.js
+    │   ├── Dashboard/
+    │   │   └── DashboardScreen.js
+    │   ├── Home/
+    │   │   ├── HomeScreen.js
+    │   │   └── StoreDetailsScreen.js
+    │   ├── Orders/
+    │   │   ├── OrderDetailsScreen.js
+    │   │   └── OrdersScreen.js
+    │   └── Settings/
+    │       ├── SettingsScreen.js
+    │       └── AddressesScreen.js
+    ├── types/
+    │   └── css.d.ts
+    └── utils/
+        ├── arabicLocalization.js
+        ├── auth.js
+        ├── customerManager.js
+        ├── dataExportImport.js
+        ├── dataValidation.js
+        ├── distance.js
+        ├── helpers.js
+        ├── localization.js
+        ├── locationHelpers.js
+        ├── offlineDataManager.js
+        ├── paymentService.js
+        ├── STORAGE_README.md
+        └── storage.js
 ```
-
-## ✅ معايير القبول
-
-- [x] جميع الشاشات تعمل بدون أخطاء
-- [x] Navigation سلس بين الشاشات
-- [x] Cart يحفظ البيانات في AsyncStorage
-- [x] GPS يعمل ويحسب المسافات بشكل صحيح
-- [x] Authentication يعمل مع Mock Data
-- [x] Orders تُنشأ وتُحفظ بشكل صحيح
-- [x] RTL يعمل بشكل كامل
-- [x] التصميم colorful وحيوي
-- [x] الـ Icons كبيرة وواضحة
-- [x] Animations سلسة وجذابة
-- [x] Empty States موجودة
-- [x] Loading States موجودة
-- [x] Error Handling واضح
-- [x] Component Structure منظمة
-- [x] Mock Data منفصلة في مجلد data/
-- [x] Context APIs مستخدمة بشكل صحيح
-- [x] Code نظيف ومنظم
-- [x] Comments بالعربية على الأكواد المهمة
-
-## 📝 ملاحظات
-
-- التطبيق مبني بالكامل على بيانات تجريبية
-- يدعم التشغيل على Android و iOS
-- يستخدم أفضل الممارسات في React Native
-- الكود قابل للتوسع والتطوير
-- تم التركيز على الأداء والتجربة المستخدم
-
----
-
-تم تطوير هذا التطبيق بواسطة AI Assistant كجزء من مشروع تعلم React Native.

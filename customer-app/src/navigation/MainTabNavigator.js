@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import { View, Text } from 'react-native';
+import { View, Text, Animated } from 'react-native';
 import { useCart } from '../context/CartContext';
 import HomeScreen from '../screens/Home/HomeScreen';
 import StoreDetailsScreen from '../screens/Home/StoreDetailsScreen';
 import CategoryStoresScreen from '../screens/Categories/CategoryStoresScreen';
+import CartScreen from '../screens/Cart/CartScreen';
+import OrdersScreen from '../screens/Orders/OrdersScreen';
+import OrderDetailsScreen from '../screens/Orders/OrderDetailsScreen';
 import COLORS from '../constants/colors';
 import SIZES from '../constants/sizes';
 
@@ -16,35 +19,61 @@ const CategoriesScreen = () => (
     <Text>Categories Screen</Text>
   </View>
 );
-const CartScreen = () => (
-  <View className="flex-1 items-center justify-center bg-white">
-    <Text>Cart Screen</Text>
-  </View>
-);
-const OrdersScreen = () => (
-  <View className="flex-1 items-center justify-center bg-white">
-    <Text>Orders Screen</Text>
-  </View>
-);
-const ProfileScreen = () => (
-  <View className="flex-1 items-center justify-center bg-white">
-    <Text>Profile Screen</Text>
-  </View>
-);
+import SettingsScreen from '../screens/Settings/SettingsScreen';
+import AddressesScreen from '../screens/Profile/AddressesScreen';
 
 // Home Stack Navigator
 const HomeStack = createNativeStackNavigator();
 const HomeStackNavigator = () => (
-  <HomeStack.Navigator screenOptions={{ headerShown: false, statusBarStyle: 'dark' }}>
+  <HomeStack.Navigator screenOptions={{ headerShown: false, statusBarStyle: 'dark', animation: 'slide_from_right' }}>
     <HomeStack.Screen name="HomeMain" component={HomeScreen} />
     <HomeStack.Screen name="StoreDetails" component={StoreDetailsScreen} />
   </HomeStack.Navigator>
+);
+
+// Order Stack Navigator
+const OrderStack = createNativeStackNavigator();
+const OrderStackNavigator = () => (
+    <OrderStack.Navigator screenOptions={{ headerShown: false, statusBarStyle: 'dark', animation: 'slide_from_right' }}>
+        <OrderStack.Screen name="OrdersList" component={OrdersScreen} />
+        <OrderStack.Screen name="OrderDetails" component={OrderDetailsScreen} />
+    </OrderStack.Navigator>
+);
+
+// Profile Stack Navigator
+const ProfileStack = createNativeStackNavigator();
+const ProfileStackNavigator = () => (
+    <ProfileStack.Navigator screenOptions={{ headerShown: false, statusBarStyle: 'dark', animation: 'slide_from_right' }}>
+        <ProfileStack.Screen name="Settings" component={SettingsScreen} />
+        <ProfileStack.Screen name="Addresses" component={AddressesScreen} />
+    </ProfileStack.Navigator>
 );
 
 const Tab = createBottomTabNavigator();
 
 const MainTabNavigator = () => {
   const { getCartItemsCount } = useCart();
+  const cartCount = getCartItemsCount();
+  const bounceAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (cartCount > 0) {
+      bounceAnim.setValue(1.2);
+      Animated.spring(bounceAnim, {
+        toValue: 1,
+        friction: 2,
+        tension: 80,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [cartCount, bounceAnim]);
+
+  const animatedBadgeStyle = {
+    transform: [{ scale: bounceAnim }],
+    backgroundColor: COLORS.danger,
+    color: 'white',
+    fontSize: 12,
+  };
 
   return (
     <Tab.Navigator
@@ -101,24 +130,20 @@ const MainTabNavigator = () => {
         component={CartScreen}
         options={{
           tabBarLabel: 'السلة',
-          tabBarBadge: getCartItemsCount() > 0 ? getCartItemsCount() : null,
-          tabBarBadgeStyle: {
-            backgroundColor: COLORS.danger,
-            color: 'white',
-            fontSize: 12,
-          },
+          tabBarBadge: cartCount > 0 ? cartCount : null,
+          tabBarBadgeStyle: animatedBadgeStyle,
         }}
       />
       <Tab.Screen
         name="Orders"
-        component={OrdersScreen}
+        component={OrderStackNavigator}
         options={{
           tabBarLabel: 'الطلبات',
         }}
       />
       <Tab.Screen
         name="Profile"
-        component={ProfileScreen}
+        component={ProfileStackNavigator}
         options={{
           tabBarLabel: 'الحساب',
         }}

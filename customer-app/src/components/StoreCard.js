@@ -57,7 +57,7 @@ const StoreCard = ({ store, onPress }) => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'white',
+    backgroundColor: COLORS.card,
     borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
-    backgroundColor: 'white',
+    backgroundColor: COLORS.card,
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     left: 8,
-    backgroundColor: 'white',
+    backgroundColor: COLORS.card,
     borderRadius: 12,
     paddingHorizontal: 8,
     paddingVertical: 4,

@@ -11,15 +11,18 @@ export const MOCK_ORDERS = [
     deliveryFee: 10.00,
     total: 76.00,
     status: 'delivered', // pending, confirmed, delivering, delivered, cancelled
-    address: '15 شارع المدرسة، كفر الشيخ',
+    deliveryAddress: {
+        street: '15 شارع المدرسة',
+        village: 'كفر الشيخ'
+    },
     paymentMethod: 'cash',
     notes: 'رجاء الاتصال عند الوصول',
     createdAt: '2025-01-15T10:30:00',
-    timeline: [
-      { status: 'pending', time: '2025-01-15T10:30:00' },
-      { status: 'confirmed', time: '2025-01-15T10:35:00' },
-      { status: 'delivering', time: '2025-01-15T11:00:00' },
-      { status: 'delivered', time: '2025-01-15T11:30:00' }
+    statusHistory: [
+      { status: 'تم التوصيل', date: '2025-01-15T11:30:00', icon: 'check-circle' },
+      { status: 'قيد التوصيل', date: '2025-01-15T11:00:00', icon: 'truck' },
+      { status: 'تم التأكيد', date: '2025-01-15T10:35:00', icon: 'package' },
+      { status: 'تم استلام الطلب', date: '2025-01-15T10:30:00', icon: 'clipboard' }
     ]
   },
   {
@@ -34,14 +37,17 @@ export const MOCK_ORDERS = [
     deliveryFee: 10.00,
     total: 47.00,
     status: 'delivering',
-    address: '15 شارع المدرسة، كفر الشيخ',
+    deliveryAddress: {
+        street: '15 شارع المدرسة',
+        village: 'كفر الشيخ'
+    },
     paymentMethod: 'cash',
     notes: '',
     createdAt: '2025-01-16T14:20:00',
-    timeline: [
-      { status: 'pending', time: '2025-01-16T14:20:00' },
-      { status: 'confirmed', time: '2025-01-16T14:25:00' },
-      { status: 'delivering', time: '2025-01-16T15:00:00' }
+    statusHistory: [
+        { status: 'قيد التوصيل', date: '2025-01-16T15:00:00', icon: 'truck' },
+        { status: 'تم التأكيد', date: '2025-01-16T14:25:00', icon: 'package' },
+        { status: 'تم استلام الطلب', date: '2025-01-16T14:20:00', icon: 'clipboard' }
     ]
   },
   {
@@ -56,13 +62,16 @@ export const MOCK_ORDERS = [
     deliveryFee: 10.00,
     total: 55.00,
     status: 'confirmed',
-    address: '25 شارع النيل، دسوق',
+    deliveryAddress: {
+        street: '25 شارع النيل',
+        village: 'دسوق'
+    },
     paymentMethod: 'cash',
     notes: 'بدون بصل',
     createdAt: '2025-01-17T12:15:00',
-    timeline: [
-      { status: 'pending', time: '2025-01-17T12:15:00' },
-      { status: 'confirmed', time: '2025-01-17T12:20:00' }
+    statusHistory: [
+        { status: 'تم التأكيد', date: '2025-01-17T12:20:00', icon: 'package' },
+        { status: 'تم استلام الطلب', date: '2025-01-17T12:15:00', icon: 'clipboard' }
     ]
   },
   {
@@ -77,12 +86,15 @@ export const MOCK_ORDERS = [
     deliveryFee: 10.00,
     total: 56.00,
     status: 'pending',
-    address: '15 شارع المدرسة، كفر الشيخ',
+    deliveryAddress: {
+        street: '15 شارع المدرسة',
+        village: 'كفر الشيخ'
+    },
     paymentMethod: 'cash',
     notes: '',
     createdAt: '2025-01-18T09:45:00',
-    timeline: [
-      { status: 'pending', time: '2025-01-18T09:45:00' }
+    statusHistory: [
+        { status: 'تم استلام الطلب', date: '2025-01-18T09:45:00', icon: 'clipboard' }
     ]
   },
   {
@@ -97,13 +109,16 @@ export const MOCK_ORDERS = [
     deliveryFee: 10.00,
     total: 30.00,
     status: 'cancelled',
-    address: '10 شارع التحرير، فوه',
+    deliveryAddress: {
+        street: '10 شارع التحرير',
+        village: 'فوه'
+    },
     paymentMethod: 'cash',
     notes: 'تم الإلغاء بسبب عدم توفر الخبز',
     createdAt: '2025-01-17T08:30:00',
-    timeline: [
-      { status: 'pending', time: '2025-01-17T08:30:00' },
-      { status: 'cancelled', time: '2025-01-17T09:00:00' }
+    statusHistory: [
+        { status: 'تم الإلغاء', date: '2025-01-17T09:00:00', icon: 'x-circle' },
+        { status: 'تم استلام الطلب', date: '2025-01-17T08:30:00', icon: 'clipboard' }
     ]
   }
 ];
