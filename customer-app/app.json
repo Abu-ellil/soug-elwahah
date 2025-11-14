@@ -1,50 +1,38 @@
 {
   "expo": {
-    "name": "تطبيق العملاء",
-    "slug": "customer-app",
+    "name": "my-expo-app",
+    "slug": "my-expo-app",
     "version": "1.0.0",
+
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+
+    "experiments": {
+      "tsconfigPaths": true
+    },
+
+    "plugins": [],
+
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FF6B35"
+      "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.customerapp"
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FF6B35"
-      },
-      "edgeToEdgeEnabled": true,
-      "package": "com.customerapp"
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "plugins": [
-      [
-        "expo-font",
-        {
-          "fonts": [
-            "./assets/fonts/Tajawal-Regular.ttf",
-            "./assets/fonts/Tajawal-Bold.ttf",
-            "./assets/fonts/Cairo-Regular.ttf",
-            "./assets/fonts/Cairo-Bold.ttf"
-          ]
-        }
-      ]
-    ],
-    "experiments": {
-      "typedRoutes": true
+        "backgroundColor": "#ffffff"
+      }
     }
   }
 }
