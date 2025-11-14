@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useCart } from '../../context/CartContext';
 import { useLocation } from '../../context/LocationProvider';
 import { STORES } from '../../data/stores';
@@ -113,7 +113,7 @@ const CartScreen = ({ navigation }) => {
         rightComponent={
           cartItems.length > 0 && (
             <TouchableOpacity onPress={handleClearCart} style={styles.clearButton}>
-              <Icon name="delete-outline" size={24} color={COLORS.danger} />
+              <MaterialIcons name="delete-outline" size={24} color={COLORS.danger} />
             </TouchableOpacity>
           )
         }
@@ -133,7 +133,7 @@ const CartScreen = ({ navigation }) => {
           {/* Delivery Info */}
           {selectedVillage && (
             <View style={styles.deliveryInfo}>
-              <Icon name="location-on" size={20} color={COLORS.primary} />
+              <MaterialIcons name="location-on" size={20} color={COLORS.primary} />
               <Text style={styles.deliveryText}>
                 التوصيل إلى: {selectedVillage.name}
               </Text>
@@ -145,7 +145,7 @@ const CartScreen = ({ navigation }) => {
             <Text style={styles.sectionTitle}>المتاجر ({stores.length})</Text>
             {stores.map(store => (
               <View key={store.id} style={styles.storeInfo}>
-                <Icon name="store" size={16} color={COLORS.primary} />
+                <MaterialIcons name="store" size={16} color={COLORS.primary} />
                 <Text style={styles.storeName}>{store.name}</Text>
                 <View style={[
                   styles.storeStatus,
@@ -213,7 +213,7 @@ const CartScreen = ({ navigation }) => {
       {cartItems.length > 0 && (
         <View style={styles.checkoutContainer}>
           <TouchableOpacity style={styles.checkoutButton} onPress={handleCheckout}>
-            <Icon name="payment" size={24} color={COLORS.white} />
+            <MaterialIcons name="payment" size={24} color={COLORS.white} />
             <Text style={styles.checkoutText}>إتمام الطلب</Text>
             <Text style={styles.checkoutTotal}>{formatPrice(total)}</Text>
           </TouchableOpacity>

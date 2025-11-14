@@ -5,6 +5,7 @@ const COLORS = {
   success: '#06D6A0',      // أخضر
   danger: '#EF476F',       // أحمر وردي
   warning: '#FFA726',      // برتقالي فاتح
+  info: '#3498DB',         // أزرق
   
   background: '#F8F9FA',   // رمادي فاتح جداً
   card: '#FFFFFF',         
@@ -13,6 +14,11 @@ const COLORS = {
   border: '#DFE6E9',
   gradientStart: '#FF6B35',
   gradientEnd: '#F7931E',
+  
+  // Additional colors used in the app
+  lightGray: '#E0E0E0',
+  gray: '#9E9E9E',
+  white: '#FFFFFF',
 };
 
 export default COLORS;

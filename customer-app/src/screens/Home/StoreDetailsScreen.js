@@ -9,7 +9,7 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useRoute, useFocusEffect } from '@react-navigation/native';
 import { STORES } from '../../data/stores';
 import { PRODUCTS } from '../../data/products';
@@ -133,11 +133,11 @@ const StoreDetailsScreen = ({ navigation, route }) => {
             <Text style={styles.storeName}>{store.name}</Text>
             <View style={styles.storeDetails}>
               <View style={styles.detailItem}>
-                <Icon name="star" size={16} color={COLORS.warning} />
+                <MaterialIcons name="star" size={16} color={COLORS.warning} />
                 <Text style={styles.detailText}>{store.rating}</Text>
               </View>
               <View style={styles.detailItem}>
-                <Icon name="access-time" size={16} color={COLORS.card} />
+                <MaterialIcons name="access-time" size={16} color={COLORS.card} />
                 <Text style={styles.detailText}>{store.deliveryTime}</Text>
               </View>
               <View style={[
@@ -260,7 +260,7 @@ const StoreDetailsScreen = ({ navigation, route }) => {
         <TouchableOpacity style={styles.storeInfoCard} onPress={handleStoreInfoPress}>
           <View style={styles.storeInfoHeader}>
             <Text style={styles.storeInfoTitle}>معلومات المتجر</Text>
-            <Icon name="info" size={20} color={COLORS.primary} />
+            <MaterialIcons name="info" size={20} color={COLORS.primary} />
           </View>
           <Text style={styles.storeInfoText}>
             متجر متخصص في {categories.map(c => c.name).join('، ')}
@@ -277,7 +277,7 @@ const StoreDetailsScreen = ({ navigation, route }) => {
           style={styles.floatingCartButton}
           onPress={() => navigation.navigate('Cart')}
         >
-          <Icon name="shopping-cart" size={24} color={COLORS.white} />
+          <MaterialIcons name="shopping-cart" size={24} color={COLORS.white} />
           <View style={styles.floatingCartBadge}>
             <Text style={styles.floatingCartBadgeText}>
               {getCartItemsCount()}

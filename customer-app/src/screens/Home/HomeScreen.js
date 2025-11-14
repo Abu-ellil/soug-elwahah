@@ -9,7 +9,7 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useLocation } from '../../context/LocationProvider';
 import { STORES } from '../../data/stores';
 import { CATEGORIES } from '../../data/categories';
@@ -122,15 +122,15 @@ const HomeScreen = ({ navigation }) => {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleLocationPress} style={styles.locationContainer}>
-          <Icon name="location-on" size={20} color={COLORS.primary} />
+          <MaterialIcons name="location-on" size={20} color={COLORS.primary} />
           <Text style={styles.locationText} numberOfLines={1}>
             {selectedVillage?.name || 'اختر المنطقة'}
           </Text>
-          <Icon name="keyboard-arrow-down" size={20} color={COLORS.gray} />
+          <MaterialIcons name="keyboard-arrow-down" size={20} color={COLORS.gray} />
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.notificationButton}>
-          <Icon name="notifications-none" size={24} color={COLORS.text} />
+          <MaterialIcons name="notifications-none" size={24} color={COLORS.text} />
           {availableVillages && availableVillages.length > 0 && (
             <View style={styles.notificationBadge}>
               <Text style={styles.badgeText}>{availableVillages.length}</Text>
@@ -239,7 +239,7 @@ const HomeScreen = ({ navigation }) => {
             style={styles.actionButton}
             onPress={() => navigation.navigate('Orders')}
           >
-            <Icon name="history" size={24} color={COLORS.primary} />
+            <MaterialIcons name="history" size={20} color={COLORS.primary} />
             <Text style={styles.actionText}>طلباتي</Text>
           </TouchableOpacity>
           
@@ -247,7 +247,7 @@ const HomeScreen = ({ navigation }) => {
             style={styles.actionButton}
             onPress={() => navigation.navigate('Cart')}
           >
-            <Icon name="shopping-cart" size={24} color={COLORS.primary} />
+            <MaterialIcons name="shopping-cart" size={24} color={COLORS.primary} />
             <Text style={styles.actionText}>السلة</Text>
           </TouchableOpacity>
         </View>

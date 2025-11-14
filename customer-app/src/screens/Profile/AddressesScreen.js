@@ -5,15 +5,15 @@ import { Feather } from '@expo/vector-icons';
 
 import Header from '../../components/Header';
 import RTLText from '../../components/RTLText';
-import { COLORS } from '../../constants/colors';
-import { SIZES } from '../../constants/sizes';
+import COLORS from '../../constants/colors';
+import SIZES from '../../constants/sizes';
 import { MOCK_ADDRESSES } from '../../data/addresses'; // Assuming you create this file
 
 const AddressesScreen = ({ navigation }) => {
   const [addresses, setAddresses] = useState(MOCK_ADDRESSES);
 
   const handleSetDefault = (id) => {
-    const updatedAddresses = addresses.map(addr => ({
+    const updatedAddresses = addresses.map((addr) => ({
       ...addr,
       isDefault: addr.id === id,
     }));
@@ -22,21 +22,17 @@ const AddressesScreen = ({ navigation }) => {
   };
 
   const handleDelete = (id) => {
-    Alert.alert(
-      'تأكيد الحذف',
-      'هل أنت متأكد أنك تريد حذف هذا العنوان؟',
-      [
-        { text: 'إلغاء', style: 'cancel' },
-        {
-          text: 'حذف',
-          style: 'destructive',
-          onPress: () => {
-            const updatedAddresses = addresses.filter(addr => addr.id !== id);
-            setAddresses(updatedAddresses);
-          },
+    Alert.alert('تأكيد الحذف', 'هل أنت متأكد أنك تريد حذف هذا العنوان؟', [
+      { text: 'إلغاء', style: 'cancel' },
+      {
+        text: 'حذف',
+        style: 'destructive',
+        onPress: () => {
+          const updatedAddresses = addresses.filter((addr) => addr.id !== id);
+          setAddresses(updatedAddresses);
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const renderAddress = ({ item }) => (
@@ -58,7 +54,9 @@ const AddressesScreen = ({ navigation }) => {
             <RTLText style={styles.actionButtonText}>تعيين كافتراضي</RTLText>
           </TouchableOpacity>
         )}
-        <TouchableOpacity style={[styles.actionButton, styles.deleteButton]} onPress={() => handleDelete(item.id)}>
+        <TouchableOpacity
+          style={[styles.actionButton, styles.deleteButton]}
+          onPress={() => handleDelete(item.id)}>
           <Feather name="trash-2" size={18} color={COLORS.danger} />
         </TouchableOpacity>
       </View>
@@ -71,10 +69,12 @@ const AddressesScreen = ({ navigation }) => {
       <FlatList
         data={addresses}
         renderItem={renderAddress}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContainer}
         ListFooterComponent={
-          <TouchableOpacity style={styles.addButton} onPress={() => Alert.alert('إضافة عنوان', 'سيتم إضافة شاشة لإضافة عنوان جديد هنا.')}>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => Alert.alert('إضافة عنوان', 'سيتم إضافة شاشة لإضافة عنوان جديد هنا.')}>
             <Feather name="plus" size={20} color={COLORS.white} />
             <RTLText style={styles.addButtonText}>إضافة عنوان جديد</RTLText>
           </TouchableOpacity>
@@ -87,16 +87,16 @@ const AddressesScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS?.background || '#F8F9FA',
   },
   listContainer: {
-    padding: SIZES.padding,
+    padding: SIZES?.padding || 16,
   },
   addressCard: {
-    backgroundColor: COLORS.white,
-    borderRadius: SIZES.radius,
-    padding: SIZES.padding,
-    marginBottom: SIZES.padding,
+    backgroundColor: COLORS?.white || '#FFFFFF',
+    borderRadius: SIZES?.radius || 8,
+    padding: SIZES?.padding || 16,
+    marginBottom: SIZES?.padding || 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -108,63 +108,63 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   addressTextContainer: {
-    marginRight: SIZES.padding,
+    marginRight: SIZES?.padding || 16,
     alignItems: 'flex-end',
   },
   addressStreet: {
-    fontSize: SIZES.body3,
+    fontSize: SIZES?.body3 || 12,
     fontWeight: 'bold',
-    color: COLORS.dark,
+    color: COLORS?.dark || '#2D3436',
   },
   addressVillage: {
-    fontSize: SIZES.body4,
-    color: COLORS.gray,
+    fontSize: SIZES?.body4 || 12,
+    color: COLORS?.gray || '#636E72',
   },
   addressActions: {
     flexDirection: 'row-reverse',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: SIZES.padding,
-    paddingTop: SIZES.base,
+    marginTop: SIZES?.padding || 16,
+    paddingTop: SIZES?.base || 8,
     borderTopWidth: 1,
-    borderTopColor: COLORS.lightGray,
+    borderTopColor: COLORS?.lightGray || '#DFE6E9',
   },
   actionButton: {
-    paddingHorizontal: SIZES.base,
-    paddingVertical: SIZES.base / 2,
+    paddingHorizontal: SIZES?.base || 8,
+    paddingVertical: (SIZES?.base || 8) / 2,
   },
   actionButtonText: {
-    color: COLORS.primary,
+    color: COLORS?.primary || '#FF6B35',
     fontWeight: 'bold',
   },
   deleteButton: {
-    // marginLeft: SIZES.base,
+    // marginLeft: SIZES?.base,
   },
   defaultBadge: {
-    backgroundColor: COLORS.success,
-    borderRadius: SIZES.radius / 2,
-    paddingHorizontal: SIZES.base,
+    backgroundColor: COLORS?.success || '#06D6A0',
+    borderRadius: (SIZES?.radius || 8) / 2,
+    paddingHorizontal: SIZES?.base || 8,
     paddingVertical: 4,
   },
   defaultBadgeText: {
-    color: COLORS.white,
-    fontSize: SIZES.caption,
+    color: COLORS?.white || '#FFFFFF',
+    fontSize: SIZES?.caption || 12,
     fontWeight: 'bold',
   },
   addButton: {
-    backgroundColor: COLORS.primary,
-    borderRadius: SIZES.radius,
-    padding: SIZES.padding,
+    backgroundColor: COLORS?.primary || '#FF6B35',
+    borderRadius: SIZES?.radius || 8,
+    padding: SIZES?.padding || 16,
     flexDirection: 'row-reverse',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: SIZES.base,
+    marginTop: SIZES?.base || 8,
   },
   addButtonText: {
-    color: COLORS.white,
-    fontSize: SIZES.h4,
+    color: COLORS?.white || '#FFFFFF',
+    fontSize: SIZES?.h4 || 20,
     fontWeight: 'bold',
-    marginRight: SIZES.base,
+    marginRight: SIZES?.base || 8,
   },
 });
 

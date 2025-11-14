@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { formatPrice } from '../utils/helpers';
 import COLORS from '../constants/colors';
 import SIZES from '../constants/sizes';
@@ -62,7 +62,7 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
             style={styles.removeButton}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Icon name="close" size={20} color={COLORS.gray} />
+            <MaterialIcons name="close" size={20} color={COLORS.gray} />
           </TouchableOpacity>
         </View>
 
@@ -77,7 +77,7 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
               style={styles.quantityButton}
               disabled={item.quantity <= 1}
             >
-              <Icon 
+              <MaterialIcons 
                 name="remove" 
                 size={16} 
                 color={item.quantity <= 1 ? COLORS.gray : COLORS.text} 
@@ -92,7 +92,7 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
               onPress={handleIncrease} 
               style={[styles.quantityButton, styles.increaseButton]}
             >
-              <Icon name="add" size={16} color={COLORS.card} />
+              <MaterialIcons name="add" size={16} color={COLORS.card} />
             </TouchableOpacity>
           </View>
 

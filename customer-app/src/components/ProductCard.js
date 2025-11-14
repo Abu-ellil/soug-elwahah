@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Animated } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { formatPrice } from '../utils/helpers';
 import COLORS from '../constants/colors';
@@ -77,7 +77,7 @@ const ProductCard = ({ product, onPress, onAddToCart }) => {
               onPress={handleAddToCart}
               style={styles.addButton}
             >
-              <Icon name="add-shopping-cart" size={16} color={COLORS.card} />
+              <MaterialIcons name="add-shopping-cart" size={16} color={COLORS.card} />
               <Text style={styles.addButtonText}>أضف للسلة</Text>
             </TouchableOpacity>
           </Animated.View>

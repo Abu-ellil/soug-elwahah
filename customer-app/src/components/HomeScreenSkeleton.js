@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import SkeletonLoader from './SkeletonLoader';
-import { SIZES } from '../constants/sizes';
+import SIZES from '../constants/sizes';
 import COLORS from '../constants/colors';
 
 const HomeScreenSkeleton = () => {

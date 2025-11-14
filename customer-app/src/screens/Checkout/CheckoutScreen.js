@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useCart } from '../../context/CartContext';
 import { useLocation } from '../../context/LocationProvider';
 import { DELIVERY_SLOTS } from '../../data/villages';
@@ -148,7 +148,7 @@ const CheckoutScreen = ({ navigation }) => {
       ]}
       onPress={() => setPaymentMethod(method.id)}
     >
-      <Icon 
+      <MaterialIcons 
         name={method.icon} 
         size={24} 
         color={paymentMethod === method.id ? COLORS.white : method.color} 
@@ -160,7 +160,7 @@ const CheckoutScreen = ({ navigation }) => {
         {method.name}
       </Text>
       {paymentMethod === method.id && (
-        <Icon name="check-circle" size={20} color={COLORS.white} />
+        <MaterialIcons name="check-circle" size={20} color={COLORS.white} />
       )}
     </TouchableOpacity>
   );
@@ -222,11 +222,11 @@ const CheckoutScreen = ({ navigation }) => {
             style={styles.villageSelector}
             onPress={() => setVillagePickerVisible(true)}
           >
-            <Icon name="location-on" size={20} color={COLORS.primary} />
+            <MaterialIcons name="location-on" size={20} color={COLORS.primary} />
             <Text style={styles.villageText}>
               {selectedVillage ? selectedVillage.name : 'اختر المنطقة *'}
             </Text>
-            <Icon name="keyboard-arrow-down" size={20} color={COLORS.gray} />
+            <MaterialIcons name="keyboard-arrow-down" size={20} color={COLORS.gray} />
           </TouchableOpacity>
 
           {selectedVillage && (
@@ -306,7 +306,7 @@ const CheckoutScreen = ({ navigation }) => {
       {/* Place Order Button */}
       <View style={styles.footer}>
         <TouchableOpacity style={styles.placeOrderButton} onPress={handlePlaceOrder}>
-          <Icon name="shopping-cart-checkout" size={24} color={COLORS.white} />
+          <MaterialIcons name="shopping-cart-checkout" size={24} color={COLORS.white} />
           <Text style={styles.placeOrderText}>تأكيد الطلب</Text>
           <Text style={styles.placeOrderTotal}>{formatPrice(total)}</Text>
         </TouchableOpacity>

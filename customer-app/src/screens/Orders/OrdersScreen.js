@@ -8,7 +8,7 @@ import {
   RefreshControl,
   Alert,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { MOCK_ORDERS } from '../../data/orders';
 import { STORES } from '../../data/stores';
 import { PRODUCTS } from '../../data/products';
@@ -138,7 +138,7 @@ const OrdersScreen = ({ navigation }) => {
             styles.statusBadge,
             { backgroundColor: statusInfo.color + '20' }
           ]}>
-            <Icon name={statusInfo.icon} size={14} color={statusInfo.color} />
+            <MaterialIcons name={statusInfo.icon} size={14} color={statusInfo.color} />
             <Text style={[
               styles.statusText,
               { color: statusInfo.color }
@@ -150,13 +150,13 @@ const OrdersScreen = ({ navigation }) => {
 
         {/* Store Info */}
         <View style={styles.storeInfo}>
-          <Icon name="store" size={16} color={COLORS.primary} />
+          <MaterialIcons name="store" size={16} color={COLORS.primary} />
           <Text style={styles.storeName}>{item.storeName}</Text>
         </View>
 
         {/* Order Items */}
         <View style={styles.itemsInfo}>
-          <Icon name="inventory" size={16} color={COLORS.textSecondary} />
+          <MaterialIcons name="inventory" size={16} color={COLORS.textSecondary} />
           <Text style={styles.itemsText}>
             {item.items.length} منتج • {formatPrice(item.total)}
           </Text>
@@ -231,7 +231,7 @@ const OrdersScreen = ({ navigation }) => {
             onPress={() => navigation.navigate('Home')}
             style={styles.shopButton}
           >
-            <Icon name="shopping-cart" size={24} color={COLORS.primary} />
+            <MaterialIcons name="shopping-cart" size={24} color={COLORS.primary} />
           </TouchableOpacity>
         }
       />
@@ -286,7 +286,7 @@ const OrdersScreen = ({ navigation }) => {
           style={styles.actionButton}
           onPress={() => navigation.navigate('Home')}
         >
-          <Icon name="home" size={20} color={COLORS.primary} />
+          <MaterialIcons name="home" size={20} color={COLORS.primary} />
           <Text style={styles.actionText}>الرئيسية</Text>
         </TouchableOpacity>
         
@@ -294,7 +294,7 @@ const OrdersScreen = ({ navigation }) => {
           style={styles.actionButton}
           onPress={() => navigation.navigate('Cart')}
         >
-          <Icon name="shopping-cart" size={20} color={COLORS.primary} />
+          <MaterialIcons name="shopping-cart" size={20} color={COLORS.primary} />
           <Text style={styles.actionText}>السلة</Text>
         </TouchableOpacity>
       </View>

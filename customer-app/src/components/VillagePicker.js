@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { VILLAGES, getAvailableVillages } from '../data/villages';
 import COLORS from '../constants/colors';
 import SIZES from '../constants/sizes';
@@ -71,22 +71,22 @@ const VillagePicker = ({
         <Text style={styles.villageRegion}>{item.region}</Text>
         <View style={styles.deliveryInfo}>
           <View style={styles.infoItem}>
-            <Icon name="access-time" size={14} color={COLORS.primary} />
+            <MaterialIcons name="access-time" size={14} color={COLORS.primary} />
             <Text style={styles.infoText}>{item.deliveryTime}</Text>
           </View>
           <View style={styles.infoItem}>
-            <Icon name="local-shipping" size={14} color={COLORS.primary} />
+            <MaterialIcons name="local-shipping" size={14} color={COLORS.primary} />
             <Text style={styles.infoText}>{item.deliveryFee} جنيه</Text>
           </View>
           {item.distance && (
             <View style={styles.infoItem}>
-              <Icon name="place" size={14} color={COLORS.primary} />
+              <MaterialIcons name="place" size={14} color={COLORS.primary} />
               <Text style={styles.infoText}>{item.distance.toFixed(1)} كم</Text>
             </View>
           )}
         </View>
       </View>
-      <Icon name="chevron-left" size={24} color={COLORS.gray} />
+      <MaterialIcons name="chevron-left" size={24} color={COLORS.gray} />
     </TouchableOpacity>
   );
 
@@ -101,7 +101,7 @@ const VillagePicker = ({
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Icon name="close" size={24} color={COLORS.text} />
+            <MaterialIcons name="close" size={24} color={COLORS.text} />
           </TouchableOpacity>
           <Text style={styles.title}>{title}</Text>
           <View style={styles.placeholder} />
@@ -109,7 +109,7 @@ const VillagePicker = ({
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <Icon name="search" size={20} color={COLORS.gray} style={styles.searchIcon} />
+          <MaterialIcons name="search" size={20} color={COLORS.gray} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
             placeholder={placeholder}
@@ -123,7 +123,7 @@ const VillagePicker = ({
         {/* Location Status */}
         {currentLocation && (
           <View style={styles.locationStatus}>
-            <Icon name="my-location" size={16} color={COLORS.primary} />
+            <MaterialIcons name="my-location" size={16} color={COLORS.primary} />
             <Text style={styles.locationText}>
               تم تحديد موقعك الحالي
             </Text>
@@ -146,7 +146,7 @@ const VillagePicker = ({
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Icon name="location-off" size={48} color={COLORS.gray} />
+                <MaterialIcons name="location-off" size={48} color={COLORS.gray} />
                 <Text style={styles.emptyText}>
                   {searchQuery ? 'لا توجد نتائج مطابقة' : 'لا توجد مناطق متاحة'}
                 </Text>

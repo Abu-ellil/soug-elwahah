@@ -7,8 +7,8 @@ import { Feather } from '@expo/vector-icons';
 import Header from '../../components/Header';
 import RTLText from '../../components/RTLText';
 import CartItem from '../../components/CartItem'; // Re-using for order items
-import { COLORS } from '../../constants/colors';
-import { SIZES } from '../../constants/sizes';
+import COLORS from '../../constants/colors';
+import SIZES from '../../constants/sizes';
 
 const OrderDetailsScreen = () => {
   const route = useRoute();
