@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute } from '@react-navigation/native';
@@ -7,12 +7,29 @@ import { Feather } from '@expo/vector-icons';
 import Header from '../../components/Header';
 import RTLText from '../../components/RTLText';
 import CartItem from '../../components/CartItem'; // Re-using for order items
+import DriverLocationMap from '../../components/DriverLocationMap';
 import COLORS from '../../constants/colors';
 import SIZES from '../../constants/sizes';
 
 const OrderDetailsScreen = () => {
   const route = useRoute();
-  const { order } = route.params;
+  const { order, focusOnDriverLocation } = route.params;
+  const scrollViewRef = useRef(null);
+  const mapSectionRef = useRef(null);
+
+  useEffect(() => {
+    if (focusOnDriverLocation && mapSectionRef.current && scrollViewRef.current) {
+      // Scroll to the map section after a short delay to ensure components are rendered
+      setTimeout(() => {
+        mapSectionRef.current?.measureLayout(
+          scrollViewRef.current.getInnerViewNode(),
+          (x, y) => {
+            scrollViewRef.current?.scrollTo({ y: y, animated: true });
+          }
+        );
+      }, 500);
+    }
+  }, [focusOnDriverLocation]);
 
   const renderTimelineStep = ({ item, index }) => {
     const isLastStep = index === order.statusHistory.length - 1;
@@ -37,7 +54,7 @@ const OrderDetailsScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <Header title={`الطلب #${order.id}`} showBackButton={true} />
-      <ScrollView>
+      <ScrollView ref={scrollViewRef}>
         {/* Order Timeline */}
         <View style={styles.section}>
           <RTLText style={styles.sectionTitle}>تتبع الطلب</RTLText>
@@ -45,6 +62,18 @@ const OrderDetailsScreen = () => {
             <View key={item.status}>{renderTimelineStep({ item, index })}</View>
           ))}
         </View>
+
+        {/* Driver Location Map - Only show for delivering orders */}
+        {order.status === 'delivering' && order.driverLocation && (
+          <View style={styles.section}>
+            <RTLText style={styles.sectionTitle}>موقع السائق</RTLText>
+            <DriverLocationMap 
+              driverLocation={order.driverLocation}
+              deliveryAddress={order.deliveryAddress}
+              orderStatus={order.status}
+            />
+          </View>
+        )}
 
         {/* Items List */}
         <View style={styles.section}>

@@ -14,10 +14,21 @@ export const MOCK_ORDERS = [
     deliveryAddress: {
       street: '15 شارع المدرسة',
       village: 'كفر الشيخ',
+      coordinates: { lat: 31.111, lng: 30.942 },
+    },
+    customerInfo: {
+      name: 'أحمد محمد',
+      phone: '01012345678',
     },
     paymentMethod: 'cash',
     notes: 'رجاء الاتصال عند الوصول',
     createdAt: '2025-01-15T10:30:00',
+    timeline: [
+      { time: '2025-01-15T11:30:00', status: 'delivered', note: 'تم التوصيل بنجاح' },
+      { time: '2025-01-15T11:00:00', status: 'delivering', note: 'الطلب في الطريق إليك' },
+      { time: '2025-01-15T10:35:00', status: 'confirmed', note: 'تم تأكيد الطلب' },
+      { time: '2025-01-15T10:30:00', status: 'pending', note: 'تم استلام الطلب' },
+    ],
     statusHistory: [
       { status: 'تم التوصيل', date: '2025-01-15T11:30:00', icon: 'check-circle' },
       { status: 'قيد التوصيل', date: '2025-01-15T11:00:00', icon: 'truck' },
@@ -40,10 +51,21 @@ export const MOCK_ORDERS = [
     deliveryAddress: {
       street: '15 شارع المدرسة',
       village: 'كفر الشيخ',
+      coordinates: { lat: 31.111, lng: 30.942 },
+    },
+    driverLocation: { lat: 31.105, lng: 30.938 },
+    customerInfo: {
+      name: 'فاطمة علي',
+      phone: '01098765432',
     },
     paymentMethod: 'cash',
     notes: '',
     createdAt: '2025-01-16T14:20:00',
+    timeline: [
+      { time: '2025-01-16T15:00:00', status: 'delivering', note: 'الطلب في الطريق إليك' },
+      { time: '2025-01-16T14:25:00', status: 'confirmed', note: 'تم تأكيد الطلب' },
+      { time: '2025-01-16T14:20:00', status: 'pending', note: 'تم استلام الطلب' },
+    ],
     statusHistory: [
       { status: 'قيد التوصيل', date: '2025-01-16T15:00:00', icon: 'truck' },
       { status: 'تم التأكيد', date: '2025-01-16T14:25:00', icon: 'package' },
@@ -65,10 +87,19 @@ export const MOCK_ORDERS = [
     deliveryAddress: {
       street: '25 شارع النيل',
       village: 'دسوق',
+      coordinates: { lat: 31.13, lng: 30.64 },
+    },
+    customerInfo: {
+      name: 'محمد حسن',
+      phone: '01123456789',
     },
     paymentMethod: 'cash',
     notes: 'بدون بصل',
     createdAt: '2025-01-17T12:15:00',
+    timeline: [
+      { time: '2025-01-17T12:20:00', status: 'confirmed', note: 'تم تأكيد الطلب' },
+      { time: '2025-01-17T12:15:00', status: 'pending', note: 'تم استلام الطلب' },
+    ],
     statusHistory: [
       { status: 'تم التأكيد', date: '2025-01-17T12:20:00', icon: 'package' },
       { status: 'تم استلام الطلب', date: '2025-01-17T12:15:00', icon: 'clipboard' },
@@ -89,10 +120,18 @@ export const MOCK_ORDERS = [
     deliveryAddress: {
       street: '15 شارع المدرسة',
       village: 'كفر الشيخ',
+      coordinates: { lat: 31.111, lng: 30.942 },
+    },
+    customerInfo: {
+      name: 'سارة أحمد',
+      phone: '01234567890',
     },
     paymentMethod: 'cash',
     notes: '',
     createdAt: '2025-01-18T09:45:00',
+    timeline: [
+      { time: '2025-01-18T09:45:00', status: 'pending', note: 'تم استلام الطلب' },
+    ],
     statusHistory: [{ status: 'تم استلام الطلب', date: '2025-01-18T09:45:00', icon: 'clipboard' }],
   },
   {
@@ -110,10 +149,19 @@ export const MOCK_ORDERS = [
     deliveryAddress: {
       street: '10 شارع التحرير',
       village: 'فوه',
+      coordinates: { lat: 30.785, lng: 31.018 },
+    },
+    customerInfo: {
+      name: 'علي خالد',
+      phone: '01567890123',
     },
     paymentMethod: 'cash',
     notes: 'تم الإلغاء بسبب عدم توفر الخبز',
     createdAt: '2025-01-17T08:30:00',
+    timeline: [
+      { time: '2025-01-17T09:00:00', status: 'cancelled', note: 'تم الإلغاء بسبب عدم توفر الخبز' },
+      { time: '2025-01-17T08:30:00', status: 'pending', note: 'تم استلام الطلب' },
+    ],
     statusHistory: [
       { status: 'تم الإلغاء', date: '2025-01-17T09:00:00', icon: 'x-circle' },
       { status: 'تم استلام الطلب', date: '2025-01-17T08:30:00', icon: 'clipboard' },

@@ -1,7 +1,7 @@
 // Offline Storage and Sync Service for Egyptian Delivery App
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Alert, NetInfo } from 'react-native';
+import { Alert, NetInfo, Platform } from 'react-native';
 
 // Storage keys
 const STORAGE_KEYS = {
@@ -29,18 +29,21 @@ export class OfflineDataManager {
 
   // Network status monitoring
   initializeNetworkListener() {
-    NetInfo.addEventListener((state) => {
-      const wasOnline = this.isOnline;
-      this.isOnline = state.isConnected;
+    // Only initialize network listener on mobile platforms
+    if (Platform.OS !== 'web' && NetInfo) {
+      NetInfo.addEventListener((state) => {
+        const wasOnline = this.isOnline;
+        this.isOnline = state.isConnected;
 
-      if (wasOnline !== this.isOnline) {
-        this.notifyListeners('network_changed', { isOnline: this.isOnline });
+        if (wasOnline !== this.isOnline) {
+          this.notifyListeners('network_changed', { isOnline: this.isOnline });
 
-        if (this.isOnline) {
-          this.handleReconnection();
+          if (this.isOnline) {
+            this.handleReconnection();
+          }
         }
-      }
-    });
+      });
+    }
   }
 
   // Cache management for stores
@@ -175,10 +178,13 @@ export class OfflineDataManager {
   // Offline orders management
   async saveOfflineOrder(order) {
     try {
+      // Clean the order data to ensure no React elements are included
+      const cleanOrder = JSON.parse(JSON.stringify(order));
+      
       const offlineOrders = await this.getOfflineOrders();
       const newOrder = {
-        ...order,
-        id: order.id || this.generateOrderId(),
+        ...cleanOrder,
+        id: cleanOrder.id || this.generateOrderId(),
         status: 'pending_sync',
         offline: true,
         createdOffline: true,
@@ -211,25 +217,34 @@ export class OfflineDataManager {
   // Pending actions queue
   async addToSyncQueue(action, data) {
     try {
+      console.log(`📝 Adding ${action} to sync queue...`);
+      
+      // Clean the data before adding to queue
+      const cleanData = JSON.parse(JSON.stringify(data));
+      console.log('✅ Data cleaned for sync queue');
+      
       const queue = await this.getSyncQueue();
       const queueItem = {
         id: this.generateSyncId(),
         action,
-        data,
+        data: cleanData,
         timestamp: Date.now(),
         retryCount: 0,
       };
 
       queue.push(queueItem);
       await AsyncStorage.setItem(STORAGE_KEYS.PENDING_ACTIONS, JSON.stringify(queue));
+      
+      console.log(`✅ ${action} added to sync queue successfully`);
 
       if (this.isOnline) {
+        console.log('🌐 Online - processing sync queue immediately');
         this.processSyncQueue();
       }
 
       return queueItem;
     } catch (error) {
-      console.error('Error adding to sync queue:', error);
+      console.error('❌ Error adding to sync queue:', error);
       throw error;
     }
   }
@@ -246,12 +261,18 @@ export class OfflineDataManager {
 
   // Handle network reconnection
   async handleReconnection() {
-    Alert.alert('تم الاتصال بالإنترنت', 'جاري مزامنة البيانات...', [
-      {
-        text: 'موافق',
-        onPress: () => this.syncAllData().catch(console.error),
-      },
-    ]);
+    // Only show alert on mobile platforms
+    if (Platform.OS !== 'web') {
+      Alert.alert('تم الاتصال بالإنترنت', 'جاري مزامنة البيانات...', [
+        {
+          text: 'موافق',
+          onPress: () => this.syncAllData().catch(console.error),
+        },
+      ]);
+    } else {
+      // On web, just sync without alert
+      this.syncAllData().catch(console.error);
+    }
   }
 
   // Data synchronization
@@ -322,9 +343,15 @@ export class OfflineDataManager {
   async processSyncItem(item) {
     switch (item.action) {
       case 'create_order':
-        console.log('Syncing order creation:', item.data);
+        console.log('🔄 Syncing order creation...');
+        console.log('📋 Sync item data:', JSON.stringify(item.data, null, 2));
+        
+        // Ensure data is clean before processing
+        const cleanData = JSON.parse(JSON.stringify(item.data));
+        console.log('✅ Sync data cleaned successfully');
+        
         await new Promise((resolve) => setTimeout(resolve, 1000));
-        return { success: true, syncedOrder: { ...item.data, synced: true } };
+        return { success: true, syncedOrder: { ...cleanData, synced: true } };
       default:
         throw new Error(`Unknown sync action: ${item.action}`);
     }
@@ -373,6 +400,10 @@ export class OfflineDataManager {
 
   // Network status
   isConnected() {
+    // On web, assume always online for now
+    if (Platform.OS === 'web') {
+      return true;
+    }
     return this.isOnline;
   }
 

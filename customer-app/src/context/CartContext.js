@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { saveCart, getCart, clearCart as clearCartStorage } from '../utils/storage';
+import { offlineDataManager } from '../utils/offlineDataManager';
 import { MOCK_ORDERS } from '../data/orders';
 
 // إنشاء سياق سلة التسوق - Create Cart Context
@@ -11,7 +13,7 @@ export const useCart = () => {
   if (!context) {
     throw new Error('يجب استخدام useCart داخل CartProvider'); // useCart must be used within a CartProvider
   }
-  return context;
+  return context; 
 };
 
 // مزود سياق سلة التسوق - Cart Context Provider Component
@@ -19,6 +21,9 @@ export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]); // حالة عناصر السلة - Cart items state
   const [orders, setOrders] = useState(MOCK_ORDERS); // حالة الطلبات - Orders state
   const [isLoading, setIsLoading] = useState(true); // حالة التحميل - Loading state
+
+
+
 
   // تحميل بيانات السلة عند تحميل المكون - Load cart data on component mount
   useEffect(() => {
@@ -30,6 +35,16 @@ export const CartProvider = ({ children }) => {
     try {
       const cart = await getCart();
       setCartItems(cart);
+
+      // Load orders from storage
+      try {
+        const storedOrders = await AsyncStorage.getItem('orders');
+        if (storedOrders) {
+          setOrders(JSON.parse(storedOrders));
+        }
+      } catch (orderError) {
+        console.error('خطأ في تحميل الطلبات:', orderError); // Error loading orders
+      }
     } catch (error) {
       console.error('خطأ في تحميل السلة:', error); // Error loading cart
     } finally {
@@ -132,8 +147,47 @@ export const CartProvider = ({ children }) => {
   };
 
   // دالة إضافة طلب جديد - Function to add a new order
-  const addOrder = (order) => {
-    setOrders((prevOrders) => [order, ...prevOrders]);
+  const addOrder = async (order) => {
+    try {
+      console.log('📝 Starting addOrder process...');
+      console.log('📋 Original order data:', JSON.stringify(order, null, 2));
+      
+      // Clean the order data to ensure no React elements are included
+      const cleanOrder = JSON.parse(JSON.stringify(order));
+      
+      console.log('✅ Order cleaned successfully');
+      console.log('🧹 Cleaned order data:', JSON.stringify(cleanOrder, null, 2));
+      
+      // Add to state first
+      setOrders((prevOrders) => {
+        const updatedOrders = [cleanOrder, ...prevOrders];
+
+        // Save to AsyncStorage for persistence
+        try {
+          console.log('💾 Saving orders to AsyncStorage...');
+          AsyncStorage.setItem('orders', JSON.stringify(updatedOrders));
+          console.log('✅ Orders saved to AsyncStorage successfully');
+        } catch (storageError) {
+          console.error('❌ Error saving orders to storage:', storageError);
+        }
+
+        return updatedOrders;
+      });
+
+      // Also save to offline data manager for offline handling
+      if (offlineDataManager) {
+        console.log('🔄 Saving order to offline data manager...');
+        await offlineDataManager.saveOfflineOrder(cleanOrder);
+        console.log('✅ Order saved to offline data manager successfully');
+      } else {
+        console.log('⚠️  Offline data manager not available');
+      }
+      
+      console.log('🎉 addOrder process completed successfully!');
+    } catch (error) {
+      console.error('❌ Error adding order:', error);
+      throw error;
+    }
   };
 
   // القيم التي يوفرها السياق - Values provided by the context

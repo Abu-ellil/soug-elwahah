@@ -80,52 +80,95 @@ const CheckoutScreen = ({ navigation }) => {
     return true;
   };
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (!validateForm()) return;
 
-    // Generate a more unique order ID
-    const timestamp = Date.now();
-    const randomNum = Math.floor(Math.random() * 1000);
-    const orderId = `ord${timestamp}${randomNum}`;
+    // Validate cart items
+    if (!cartItems || cartItems.length === 0) {
+      Alert.alert('خطأ', 'السلة فارغة');
+      return;
+    }
 
-    const newOrder = {
-      id: orderId,
-      userId: 'user1', // Assuming a logged-in user
-      storeId: cartItems[0].storeId, // Assuming all items are from the same store
-      storeName:
-        STORES.find((store) => store.id === cartItems[0].storeId)?.name || 'متجر غير معروف',
-      customerInfo: {
-        name: customerInfo.name,
-        phone: customerInfo.phone,
-      },
-      items: cartItems,
-      subtotal: subtotal,
-      deliveryFee: deliveryFee,
-      total: total,
-      status: 'pending',
-      deliveryAddress: {
-        street: customerInfo.address,
-        village: selectedVillage.name,
-      },
-      deliverySlot: deliveryInfo.selectedSlot,
-      paymentMethod: paymentMethod,
-      notes: customerInfo.notes,
-      createdAt: new Date().toISOString(),
-      statusHistory: [
-        { status: 'تم استلام الطلب', date: new Date().toISOString(), icon: 'clipboard' },
-      ],
-    };
+    const firstItem = cartItems[0];
+    if (!firstItem) {
+      Alert.alert('خطأ', 'لا يمكن إنشاء الطلب - السة فارغة');
+      return;
+    }
 
-    addOrder(newOrder);
-    clearCart();
+    if (!firstItem.storeId) {
+      Alert.alert('خطأ', 'لا يمكن إنشاء الطلب - بيانات المتجر غير متوفرة');
+      return;
+    }
 
-    Toast.show({
-      type: 'success',
-      text1: 'تم إنشاء الطلب',
-      text2: 'سيتم التواصل معك قريباً لتأكيد الطلب',
-    });
+    // Validate that all cart items have valid storeIds
+    const invalidItems = cartItems.filter((item) => !item.storeId);
+    if (invalidItems.length > 0) {
+      Alert.alert('خطأ', 'بعض المنتجات في السلة لا تحتوي على معلومات المتجر');
+      return;
+    }
 
-    navigation.navigate('Orders');
+    try {
+      // Generate a more unique order ID
+      const timestamp = Date.now();
+      const randomNum = Math.floor(Math.random() * 1000);
+      const orderId = `ord${timestamp}${randomNum}`;
+
+      const newOrder = {
+        id: orderId,
+        userId: 'user1', // Assuming a logged-in user
+        storeId: firstItem.storeId,
+        storeName:
+          STORES.find((store) => store.id === firstItem.storeId)?.name ||
+          `متجر ${firstItem.storeId}` ||
+          'متجر غير معروف',
+        customerInfo: {
+          name: customerInfo.name,
+          phone: customerInfo.phone,
+        },
+        items: cartItems,
+        subtotal: subtotal,
+        deliveryFee: deliveryFee,
+        total: total,
+        status: 'pending',
+        deliveryAddress: {
+          street: customerInfo.address,
+          village: selectedVillage.name,
+        },
+        deliverySlot: deliveryInfo.selectedSlot,
+        paymentMethod: paymentMethod,
+        notes: customerInfo.notes,
+        createdAt: new Date().toISOString(),
+        statusHistory: [
+          { status: 'تم استلام الطلب', date: new Date().toISOString(), icon: 'clipboard' },
+        ],
+      };
+
+      console.log('🚀 Starting order creation process...');
+      console.log('📦 New order data:', JSON.stringify(newOrder, null, 2));
+      
+      // Add order and wait for it to complete
+      console.log('➕ Calling addOrder function...');
+      await addOrder(newOrder);
+      console.log('✅ Order created successfully!');
+
+      // Clear cart after successful order creation
+      clearCart();
+
+      // Show success message
+      Toast.show({
+        type: 'success',
+        text1: 'تم إنشاء الطلب',
+        text2: 'سيتم التواصل معك قريباً لتأكيد الطلب',
+      });
+
+      // Navigate to orders screen
+      navigation.navigate('Orders');
+    } catch (error) {
+      console.error('❌ Error creating order:', error);
+      console.error('Error details:', error.message);
+      console.error('Error stack:', error.stack);
+      Alert.alert('خطأ', 'حدث خطأ أثناء إنشاء الطلب. يرجى المحاولة مرة أخرى.');
+    }
   };
 
   const renderInput = (

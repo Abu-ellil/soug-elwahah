@@ -92,7 +92,7 @@ const CartScreen = ({ navigation }) => {
       {/* Cart Content */}
       {cartItems.length === 0 ? (
         <EmptyState
-          icon="shopping-cart"
+          icon="cart-outline"
           title="السلة فارغة"
           message="أضف منتجات إلى السلة لبدء التسوق"
           actionText="تسوق الآن"

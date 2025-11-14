@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,10 +6,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   RefreshControl,
-  Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { MOCK_ORDERS } from '../../data/orders';
 import { STORES } from '../../data/stores';
 import { PRODUCTS } from '../../data/products';
 import { formatPrice } from '../../utils/helpers';
@@ -18,43 +16,124 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
 import COLORS from '../../constants/colors';
 import SIZES from '../../constants/sizes';
+import { useCart } from '../../context/CartContext';
 
 const OrdersScreen = ({ navigation }) => {
+  const { orders: cartOrders } = useCart();
+
+  // Debug: Log orders data from context
+  console.log('🛒 OrdersScreen - cartOrders received:', cartOrders);
+  console.log('📊 OrdersScreen - cartOrders count:', cartOrders?.length || 0);
+  console.log('🎯 OrdersScreen - first order sample:', cartOrders?.[0]);
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [selectedFilter, setSelectedFilter] = useState('all'); // all, current, completed
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const filters = [
-    { id: 'all', name: 'الكل', count: 0 },
-    { id: 'current', name: 'حالية', count: 0 },
-    { id: 'completed', name: 'منتهية', count: 0 },
-  ];
+  // Debug: Log initial state
+  useEffect(() => {
+    console.log('🎯 OrdersScreen - Initial render');
+    console.log('📋 OrdersScreen - Initial cartOrders:', cartOrders);
+    console.log('🎯 OrdersScreen - Initial selectedFilter:', selectedFilter);
+    console.log('📊 OrdersScreen - Initial orders state:', orders);
+    console.log('📋 OrdersScreen - Initial filteredOrders:', filteredOrders);
+  }, []);
+
+  const getFilterCounts = () => {
+    const currentOrders = orders.filter((order) =>
+      ['pending', 'confirmed', 'delivering'].includes(order.status)
+    );
+    const completedOrders = orders.filter((order) =>
+      ['delivered', 'cancelled'].includes(order.status)
+    );
+
+    return {
+      all: orders.length,
+      current: currentOrders.length,
+      completed: completedOrders.length,
+    };
+  };
+
+  const filterCounts = getFilterCounts();
+
+  const filters = useMemo(
+    () => [
+      { id: 'all', name: 'الكل', count: filterCounts.all },
+      { id: 'current', name: 'حالية', count: filterCounts.current },
+      { id: 'completed', name: 'منتهية', count: filterCounts.completed },
+    ],
+    [filterCounts]
+  );
 
   useEffect(() => {
     loadOrders();
-  }, [loadOrders]);
+  }, [cartOrders]);
 
   useEffect(() => {
-    filterOrders();
-  }, [filterOrders]);
+    console.log('🔄 OrdersScreen - Orders changed, triggering filter');
+    console.log('📋 OrdersScreen - New orders count:', orders.length);
+    
+    if (orders.length > 0) {
+      console.log('✅ OrdersScreen - Calling filterOrders with new orders');
+      filterOrders();
+    } else {
+      console.log('⚠️ OrdersScreen - No orders to filter');
+      setFilteredOrders([]);
+    }
+  }, [orders]);
+
+  useEffect(() => {
+    console.log('🔄 OrdersScreen - Filter changed, re-filtering');
+    console.log('🎯 OrdersScreen - New selectedFilter:', selectedFilter);
+    console.log('📋 OrdersScreen - Current orders count:', orders.length);
+    
+    if (orders.length > 0) {
+      console.log('✅ OrdersScreen - Calling filterOrders with new filter');
+      filterOrders();
+    }
+  }, [selectedFilter]);
+
+  // Debug: Log filteredOrders changes
+  useEffect(() => {
+    console.log('📋 OrdersScreen - filteredOrders updated:', filteredOrders.length);
+    console.log('🎯 OrdersScreen - Current selectedFilter:', selectedFilter);
+    console.log('📊 OrdersScreen - Total orders:', orders.length);
+  }, [filteredOrders]);
 
   const loadOrders = useCallback(async () => {
     try {
-      // In a real app, this would fetch from an API
-      // For now, we'll use mock data
+      console.log('🔄 OrdersScreen - Starting to load orders...');
+      console.log('📋 OrdersScreen - cartOrders data:', cartOrders);
+      
+      // Use orders from CartContext instead of mock data
       setTimeout(() => {
-        const enrichedOrders = MOCK_ORDERS.map((order) => {
+        console.log('⚡ OrdersScreen - Processing orders in setTimeout');
+        
+        if (!cartOrders || !Array.isArray(cartOrders)) {
+          console.log('⚠️ OrdersScreen - cartOrders is not an array or is undefined');
+          setOrders([]);
+          setLoading(false);
+          return;
+        }
+        
+        const enrichedOrders = cartOrders.map((order, index) => {
+          console.log(`📝 Processing order ${index}:`, order);
+          
+          if (!order || typeof order !== 'object') {
+            console.log(`⚠️ Order ${index} is invalid:`, order);
+            return null;
+          }
+          
           const store = STORES.find((s) => s.id === order.storeId);
-          const enrichedItems = order.items.map((item) => {
+          const enrichedItems = order.items?.map((item) => {
             const product = PRODUCTS.find((p) => p.id === item.productId);
             return {
               ...item,
               name: product?.name || 'منتج غير معروف',
               image: product?.image || '',
             };
-          });
+          }) || [];
 
           return {
             ...order,
@@ -62,16 +141,23 @@ const OrdersScreen = ({ navigation }) => {
             storeImage: store?.image || '',
             items: enrichedItems,
           };
-        });
+        }).filter(Boolean); // Remove null entries
 
+        console.log('✅ OrdersScreen - Enriched orders:', enrichedOrders);
+        console.log('📊 OrdersScreen - Final orders count:', enrichedOrders.length);
+        
         setOrders(enrichedOrders);
         setLoading(false);
+        
+        // Debug: Check if filterOrders will be triggered after setting orders
+        console.log('🔄 OrdersScreen - Orders set, should trigger filterOrders useEffect');
+        console.log('📊 OrdersScreen - Enriched orders count after set:', enrichedOrders.length);
       }, 1000);
     } catch (error) {
-      console.error('Error loading orders:', error);
+      console.error('❌ Error loading orders:', error);
       setLoading(false);
     }
-  }, []);
+  }, [cartOrders]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -80,21 +166,43 @@ const OrdersScreen = ({ navigation }) => {
   };
 
   const filterOrders = useCallback(() => {
-    let filtered = orders;
+    console.log('🔍 OrdersScreen - Filtering orders...');
+    console.log('📋 OrdersScreen - All orders count:', orders.length);
+    console.log('🎯 OrdersScreen - Selected filter:', selectedFilter);
+    
+    if (!orders || orders.length === 0) {
+      console.log('⚠️ OrdersScreen - No orders to filter');
+      setFilteredOrders([]);
+      return;
+    }
+    
+    let filtered = [];
 
     switch (selectedFilter) {
       case 'current':
-        filtered = orders.filter((order) =>
-          ['pending', 'confirmed', 'delivering'].includes(order.status)
-        );
+        filtered = orders.filter((order) => {
+          const isCurrent = ['pending', 'confirmed', 'delivering'].includes(order.status);
+          console.log(`🔍 Order ${order.id} status: ${order.status}, isCurrent: ${isCurrent}`);
+          return isCurrent;
+        });
         break;
       case 'completed':
-        filtered = orders.filter((order) => ['delivered', 'cancelled'].includes(order.status));
+        filtered = orders.filter((order) => {
+          const isCompleted = ['delivered', 'cancelled'].includes(order.status);
+          console.log(`🔍 Order ${order.id} status: ${order.status}, isCompleted: ${isCompleted}`);
+          return isCompleted;
+        });
         break;
+      case 'all':
       default:
         filtered = orders;
+        console.log('📋 OrdersScreen - Showing all orders');
+        break;
     }
 
+    console.log('✅ OrdersScreen - Filtered orders count:', filtered.length);
+    console.log('📊 OrdersScreen - First 3 filtered orders:', filtered.slice(0, 3));
+    
     setFilteredOrders(filtered);
   }, [orders, selectedFilter]);
 
@@ -118,6 +226,11 @@ const OrdersScreen = ({ navigation }) => {
 
   const handleOrderPress = (order) => {
     navigation.navigate('OrderDetails', { order });
+  };
+
+  const handleShowDriverLocation = (order) => {
+    // Navigate directly to order details with focus on driver location
+    navigation.navigate('OrderDetails', { order, focusOnDriverLocation: true });
   };
 
   const renderOrderItem = ({ item }) => {
@@ -176,6 +289,17 @@ const OrdersScreen = ({ navigation }) => {
             </Text>
           </View>
         )}
+
+        {/* Driver Location Button - Only show for delivering orders */}
+        {item.status === 'delivering' && item.driverLocation && (
+          <TouchableOpacity 
+            style={styles.driverLocationButton}
+            onPress={() => handleShowDriverLocation(item)}
+          >
+            <MaterialIcons name="location-on" size={16} color={COLORS.white} />
+            <Text style={styles.driverLocationButtonText}>عرض موقع السائق</Text>
+          </TouchableOpacity>
+        )}
       </TouchableOpacity>
     );
   };
@@ -184,7 +308,10 @@ const OrdersScreen = ({ navigation }) => {
     <TouchableOpacity
       key={filter.id}
       style={[styles.filterButton, selectedFilter === filter.id && styles.activeFilter]}
-      onPress={() => setSelectedFilter(filter.id)}>
+      onPress={() => {
+        console.log(`🎯 Filter button pressed: ${filter.id} (${filter.name})`);
+        setSelectedFilter(filter.id);
+      }}>
       <Text style={[styles.filterText, selectedFilter === filter.id && styles.activeFilterText]}>
         {filter.name}
       </Text>
@@ -418,6 +545,23 @@ const styles = StyleSheet.create({
     fontSize: SIZES.caption,
     color: COLORS.textSecondary,
     textAlign: 'right',
+  },
+  driverLocationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.primary,
+    paddingVertical: SIZES.base / 2,
+    paddingHorizontal: SIZES.base,
+    borderRadius: SIZES.borderRadius,
+    marginTop: SIZES.base,
+    alignSelf: 'flex-end',
+  },
+  driverLocationButtonText: {
+    fontSize: SIZES.body3,
+    color: COLORS.white,
+    marginRight: SIZES.base / 2,
+    fontWeight: '600',
   },
   quickActions: {
     flexDirection: 'row',
