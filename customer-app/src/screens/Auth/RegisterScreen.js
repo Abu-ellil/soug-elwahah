@@ -7,7 +7,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  ScrollView
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
@@ -48,7 +48,7 @@ const RegisterScreen = ({ navigation }) => {
       const result = await register({
         name: name.trim(),
         phone,
-        password
+        password,
       });
 
       if (!result.success) {
@@ -69,28 +69,20 @@ const RegisterScreen = ({ navigation }) => {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-white"
-    >
+      className="flex-1 bg-white">
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View className="flex-1 px-6 pt-20">
           {/* Logo/Icon */}
-          <View className="items-center mb-10">
+          <View className="mb-10 items-center">
             <View
-              className="w-20 h-20 rounded-full items-center justify-center mb-4"
-              style={{ backgroundColor: COLORS.primary }}
-            >
+              className="mb-4 h-20 w-20 items-center justify-center rounded-full"
+              style={{ backgroundColor: COLORS.primary }}>
               <Ionicons name="person-add" size={40} color="white" />
             </View>
-            <Text
-              className="text-2xl font-bold"
-              style={{ color: COLORS.text }}
-            >
+            <Text className="text-2xl font-bold" style={{ color: COLORS.text }}>
               إنشاء حساب جديد
             </Text>
-            <Text
-              className="text-base mt-2"
-              style={{ color: COLORS.textSecondary }}
-            >
+            <Text className="mt-2 text-base" style={{ color: COLORS.textSecondary }}>
               انضم إلينا الآن
             </Text>
           </View>
@@ -98,13 +90,10 @@ const RegisterScreen = ({ navigation }) => {
           {/* Form */}
           <View className="mb-8">
             <View className="mb-4">
-              <Text
-                className="text-sm font-medium mb-2"
-                style={{ color: COLORS.text }}
-              >
+              <Text className="mb-2 text-sm font-medium" style={{ color: COLORS.text }}>
                 الاسم الكامل
               </Text>
-              <View className="flex-row items-center border rounded-xl px-4 py-3">
+              <View className="flex-row items-center rounded-xl border px-4 py-3">
                 <TextInput
                   value={name}
                   onChangeText={setName}
@@ -117,13 +106,10 @@ const RegisterScreen = ({ navigation }) => {
             </View>
 
             <View className="mb-4">
-              <Text
-                className="text-sm font-medium mb-2"
-                style={{ color: COLORS.text }}
-              >
+              <Text className="mb-2 text-sm font-medium" style={{ color: COLORS.text }}>
                 رقم الموبايل
               </Text>
-              <View className="flex-row items-center border rounded-xl px-4 py-3">
+              <View className="flex-row items-center rounded-xl border px-4 py-3">
                 <TextInput
                   value={phone}
                   onChangeText={setPhone}
@@ -138,13 +124,10 @@ const RegisterScreen = ({ navigation }) => {
             </View>
 
             <View className="mb-4">
-              <Text
-                className="text-sm font-medium mb-2"
-                style={{ color: COLORS.text }}
-              >
+              <Text className="mb-2 text-sm font-medium" style={{ color: COLORS.text }}>
                 كلمة المرور
               </Text>
-              <View className="flex-row items-center border rounded-xl px-4 py-3">
+              <View className="flex-row items-center rounded-xl border px-4 py-3">
                 <TextInput
                   value={password}
                   onChangeText={setPassword}
@@ -158,13 +141,10 @@ const RegisterScreen = ({ navigation }) => {
             </View>
 
             <View className="mb-6">
-              <Text
-                className="text-sm font-medium mb-2"
-                style={{ color: COLORS.text }}
-              >
+              <Text className="mb-2 text-sm font-medium" style={{ color: COLORS.text }}>
                 تأكيد كلمة المرور
               </Text>
-              <View className="flex-row items-center border rounded-xl px-4 py-3">
+              <View className="flex-row items-center rounded-xl border px-4 py-3">
                 <TextInput
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
@@ -180,10 +160,9 @@ const RegisterScreen = ({ navigation }) => {
             <TouchableOpacity
               onPress={handleRegister}
               disabled={isLoading}
-              className="rounded-xl py-4 items-center"
-              style={{ backgroundColor: COLORS.primary }}
-            >
-              <Text className="text-white font-bold text-lg">
+              className="items-center rounded-xl py-4"
+              style={{ backgroundColor: COLORS.primary }}>
+              <Text className="text-lg font-bold text-white">
                 {isLoading ? 'جاري التسجيل...' : 'تسجيل'}
               </Text>
             </TouchableOpacity>
@@ -191,17 +170,11 @@ const RegisterScreen = ({ navigation }) => {
 
           {/* Login Link */}
           <View className="flex-row items-center justify-center">
-            <Text
-              className="text-base"
-              style={{ color: COLORS.textSecondary }}
-            >
+            <Text className="text-base" style={{ color: COLORS.textSecondary }}>
               لديك حساب بالفعل؟{' '}
             </Text>
             <TouchableOpacity onPress={navigateToLogin}>
-              <Text
-                className="text-base font-bold"
-                style={{ color: COLORS.primary }}
-              >
+              <Text className="text-base font-bold" style={{ color: COLORS.primary }}>
                 سجل الدخول
               </Text>
             </TouchableOpacity>

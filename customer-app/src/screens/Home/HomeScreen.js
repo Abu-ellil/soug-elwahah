@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -44,36 +44,40 @@ const HomeScreen = ({ navigation }) => {
 
   useEffect(() => {
     loadStores();
-  }, [selectedVillage]);
+  }, [loadStores]);
 
-  const loadStores = () => {
+  const loadStores = useCallback(() => {
     let stores = STORES;
-    
+
     // Filter by selected village
     if (selectedVillage) {
       stores = getStoresByVillage(stores, selectedVillage.id);
     }
-    
+
     // Calculate distances if user location is available
     if (userLocation) {
-      stores = stores.map(store => ({
-        ...store,
-        distance: userLocation ? 
-          calculateDistance(userLocation, store.coordinates) : 0
-      })).sort((a, b) => a.distance - b.distance);
+      stores = stores
+        .map((store) => ({
+          ...store,
+          distance: userLocation ? calculateDistance(userLocation, store.coordinates) : 0,
+        }))
+        .sort((a, b) => a.distance - b.distance);
     }
-    
+
     setNearbyStores(stores);
-  };
+  }, [selectedVillage, userLocation]);
 
   const calculateDistance = (loc1, loc2) => {
     const R = 6371; // Earth's radius in km
-    const dLat = (loc2.lat - loc1.lat) * Math.PI / 180;
-    const dLng = (loc2.lng - loc1.lng) * Math.PI / 180;
-    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(loc1.lat * Math.PI / 180) * Math.cos(loc2.lat * Math.PI / 180) *
-      Math.sin(dLng/2) * Math.sin(dLng/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const dLat = ((loc2.lat - loc1.lat) * Math.PI) / 180;
+    const dLng = ((loc2.lng - loc1.lng) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((loc1.lat * Math.PI) / 180) *
+        Math.cos((loc2.lat * Math.PI) / 180) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   };
 
@@ -106,10 +110,9 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const filteredStores = nearbyStores.filter((store) => {
-    const matchesSearch = searchQuery === '' || 
-      store.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = !selectedCategory || 
-      store.categoryId === selectedCategory.id;
+    const matchesSearch =
+      searchQuery === '' || store.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = !selectedCategory || store.categoryId === selectedCategory.id;
     return matchesSearch && matchesCategory;
   });
 
@@ -128,7 +131,7 @@ const HomeScreen = ({ navigation }) => {
           </Text>
           <MaterialIcons name="keyboard-arrow-down" size={20} color={COLORS.gray} />
         </TouchableOpacity>
-        
+
         <TouchableOpacity style={styles.notificationButton}>
           <MaterialIcons name="notifications-none" size={24} color={COLORS.text} />
           {availableVillages && availableVillages.length > 0 && (
@@ -148,11 +151,10 @@ const HomeScreen = ({ navigation }) => {
         />
       </View>
 
-      <ScrollView 
+      <ScrollView
         style={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        showsVerticalScrollIndicator={false}
-      >
+        showsVerticalScrollIndicator={false}>
         {/* Categories */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>الفئات</Text>
@@ -175,14 +177,11 @@ const HomeScreen = ({ navigation }) => {
         {/* Stores Section Header */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>
-            {selectedCategory ? 
-              `${selectedCategory.name} في ${selectedVillage?.name || 'المنطقة المختارة'}` :
-              'المتاجر المتاحة'
-            }
+            {selectedCategory
+              ? `${selectedCategory.name} في ${selectedVillage?.name || 'المنطقة المختارة'}`
+              : 'المتاجر المتاحة'}
           </Text>
-          <Text style={styles.storesCountText}>
-            {filteredStores.length} متجر
-          </Text>
+          <Text style={styles.storesCountText}>{filteredStores.length} متجر</Text>
         </View>
 
         {/* Stores List */}
@@ -198,8 +197,8 @@ const HomeScreen = ({ navigation }) => {
           <FlatList
             data={filteredStores}
             renderItem={({ item }) => (
-              <StoreCard 
-                store={item} 
+              <StoreCard
+                store={item}
                 onPress={() => handleStorePress(item)}
                 userLocation={userLocation}
               />
@@ -213,9 +212,9 @@ const HomeScreen = ({ navigation }) => {
             icon="search-off"
             title="لا توجد نتائج"
             message={
-              searchQuery ? 
-                `لا توجد متاجر تحتوي على "${searchQuery}"` :
-                'لا توجد متاجر في هذه الفئة'
+              searchQuery
+                ? `لا توجد متاجر تحتوي على "${searchQuery}"`
+                : 'لا توجد متاجر في هذه الفئة'
             }
             actionText="مسح البحث"
             onActionPress={() => {
@@ -235,18 +234,14 @@ const HomeScreen = ({ navigation }) => {
 
         {/* Quick Actions */}
         <View style={styles.quickActions}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => navigation.navigate('Orders')}
-          >
+            onPress={() => navigation.navigate('Orders')}>
             <MaterialIcons name="history" size={20} color={COLORS.primary} />
             <Text style={styles.actionText}>طلباتي</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => navigation.navigate('Cart')}
-          >
+
+          <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Cart')}>
             <MaterialIcons name="shopping-cart" size={24} color={COLORS.primary} />
             <Text style={styles.actionText}>السلة</Text>
           </TouchableOpacity>

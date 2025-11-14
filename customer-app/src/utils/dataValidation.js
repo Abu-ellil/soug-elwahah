@@ -24,7 +24,7 @@ export const VALIDATION_TYPES = {
   ALPHA: 'alpha',
   BOOLEAN: 'boolean',
   ARRAY: 'array',
-  OBJECT: 'object'
+  OBJECT: 'object',
 };
 
 // قواعد التنظيف - Sanitization Rules
@@ -39,7 +39,7 @@ export const SANITIZATION_RULES = {
   FORMAT_DATE: 'formatDate',
   SANITIZE_HTML: 'sanitizeHtml',
   REMOVE_DUPLICATES: 'removeDuplicates',
-  SANITIZE_FILENAME: 'sanitizeFilename'
+  SANITIZE_FILENAME: 'sanitizeFilename',
 };
 
 // إعدادات التحقق الافتراضية - Default Validation Settings
@@ -52,7 +52,7 @@ export const DEFAULT_VALIDATION_SETTINGS = {
   maxFieldLength: 1000,
   preventXSS: true,
   sanitizeOutput: true,
-  normalizeData: true
+  normalizeData: true,
 };
 
 // فئة التحقق من البيانات - Data Validation Class
@@ -79,7 +79,7 @@ export class DataValidator {
       isValid: true,
       errors: [],
       sanitizedData: { ...data },
-      warnings: []
+      warnings: [],
     };
 
     try {
@@ -90,8 +90,13 @@ export class DataValidator {
 
       // التحقق من الحقول المطلوبة - Validate required fields
       for (const [field, fieldRules] of Object.entries(rules)) {
-        const fieldResult = this.validateField(field, results.sanitizedData[field], fieldRules, data);
-        
+        const fieldResult = this.validateField(
+          field,
+          results.sanitizedData[field],
+          fieldRules,
+          data
+        );
+
         if (!fieldResult.isValid) {
           results.isValid = false;
           results.errors.push(...fieldResult.errors);
@@ -115,7 +120,6 @@ export class DataValidator {
           results.errors.push(...customResult.errors);
         }
       }
-
     } catch (error) {
       console.error('خطأ في التحقق من البيانات:', error);
       results.isValid = false;
@@ -131,7 +135,7 @@ export class DataValidator {
       isValid: true,
       errors: [],
       warnings: [],
-      sanitizedValue: value
+      sanitizedValue: value,
     };
 
     // التحقق من الحقل المطلوب - Required field check
@@ -151,7 +155,7 @@ export class DataValidator {
       if (ruleType === 'required') continue; // Already handled above
 
       const ruleResult = this.applyValidationRule(fieldName, value, ruleType, ruleValue, fullData);
-      
+
       if (!ruleResult.isValid) {
         result.isValid = false;
         result.errors.push(...ruleResult.errors);
@@ -175,7 +179,7 @@ export class DataValidator {
       isValid: true,
       errors: [],
       warnings: [],
-      sanitizedValue: undefined
+      sanitizedValue: undefined,
     };
 
     switch (ruleType) {
@@ -369,9 +373,9 @@ export class DataValidator {
   // تطبيع رقم الهاتف - Normalize Phone Number
   normalizePhoneNumber(phone) {
     if (typeof phone !== 'string') return phone;
-    
+
     let cleaned = phone.replace(/\D/g, '');
-    
+
     // تحويل الرقم المصري - Convert Egyptian number
     if (cleaned.startsWith('20')) {
       cleaned = cleaned.substring(2);
@@ -379,28 +383,28 @@ export class DataValidator {
     if (cleaned.startsWith('0')) {
       cleaned = cleaned.substring(1);
     }
-    
+
     return `+20${cleaned}`;
   }
 
   // تنسيق التاريخ - Format Date
   formatDate(date) {
     if (!date) return '';
-    
+
     const d = new Date(date);
     if (isNaN(d.getTime())) return date;
-    
+
     return d.toLocaleDateString('ar-EG', {
       year: 'numeric',
       month: '2-digit',
-      day: '2-digit'
+      day: '2-digit',
     });
   }
 
   // تنظيف اسم الملف - Sanitize Filename
   sanitizeFilename(filename) {
     if (typeof filename !== 'string') return filename;
-    
+
     return filename
       .replace(/[^a-zA-Z0-9\u0600-\u06FF._-]/g, '_')
       .replace(/_{2,}/g, '_')
@@ -410,22 +414,22 @@ export class DataValidator {
   // التحقق من XSS - XSS Detection
   detectXSS(value) {
     if (typeof value !== 'string') return false;
-    
+
     const xssPatterns = [
       /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
       /<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi,
       /javascript:/gi,
       /on\w+\s*=/gi,
-      /<[^>]*on\w+="[^"]*"/gi
+      /<[^>]*on\w+="[^"]*"/gi,
     ];
 
-    return xssPatterns.some(pattern => pattern.test(value));
+    return xssPatterns.some((pattern) => pattern.test(value));
   }
 
   // منع XSS - XSS Prevention
   preventXSS(value) {
     if (typeof value !== 'string') return value;
-    
+
     return value
       .replace(/&/g, '&')
       .replace(/</g, '<')
@@ -442,63 +446,63 @@ export const CUSTOMER_VALIDATION_RULES = {
     required: true,
     minLength: 2,
     maxLength: 50,
-    custom: 'validateArabicName'
+    custom: 'validateArabicName',
   },
-  
+
   lastName: {
     required: true,
     minLength: 2,
     maxLength: 50,
-    custom: 'validateArabicName'
+    custom: 'validateArabicName',
   },
-  
+
   email: {
     required: true,
     email: true,
     maxLength: 100,
-    custom: 'validateUniqueEmail'
+    custom: 'validateUniqueEmail',
   },
-  
+
   phone: {
     required: true,
     phone: true,
-    custom: 'validateUniquePhone'
+    custom: 'validateUniquePhone',
   },
-  
+
   alternativePhone: {
     phone: true,
-    custom: 'validateUniqueAlternativePhone'
+    custom: 'validateUniqueAlternativePhone',
   },
-  
+
   dateOfBirth: {
     date: true,
-    custom: 'validateAge'
+    custom: 'validateAge',
   },
-  
+
   address: {
     required: true,
-    custom: 'validateAddress'
+    custom: 'validateAddress',
   },
-  
+
   type: {
     required: true,
-    custom: 'validateCustomerType'
+    custom: 'validateCustomerType',
   },
-  
+
   tier: {
     required: true,
-    custom: 'validateCustomerTier'
+    custom: 'validateCustomerTier',
   },
-  
+
   status: {
     required: true,
-    custom: 'validateCustomerStatus'
+    custom: 'validateCustomerStatus',
   },
-  
+
   notes: {
     maxLength: 1000,
-    custom: 'sanitizeNotes'
-  }
+    custom: 'sanitizeNotes',
+  },
 };
 
 // قواعد التنظيف المحددة للعملاء - Customer-Specific Sanitization Rules
@@ -513,8 +517,8 @@ export const CUSTOMER_SANITIZATION_RULES = {
     street: [SANITIZATION_RULES.TRIM],
     city: [SANITIZATION_RULES.TRIM],
     state: [SANITIZATION_RULES.TRIM],
-    country: [SANITIZATION_RULES.TRIM]
-  }
+    country: [SANITIZATION_RULES.TRIM],
+  },
 };
 
 // فئات التحقق المخصصة - Custom Validator Classes
@@ -530,11 +534,11 @@ export class CustomerValidator extends DataValidator {
     this.addCustomValidator('validateArabicName', (value, fullData) => {
       const arabicRegex = /^[\u0600-\u06FF\s]+$/;
       const englishRegex = /^[a-zA-Z\s]+$/;
-      
+
       if (!arabicRegex.test(value) && !englishRegex.test(value)) {
         return { isValid: false, errors: ['يجب أن يحتوي الاسم على أحرف عربية أو إنجليزية فقط'] };
       }
-      
+
       return { isValid: true, errors: [] };
     });
 
@@ -568,19 +572,19 @@ export class CustomerValidator extends DataValidator {
     // التحقق من العمر - Age Validation
     this.addCustomValidator('validateAge', (value) => {
       if (!value) return { isValid: true, errors: [] };
-      
+
       const birthDate = new Date(value);
       const today = new Date();
       const age = today.getFullYear() - birthDate.getFullYear();
-      
+
       if (age < 16) {
         return { isValid: false, errors: ['يجب أن يكون العميل أكبر من 16 سنة'] };
       }
-      
+
       if (age > 120) {
         return { isValid: false, errors: ['العمر غير منطقي'] };
       }
-      
+
       return { isValid: true, errors: [] };
     });
 
@@ -589,14 +593,19 @@ export class CustomerValidator extends DataValidator {
       if (!address || typeof address !== 'object') {
         return { isValid: false, errors: ['العنوان مطلوب'] };
       }
-      
+
       const requiredFields = ['street', 'city', 'country'];
-      const missingFields = requiredFields.filter(field => !address[field] || address[field].trim() === '');
-      
+      const missingFields = requiredFields.filter(
+        (field) => !address[field] || address[field].trim() === ''
+      );
+
       if (missingFields.length > 0) {
-        return { isValid: false, errors: [`الحقول التالية مطلوبة في العنوان: ${missingFields.join(', ')}`] };
+        return {
+          isValid: false,
+          errors: [`الحقول التالية مطلوبة في العنوان: ${missingFields.join(', ')}`],
+        };
       }
-      
+
       return { isValid: true, errors: [] };
     });
 
@@ -632,9 +641,7 @@ export class CustomerValidator extends DataValidator {
   async findCustomerByEmail(email, excludeId = null) {
     try {
       const customers = await customerManager.getAllCustomers({});
-      return customers.customers.find(c => 
-        c.email === email && c.id !== excludeId
-      );
+      return customers.customers.find((c) => c.email === email && c.id !== excludeId);
     } catch (error) {
       console.error('خطأ في البحث عن البريد الإلكتروني:', error);
       return null;
@@ -645,9 +652,7 @@ export class CustomerValidator extends DataValidator {
   async findCustomerByPhone(phone, excludeId = null) {
     try {
       const customers = await customerManager.getAllCustomers({});
-      return customers.customers.find(c => 
-        c.phone === phone && c.id !== excludeId
-      );
+      return customers.customers.find((c) => c.phone === phone && c.id !== excludeId);
     } catch (error) {
       console.error('خطأ في البحث عن رقم الهاتف:', error);
       return null;
@@ -656,16 +661,12 @@ export class CustomerValidator extends DataValidator {
 
   // التحقق من بيانات العميل - Validate Customer Data
   async validateCustomerData(customerData, options = {}) {
-    const {
-      isUpdate = false,
-      validateDuplicates = true,
-      customValidation = null
-    } = options;
+    const { isUpdate = false, validateDuplicates = true, customValidation = null } = options;
 
     // تعديل القواعد للتحديث - Adjust rules for update
     const rules = { ...CUSTOMER_VALIDATION_RULES };
     if (isUpdate) {
-      Object.keys(rules).forEach(key => {
+      Object.keys(rules).forEach((key) => {
         if (rules[key].required) {
           delete rules[key].required;
         }
@@ -673,7 +674,7 @@ export class CustomerValidator extends DataValidator {
     }
 
     const result = this.validate(customerData, rules, {
-      customValidation
+      customValidation,
     });
 
     // التحقق من الأمان الإضافي - Additional security checks
@@ -701,7 +702,7 @@ export class SecurityValidator {
   // فحص الثغرات الأمنية - Security Vulnerability Checks
   static performSecurityScan(data) {
     const vulnerabilities = [];
-    
+
     for (const [field, value] of Object.entries(data)) {
       if (typeof value === 'string') {
         // فحص XSS - XSS Check
@@ -710,39 +711,39 @@ export class SecurityValidator {
             type: 'XSS',
             field,
             severity: 'high',
-            message: `حقل ${field} يحتوي على محتوى XSS محتمل`
+            message: `حقل ${field} يحتوي على محتوى XSS محتمل`,
           });
         }
-        
+
         // فحص الحقن - Injection Check
         if (this.detectSQLInjection(value)) {
           vulnerabilities.push({
             type: 'INJECTION',
             field,
             severity: 'high',
-            message: `حقل ${field} قد يحتوي على محاولة حقن`
+            message: `حقل ${field} قد يحتوي على محاولة حقن`,
           });
         }
-        
+
         // فحص البيانات الحساسة - Sensitive Data Check
         if (this.detectSensitiveData(value)) {
           vulnerabilities.push({
             type: 'SENSITIVE_DATA',
             field,
             severity: 'medium',
-            message: `حقل ${field} قد يحتوي على بيانات حساسة`
+            message: `حقل ${field} قد يحتوي على بيانات حساسة`,
           });
         }
       }
     }
-    
+
     return {
       isSecure: vulnerabilities.length === 0,
       vulnerabilities,
-      securityScore: Math.max(0, 100 - (vulnerabilities.length * 20))
+      securityScore: Math.max(0, 100 - vulnerabilities.length * 20),
     };
   }
-  
+
   // فحص XSS - XSS Detection
   static detectXSS(value) {
     const xssPatterns = [
@@ -752,12 +753,12 @@ export class SecurityValidator {
       /on\w+\s*=/gi,
       /<[^>]*on\w+="[^"]*"/gi,
       /eval\s*\(/gi,
-      /expression\s*\(/gi
+      /expression\s*\(/gi,
     ];
-    
-    return xssPatterns.some(pattern => pattern.test(value));
+
+    return xssPatterns.some((pattern) => pattern.test(value));
   }
-  
+
   // فحص الحقن - Injection Detection
   static detectSQLInjection(value) {
     const sqlPatterns = [
@@ -766,22 +767,22 @@ export class SecurityValidator {
       /['";]/g,
       /--/g,
       /\/\*/g,
-      /\*\//g
+      /\*\//g,
     ];
-    
-    return sqlPatterns.some(pattern => pattern.test(value));
+
+    return sqlPatterns.some((pattern) => pattern.test(value));
   }
-  
+
   // فحص البيانات الحساسة - Sensitive Data Detection
   static detectSensitiveData(value) {
     const sensitivePatterns = [
       /\b\d{16}\b/g, // أرقام بطاقات الائتمان
       /\b\d{3}-\d{2}-\d{4}\b/g, // أرقام الضمان الاجتماعي
       /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, // بريد إلكتروني
-      /\b\d{10,}\b/g // أرقام طويلة محتملة
+      /\b\d{10,}\b/g, // أرقام طويلة محتملة
     ];
-    
-    return sensitivePatterns.some(pattern => pattern.test(value));
+
+    return sensitivePatterns.some((pattern) => pattern.test(value));
   }
 }
 
@@ -816,5 +817,5 @@ export default {
   SANITIZATION_RULES,
   CUSTOMER_VALIDATION_RULES,
   CUSTOMER_SANITIZATION_RULES,
-  DEFAULT_VALIDATION_SETTINGS
+  DEFAULT_VALIDATION_SETTINGS,
 };

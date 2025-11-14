@@ -1,12 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useCart } from '../../context/CartContext';
 import { useLocation } from '../../context/LocationProvider';
@@ -38,25 +31,21 @@ const CartScreen = ({ navigation }) => {
 
   useEffect(() => {
     loadStores();
-  }, []);
+  }, [loadStores]);
 
-  const loadStores = () => {
-    const cartStoreIds = [...new Set(cartItems.map(item => item.storeId))];
-    const cartStores = cartStoreIds.map(storeId => 
-      STORES.find(store => store.id === storeId)
-    ).filter(Boolean);
+  const loadStores = useCallback(() => {
+    const cartStoreIds = [...new Set(cartItems.map((item) => item.storeId))];
+    const cartStores = cartStoreIds
+      .map((storeId) => STORES.find((store) => store.id === storeId))
+      .filter(Boolean);
     setStores(cartStores);
-  };
+  }, [cartItems]);
 
   const handleClearCart = () => {
-    Alert.alert(
-      'تفريغ السلة',
-      'هل تريد تفريغ السلة بالكامل؟',
-      [
-        { text: 'إلغاء', style: 'cancel' },
-        { text: 'تفريغ', style: 'destructive', onPress: clearCart }
-      ]
-    );
+    Alert.alert('تفريغ السلة', 'هل تريد تفريغ السلة بالكامل؟', [
+      { text: 'إلغاء', style: 'cancel' },
+      { text: 'تفريغ', style: 'destructive', onPress: clearCart },
+    ]);
   };
 
   const handleCheckout = () => {
@@ -66,37 +55,16 @@ const CartScreen = ({ navigation }) => {
     }
 
     if (!selectedVillage) {
-      Alert.alert(
-        'تحديد الموقع',
-        'يرجى تحديد موقع التوصيل أولاً',
-        [
-          { text: 'إلغاء', style: 'cancel' },
-          { text: 'تحديد الموقع', onPress: () => setVillagePickerVisible(true) }
-        ]
-      );
+      Alert.alert('تحديد الموقع', 'يرجى تحديد موقع التوصيل أولاً', [
+        { text: 'إلغاء', style: 'cancel' },
+        { text: 'تحديد الموقع', onPress: () => setVillagePickerVisible(true) },
+      ]);
       return;
     }
 
     navigation.navigate('Home', { screen: 'Checkout' });
   };
 
-  const getStoreName = (storeId) => {
-    const store = STORES.find(s => s.id === storeId);
-    return store ? store.name : 'متجر غير معروف';
-  };
-
-  const getItemsByStore = () => {
-    const grouped = {};
-    cartItems.forEach(item => {
-      if (!grouped[item.storeId]) {
-        grouped[item.storeId] = [];
-      }
-      grouped[item.storeId].push(item);
-    });
-    return grouped;
-  };
-
-  const itemsByStore = getItemsByStore();
   const subtotal = getCartSubtotal();
   const deliveryFee = getDeliveryFee();
   const total = getTotalWithDelivery();
@@ -134,43 +102,48 @@ const CartScreen = ({ navigation }) => {
         <View style={styles.content}>
           {/* Delivery Info */}
           {selectedVillage ? (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.deliveryInfo}
-              onPress={() => setVillagePickerVisible(true)}
-            >
+              onPress={() => setVillagePickerVisible(true)}>
               <MaterialIcons name="location-on" size={20} color={COLORS.primary} />
-              <Text style={styles.deliveryText}>
-                التوصيل إلى: {selectedVillage.name}
-              </Text>
-              <MaterialIcons name="edit" size={16} color={COLORS.primary} style={{ marginRight: 'auto' }} />
+              <Text style={styles.deliveryText}>التوصيل إلى: {selectedVillage.name}</Text>
+              <MaterialIcons
+                name="edit"
+                size={16}
+                color={COLORS.primary}
+                style={{ marginRight: 'auto' }}
+              />
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.deliveryInfo, { backgroundColor: COLORS.warningLight }]}
-              onPress={() => setVillagePickerVisible(true)}
-            >
+              onPress={() => setVillagePickerVisible(true)}>
               <MaterialIcons name="location-off" size={20} color={COLORS.warning} />
               <Text style={[styles.deliveryText, { color: COLORS.warning }]}>
                 اختر موقع التوصيل
               </Text>
-              <MaterialIcons name="add" size={20} color={COLORS.warning} style={{ marginRight: 'auto' }} />
+              <MaterialIcons
+                name="add"
+                size={20}
+                color={COLORS.warning}
+                style={{ marginRight: 'auto' }}
+              />
             </TouchableOpacity>
           )}
 
           {/* Stores Summary */}
           <View style={styles.storesSection}>
             <Text style={styles.sectionTitle}>المتاجر ({stores.length})</Text>
-            {stores.map(store => (
+            {stores.map((store) => (
               <View key={store.id} style={styles.storeInfo}>
                 <MaterialIcons name="store" size={16} color={COLORS.primary} />
                 <Text style={styles.storeName}>{store.name}</Text>
-                <View style={[
-                  styles.storeStatus,
-                  { backgroundColor: store.isOpen ? COLORS.success : COLORS.danger }
-                ]}>
-                  <Text style={styles.storeStatusText}>
-                    {store.isOpen ? 'مفتوح' : 'مغلق'}
-                  </Text>
+                <View
+                  style={[
+                    styles.storeStatus,
+                    { backgroundColor: store.isOpen ? COLORS.success : COLORS.danger },
+                  ]}>
+                  <Text style={styles.storeStatusText}>{store.isOpen ? 'مفتوح' : 'مغلق'}</Text>
                 </View>
               </View>
             ))}
@@ -180,11 +153,7 @@ const CartScreen = ({ navigation }) => {
           <FlatList
             data={cartItems}
             renderItem={({ item }) => (
-              <CartItem
-                item={item}
-                onUpdateQuantity={updateQuantity}
-                onRemove={removeFromCart}
-              />
+              <CartItem item={item} onUpdateQuantity={updateQuantity} onRemove={removeFromCart} />
             )}
             keyExtractor={(item) => item.productId}
             showsVerticalScrollIndicator={false}
@@ -194,7 +163,7 @@ const CartScreen = ({ navigation }) => {
           {/* Order Summary */}
           <View style={styles.summaryContainer}>
             <Text style={styles.sectionTitle}>ملخص الطلب</Text>
-            
+
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>المجموع الفرعي</Text>
               <Text style={styles.summaryValue}>{formatPrice(subtotal)}</Text>
@@ -209,12 +178,8 @@ const CartScreen = ({ navigation }) => {
 
             {selectedVillage && (
               <View style={styles.summaryRow}>
-                <Text style={styles.deliveryVillage}>
-                  إلى {selectedVillage.name}
-                </Text>
-                <Text style={styles.deliveryTime}>
-                  {selectedVillage.deliveryTime}
-                </Text>
+                <Text style={styles.deliveryVillage}>إلى {selectedVillage.name}</Text>
+                <Text style={styles.deliveryTime}>{selectedVillage.deliveryTime}</Text>
               </View>
             )}
 

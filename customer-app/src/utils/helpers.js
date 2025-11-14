@@ -13,7 +13,7 @@ export const formatDate = (dateString) => {
     month: 'long',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   });
 };
 
@@ -22,7 +22,7 @@ export const formatTime = (dateString) => {
   const date = new Date(dateString);
   return date.toLocaleTimeString('ar-EG', {
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   });
 };
 
@@ -33,7 +33,7 @@ export const getStatusColor = (status) => {
     confirmed: '#2196F3',
     delivering: '#FF9800',
     delivered: '#4CAF50',
-    cancelled: '#F44336'
+    cancelled: '#F44336',
   };
   return colors[status] || '#9E9E9E';
 };
@@ -45,7 +45,7 @@ export const getStatusText = (status) => {
     confirmed: 'مؤكد',
     delivering: 'قيد التوصيل',
     delivered: 'تم التوصيل',
-    cancelled: 'ملغي'
+    cancelled: 'ملغي',
   };
   return texts[status] || 'غير معروف';
 };

@@ -8,28 +8,28 @@ const StoreDetailsScreenSkeleton = () => {
   return (
     <View className="flex-1 p-4">
       {/* Image Skeleton */}
-      <SkeletonLoader className="w-full h-[200px] mb-4" backgroundColor={COLORS.lightGray} />
+      <SkeletonLoader className="mb-4 h-[200px] w-full" backgroundColor={COLORS.lightGray} />
 
       {/* Header Skeleton */}
       <View className="mb-4">
-        <SkeletonLoader className="w-[70%] h-[30px] mb-2" backgroundColor={COLORS.lightGray} />
-        <SkeletonLoader className="w-[50%] h-[20px]" backgroundColor={COLORS.lightGray} />
+        <SkeletonLoader className="mb-2 h-[30px] w-[70%]" backgroundColor={COLORS.lightGray} />
+        <SkeletonLoader className="h-[20px] w-[50%]" backgroundColor={COLORS.lightGray} />
       </View>
 
       {/* Info Row Skeleton */}
-      <View className="flex-row justify-between mb-4"> 
-        <SkeletonLoader className="w-[30%] h-[50px]" backgroundColor={COLORS.lightGray} />
-        <SkeletonLoader className="w-[30%] h-[50px]" backgroundColor={COLORS.lightGray} />
-        <SkeletonLoader className="w-[30%] h-[50px]" backgroundColor={COLORS.lightGray} />
-      </View> 
+      <View className="mb-4 flex-row justify-between">
+        <SkeletonLoader className="h-[50px] w-[30%]" backgroundColor={COLORS.lightGray} />
+        <SkeletonLoader className="h-[50px] w-[30%]" backgroundColor={COLORS.lightGray} />
+        <SkeletonLoader className="h-[50px] w-[30%]" backgroundColor={COLORS.lightGray} />
+      </View>
 
       {/* Product Skeletons */}
       {[...Array(3)].map((_, i) => (
-        <View key={i} className="flex-row mb-4">
-          <SkeletonLoader className="w-[100px] h-[100px] mr-4" backgroundColor={COLORS.lightGray} />
+        <View key={i} className="mb-4 flex-row">
+          <SkeletonLoader className="mr-4 h-[100px] w-[100px]" backgroundColor={COLORS.lightGray} />
           <View className="flex-1 justify-center">
-            <SkeletonLoader className="w-[80%] h-[20px] mb-2" backgroundColor={COLORS.lightGray} />
-            <SkeletonLoader className="w-[40%] h-[20px]" backgroundColor={COLORS.lightGray} />
+            <SkeletonLoader className="mb-2 h-[20px] w-[80%]" backgroundColor={COLORS.lightGray} />
+            <SkeletonLoader className="h-[20px] w-[40%]" backgroundColor={COLORS.lightGray} />
           </View>
         </View>
       ))}

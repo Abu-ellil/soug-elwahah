@@ -1,8 +1,7 @@
 // Egyptian Payment Methods Integration Service
 
 import { Alert, Linking, Platform } from 'react-native';
-import { t , formatEGPCurrency } from './arabicLocalization';
-
+import { t, formatEGPCurrency } from './arabicLocalization';
 
 // Egyptian Payment Providers Configuration
 export const PAYMENT_PROVIDERS = {
@@ -18,10 +17,10 @@ export const PAYMENT_PROVIDERS = {
     instructions: [
       'قم بإعداد المبلغ المطلوب',
       'احتفظ بالفكة الصغيرة إن أمكن',
-      'يمكنك الدفع للدليفري مباشرة'
-    ]
+      'يمكنك الدفع للدليفري مباشرة',
+    ],
   },
-  
+
   fawry: {
     id: 'fawry',
     name: 'فوري',
@@ -35,11 +34,11 @@ export const PAYMENT_PROVIDERS = {
       'اذهب إلى أقرب نقطة فوري',
       'اختر "تسوق أونلاين"',
       'ادخل رقم الفاتورة',
-      'ادفع المبلغ واحتفظ بالإيصال'
+      'ادفع المبلغ واحتفظ بالإيصال',
     ],
-    fawryCode: 'TDS' // Example code
+    fawryCode: 'TDS', // Example code
   },
-  
+
   vodafone_cash: {
     id: 'vodafone_cash',
     name: 'فودافون كاش',
@@ -53,11 +52,11 @@ export const PAYMENT_PROVIDERS = {
       'اطلب كود التحويل من الدعم الفني',
       'اتصل بـ *9*7# من خط فودافون',
       'اختر "تحويل أموال"',
-      'ادخل رقم الهاتف والمبلغ'
+      'ادخل رقم الهاتف والمبلغ',
     ],
-    merchantCode: 'TDS123' // Example merchant code
+    merchantCode: 'TDS123', // Example merchant code
   },
-  
+
   orange_money: {
     id: 'orange_money',
     name: 'أورانج ماني',
@@ -71,11 +70,11 @@ export const PAYMENT_PROVIDERS = {
       'اطلب كود التحويل من الدعم الفني',
       'اتصل بـ *100*16# من خط أورانج',
       'اختر "تحويل أموال"',
-      'ادخل رقم الهاتف والمبلغ'
+      'ادخل رقم الهاتف والمبلغ',
     ],
-    merchantCode: 'TDS456' // Example merchant code
+    merchantCode: 'TDS456', // Example merchant code
   },
-  
+
   aman: {
     id: 'aman',
     name: 'أمان',
@@ -89,11 +88,11 @@ export const PAYMENT_PROVIDERS = {
       'حمل تطبيق أمان من المتجر',
       'أنشئ حساب أو سجل دخولك',
       'اختر "تحويل أموال"',
-      'ادخل رقم الهاتف والمبلغ'
+      'ادخل رقم الهاتف والمبلغ',
     ],
-    merchantCode: 'TDS789' // Example merchant code
+    merchantCode: 'TDS789', // Example merchant code
   },
-  
+
   masary: {
     id: 'masary',
     name: 'مصاري',
@@ -107,11 +106,11 @@ export const PAYMENT_PROVIDERS = {
       'حمل تطبيق مصاري من المتجر',
       'أنشئ حساب أو سجل دخولك',
       'اختر "تحويل أموال"',
-      'ادخل رقم الهاتف والمبلغ'
+      'ادخل رقم الهاتف والمبلغ',
     ],
-    merchantCode: 'TDS321' // Example merchant code
+    merchantCode: 'TDS321', // Example merchant code
   },
-  
+
   bank_transfer: {
     id: 'bank_transfer',
     name: 'حوالة بنكية',
@@ -126,16 +125,16 @@ export const PAYMENT_PROVIDERS = {
       'حوّل المبلغ لحساب: البنك الأهلي',
       'رقم الحساب: 1234567890',
       'أرسل إيصال التحويل',
-      'سيتم تأكيد الطلب خلال 24 ساعة'
+      'سيتم تأكيد الطلب خلال 24 ساعة',
     ],
     bankDetails: {
       bankName: 'البنك الأهلي المصري',
       accountNumber: '1234567890',
       iban: 'EG1500350008000000002601842',
       swiftCode: 'NBEGEGCX',
-      accountHolderName: 'شركة التوصيل للقرى المصرية'
-    }
-  }
+      accountHolderName: 'شركة التوصيل للقرى المصرية',
+    },
+  },
 };
 
 // Payment Service Class
@@ -147,8 +146,8 @@ class PaymentService {
 
   // Get available payment methods for Egypt
   getAvailablePaymentMethods() {
-    return Object.values(PAYMENT_PROVIDERS).filter(provider => 
-      provider.type !== 'offline' || Platform.OS === 'android' // Allow cash on all platforms
+    return Object.values(PAYMENT_PROVIDERS).filter(
+      (provider) => provider.type !== 'offline' || Platform.OS === 'android' // Allow cash on all platforms
     );
   }
 
@@ -172,7 +171,7 @@ class PaymentService {
     };
 
     this.currentPayment = paymentRequest;
-    
+
     // Notify listeners
     this.notifyListeners('payment_initiated', paymentRequest);
 
@@ -186,19 +185,19 @@ class PaymentService {
     switch (method) {
       case 'cash':
         return this.processCashPayment(paymentRequest);
-      
+
       case 'fawry':
         return this.processFawryPayment(paymentRequest);
-      
+
       case 'vodafone_cash':
       case 'orange_money':
       case 'aman':
       case 'masary':
         return this.processMobileWalletPayment(paymentRequest);
-      
+
       case 'bank_transfer':
         return this.processBankTransfer(paymentRequest);
-      
+
       default:
         throw new Error(`Unsupported payment method: ${method}`);
     }
@@ -212,7 +211,7 @@ class PaymentService {
       paymentUrl: null,
       reference: `CASH_${paymentRequest.id}`,
       instructions: PAYMENT_PROVIDERS.cash.instructions,
-      message: 'تم تأكيد الدفع عند الاستلام'
+      message: 'تم تأكيد الدفع عند الاستلام',
     };
   }
 
@@ -232,12 +231,14 @@ class PaymentService {
         currencyCode: 'EGP',
         description: `طلب رقم ${paymentRequest.orderId}`,
         language: 'ar-eg',
-        chargeItems: [{
-          itemId: paymentRequest.orderId,
-          description: `طلب من تطبيق التوصيل للقرى المصرية`,
-          price: Math.round(paymentRequest.amount * 100),
-          quantity: 1
-        }]
+        chargeItems: [
+          {
+            itemId: paymentRequest.orderId,
+            description: `طلب من تطبيق التوصيل للقرى المصرية`,
+            price: Math.round(paymentRequest.amount * 100),
+            quantity: 1,
+          },
+        ],
       };
 
       // Mock response - replace with actual Fawry API call
@@ -246,8 +247,8 @@ class PaymentService {
         data: {
           referenceNumber: `FAWRY_${paymentRequest.id}`,
           paymentUrl: `https://www.fawrystaging.com/Fawrypay/Index?refrenceNumber=FAWRY_${paymentRequest.id}`,
-          merchantRefNumber: paymentRequest.id
-        }
+          merchantRefNumber: paymentRequest.id,
+        },
       };
 
       return {
@@ -256,9 +257,8 @@ class PaymentService {
         paymentUrl: mockResponse.data.paymentUrl,
         reference: mockResponse.data.referenceNumber,
         instructions: PAYMENT_PROVIDERS.fawry.instructions,
-        message: 'يرجى الدفع من أقرب نقطة فوري'
+        message: 'يرجى الدفع من أقرب نقطة فوري',
       };
-
     } catch (error) {
       throw new Error('فشل في إنشاء طلب الدفع من فوري');
     }
@@ -267,7 +267,7 @@ class PaymentService {
   // Mobile wallet payment processing
   async processMobileWalletPayment(paymentRequest) {
     const provider = PAYMENT_PROVIDERS[paymentRequest.method];
-    
+
     try {
       // In a real implementation, you would:
       // 1. Generate payment request with the wallet provider
@@ -275,7 +275,7 @@ class PaymentService {
       // 3. Handle payment confirmation
 
       const paymentCode = this.generatePaymentCode();
-      
+
       return {
         ...paymentRequest,
         status: 'pending_payment',
@@ -285,9 +285,8 @@ class PaymentService {
         paymentCode: paymentCode,
         merchantCode: provider.merchantCode,
         message: `يرجى الدفع باستخدام ${provider.name}`,
-        amountInWallet: paymentRequest.amount
+        amountInWallet: paymentRequest.amount,
       };
-
     } catch (error) {
       throw new Error(`فشل في إنشاء طلب الدفع من ${provider.name}`);
     }
@@ -303,7 +302,7 @@ class PaymentService {
       instructions: PAYMENT_PROVIDERS.bank_transfer.instructions,
       bankDetails: PAYMENT_PROVIDERS.bank_transfer.bankDetails,
       verificationRequired: true,
-      message: 'يرجى تحويل المبلغ وإرسال إيصال التحويل'
+      message: 'يرجى تحويل المبلغ وإرسال إيصال التحويل',
     };
   }
 
@@ -318,11 +317,11 @@ class PaymentService {
         case 'fawry':
           verificationResult = await this.verifyFawryPayment(reference);
           break;
-        
+
         case 'bank_transfer':
           verificationResult = await this.verifyBankTransfer(paymentRequest, verificationData);
           break;
-        
+
         default:
           verificationResult = { verified: false, message: 'Payment verification not implemented' };
       }
@@ -332,7 +331,7 @@ class PaymentService {
           ...paymentRequest,
           status: 'completed',
           verifiedAt: new Date().toISOString(),
-          verificationData
+          verificationData,
         };
 
         this.notifyListeners('payment_completed', updatedPayment);
@@ -342,19 +341,18 @@ class PaymentService {
           ...paymentRequest,
           status: 'failed',
           failedAt: new Date().toISOString(),
-          failureReason: verificationResult.message
+          failureReason: verificationResult.message,
         };
 
         this.notifyListeners('payment_failed', failedPayment);
         return failedPayment;
       }
-
     } catch (error) {
       const errorPayment = {
         ...paymentRequest,
         status: 'error',
         errorAt: new Date().toISOString(),
-        errorMessage: error.message
+        errorMessage: error.message,
       };
 
       this.notifyListeners('payment_error', errorPayment);
@@ -366,11 +364,11 @@ class PaymentService {
   async verifyFawryPayment(reference) {
     // In real implementation, call Fawry API to check payment status
     // For demo purposes, we'll simulate verification
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
     return {
       verified: true,
-      message: 'تم تأكيد الدفع من فوري'
+      message: 'تم تأكيد الدفع من فوري',
     };
   }
 
@@ -380,17 +378,17 @@ class PaymentService {
     // 1. Check bank account for incoming transfer
     // 2. Verify amount and reference
     // 3. Update payment status
-    
+
     if (verificationData && verificationData.transferScreenshot) {
       return {
         verified: true,
-        message: 'تم تأكيد التحويل البنكي'
+        message: 'تم تأكيد التحويل البنكي',
       };
     }
-    
+
     return {
       verified: false,
-      message: 'لم يتم العثور على التحويل البنكي'
+      message: 'لم يتم العثور على التحويل البنكي',
     };
   }
 
@@ -409,8 +407,8 @@ class PaymentService {
         name: 'شركة التوصيل للقرى المصرية',
         address: 'القاهرة، مصر',
         phone: '+20 123 456 7890',
-        email: 'support@egyptdelivery.com'
-      }
+        email: 'support@egyptdelivery.com',
+      },
     };
   }
 
@@ -430,11 +428,11 @@ class PaymentService {
   }
 
   removeListener(callback) {
-    this.listeners = this.listeners.filter(listener => listener !== callback);
+    this.listeners = this.listeners.filter((listener) => listener !== callback);
   }
 
   notifyListeners(event, data) {
-    this.listeners.forEach(listener => {
+    this.listeners.forEach((listener) => {
       try {
         listener(event, data);
       } catch (error) {

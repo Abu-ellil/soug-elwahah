@@ -8,7 +8,7 @@ export const VILLAGES = [
     deliveryTime: '20-30 دقيقة',
     region: 'محافظة كفر الشيخ',
     isActive: true,
-    landmarks: ['مركز المحافظة', 'المستشفى العام', 'السوق الرئيسي']
+    landmarks: ['مركز المحافظة', 'المستشفى العام', 'السوق الرئيسي'],
   },
   {
     id: 'v2',
@@ -19,18 +19,18 @@ export const VILLAGES = [
     deliveryTime: '15-25 دقيقة',
     region: 'محافظة كفر الشيخ',
     isActive: true,
-    landmarks: ['المركز الطبي', 'سوق السمك', 'محطة القطار']
+    landmarks: ['المركز الطبي', 'سوق السمك', 'محطة القطار'],
   },
   {
     id: 'v3',
     name: 'فوه',
-    coordinates: { lat: 30.5500, lng: 30.9833 },
+    coordinates: { lat: 30.55, lng: 30.9833 },
     deliveryRadius: 10,
     deliveryFee: 15,
     deliveryTime: '25-35 دقيقة',
     region: 'محافظة كفر الشيخ',
     isActive: true,
-    landmarks: ['الوحدة المحلية', 'المركز الصحي', 'السوق الأسبوعي']
+    landmarks: ['الوحدة المحلية', 'المركز الصحي', 'السوق الأسبوعي'],
   },
   {
     id: 'v4',
@@ -41,7 +41,7 @@ export const VILLAGES = [
     deliveryTime: '20-30 دقيقة',
     region: 'محافظة كفر الشيخ',
     isActive: true,
-    landmarks: ['المركز الطبي', 'السوق الجديد', 'مدرسة مطوبس']
+    landmarks: ['المركز الطبي', 'السوق الجديد', 'مدرسة مطوبس'],
   },
   {
     id: 'v5',
@@ -52,7 +52,7 @@ export const VILLAGES = [
     deliveryTime: '30-40 دقيقة',
     region: 'محافظة كفر الشيخ',
     isActive: true,
-    landmarks: ['مركز المدينة', 'المستشفى التعليمي', 'نادي بيلا الرياضي']
+    landmarks: ['مركز المدينة', 'المستشفى التعليمي', 'نادي بيلا الرياضي'],
   },
   {
     id: 'v6',
@@ -63,7 +63,7 @@ export const VILLAGES = [
     deliveryTime: '25-35 دقيقة',
     region: 'محافظة كفر الشيخ',
     isActive: true,
-    landmarks: ['مركز شباب سيدي سالم', 'البنك الأهلي', 'محطة أتوبيس']
+    landmarks: ['مركز شباب سيدي سالم', 'البنك الأهلي', 'محطة أتوبيس'],
   },
   {
     id: 'v7',
@@ -74,7 +74,7 @@ export const VILLAGES = [
     deliveryTime: '22-32 دقيقة',
     region: 'محافظة كفر الشيخ',
     isActive: true,
-    landmarks: ['الوحدة المحلية', 'مدرسة قلين', 'مسجد نور الإسلام']
+    landmarks: ['الوحدة المحلية', 'مدرسة قلين', 'مسجد نور الإسلام'],
   },
   {
     id: 'v8',
@@ -85,7 +85,7 @@ export const VILLAGES = [
     deliveryTime: '18-28 دقيقة',
     region: 'محافظة كفر الشيخ',
     isActive: true,
-    landmarks: ['مركز طبي الرياض', 'السوق التجاري', 'محطة بنزين الرياض']
+    landmarks: ['مركز طبي الرياض', 'السوق التجاري', 'محطة بنزين الرياض'],
   },
   {
     id: 'v9',
@@ -96,7 +96,7 @@ export const VILLAGES = [
     deliveryTime: '20-30 دقيقة',
     region: 'محافظة كفر الشيخ',
     isActive: true,
-    landmarks: ['مجلس قروي الحامول', 'العيادة البيطرية', 'حظيرة جمهور']
+    landmarks: ['مجلس قروي الحامول', 'العيادة البيطرية', 'حظيرة جمهور'],
   },
   {
     id: 'v10',
@@ -107,7 +107,7 @@ export const VILLAGES = [
     deliveryTime: '28-38 دقيقة',
     region: 'محافظة كفر الشيخ',
     isActive: true,
-    landmarks: ['مركز الشرطة', 'المركز الطبي المطور', 'ميناء الصيد']
+    landmarks: ['مركز الشرطة', 'المركز الطبي المطور', 'ميناء الصيد'],
   },
   // Additional villages for expanded coverage
   {
@@ -119,7 +119,7 @@ export const VILLAGES = [
     deliveryTime: '35-45 دقيقة',
     region: 'محافظة كفر الشيخ',
     isActive: false, // Future expansion
-    landmarks: ['ميناء بلطيم', 'شاطئ البلطيم', 'فندق سياحي']
+    landmarks: ['ميناء بلطيم', 'شاطئ البلطيم', 'فندق سياحي'],
   },
   {
     id: 'v12',
@@ -130,8 +130,8 @@ export const VILLAGES = [
     deliveryTime: '40-50 دقيقة',
     region: 'محافظة كفر الشيخ',
     isActive: false, // Future expansion
-    landmarks: ['شاطئ الريّس', 'قرية سياحية', 'فندق عائلي']
-  }
+    landmarks: ['شاطئ الريّس', 'قرية سياحية', 'فندق عائلي'],
+  },
 ];
 
 // Delivery time slots
@@ -139,19 +139,19 @@ export const DELIVERY_SLOTS = [
   { id: 'morning', name: 'الصباح (9:00 - 12:00)', timeRange: '09:00-12:00', isAvailable: true },
   { id: 'noon', name: 'الظهيرة (12:00 - 15:00)', timeRange: '12:00-15:00', isAvailable: true },
   { id: 'evening', name: 'المساء (15:00 - 18:00)', timeRange: '15:00-18:00', isAvailable: true },
-  { id: 'night', name: 'الليل (18:00 - 21:00)', timeRange: '18:00-21:00', isAvailable: true }
+  { id: 'night', name: 'الليل (18:00 - 21:00)', timeRange: '18:00-21:00', isAvailable: true },
 ];
 
 // Get delivery information for a village
 export const getDeliveryInfo = (villageId) => {
-  const village = VILLAGES.find(v => v.id === villageId);
+  const village = VILLAGES.find((v) => v.id === villageId);
   if (!village) return null;
-  
+
   return {
     village,
     deliveryTime: village.deliveryTime,
     deliveryFee: village.deliveryFee,
     deliveryRadius: village.deliveryRadius,
-    availableSlots: DELIVERY_SLOTS.filter(slot => slot.isAvailable)
+    availableSlots: DELIVERY_SLOTS.filter((slot) => slot.isAvailable),
   };
 };

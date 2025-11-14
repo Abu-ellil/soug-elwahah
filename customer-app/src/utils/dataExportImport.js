@@ -2,6 +2,7 @@
 // =========================================================
 
 import * as FileSystem from 'expo-file-system';
+import { Paths } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import * as Print from 'expo-print';
 import * as Clipboard from 'expo-clipboard';
@@ -10,6 +11,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
 import XLSX from 'xlsx';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Buffer } from 'buffer';
 import { customerManager } from './customerManager';
 import { t } from './localization';
 
@@ -19,7 +21,7 @@ export const SUPPORTED_FORMATS = {
   JSON: 'json',
   EXCEL: 'xlsx',
   PDF: 'pdf',
-  XML: 'xml'
+  XML: 'xml',
 };
 
 // أنواع البيانات للتصدير - Data Types for Export
@@ -27,20 +29,20 @@ export const EXPORT_TYPES = {
   CUSTOMERS: 'customers',
   ALL_DATA: 'all_data',
   BACKUP: 'backup',
-  REPORT: 'report'
+  REPORT: 'report',
 };
 
 // إعدادات التصدير - Export Settings
 export const EXPORT_SETTINGS = {
   MAX_RECORDS: 10000,
   CHUNK_SIZE: 1000,
-  TIMEOUT: 30000
+  TIMEOUT: 30000,
 };
 
 // فئة تصدير البيانات - Data Export Class
 export class DataExporter {
   constructor() {
-    this.exportPath = `${FileSystem.documentDirectory}exports/`;
+    this.exportPath = `${Paths.cache.uri}exports/`;
     this.ensureExportDirectory();
   }
 
@@ -74,13 +76,13 @@ export class DataExporter {
         'إجمالي المصروفات',
         'عدد المشتريات',
         'متوسط قيمة الطلب',
-        'نقاط الولاء'
+        'نقاط الولاء',
       ];
 
       // تحويل البيانات إلى صيغة CSV - Convert data to CSV format
       const csvRows = [headers.join(',')];
 
-      customers.forEach(customer => {
+      customers.forEach((customer) => {
         const row = [
           customer.id,
           customer.firstName || '',
@@ -95,25 +97,25 @@ export class DataExporter {
           customer.statistics?.totalSpent || 0,
           customer.statistics?.totalPurchases || 0,
           customer.statistics?.averageOrderValue || 0,
-          customer.statistics?.loyaltyPoints || 0
+          customer.statistics?.loyaltyPoints || 0,
         ];
-        
+
         // تنظيف البيانات من الفواصل والأقواس - Clean data from commas and quotes
-        const cleanedRow = row.map(field => {
+        const cleanedRow = row.map((field) => {
           if (typeof field === 'string') {
             return `"${field.replace(/"/g, '""')}"`;
           }
           return field;
         });
-        
+
         csvRows.push(cleanedRow.join(','));
       });
 
       const csvContent = csvRows.join('\n');
-      
+
       // حفظ الملف - Save file
       await FileSystem.writeAsStringAsync(filePath, csvContent, {
-        encoding: FileSystem.EncodingType.UTF8
+        encoding: 'utf8',
       });
 
       return {
@@ -121,7 +123,7 @@ export class DataExporter {
         filePath,
         fileName,
         recordCount: customers.length,
-        format: 'CSV'
+        format: 'CSV',
       };
     } catch (error) {
       console.error('خطأ في تصدير CSV:', error);
@@ -143,19 +145,19 @@ export class DataExporter {
           totalRecords: customers.length,
           exportFormat: 'JSON',
           version: '1.0',
-          generatedBy: 'نظام إدارة العملاء'
+          generatedBy: 'نظام إدارة العملاء',
         },
-        customers: customers.map(customer => ({
+        customers: customers.map((customer) => ({
           ...customer,
-          exportDate: new Date().toISOString()
-        }))
+          exportDate: new Date().toISOString(),
+        })),
       };
 
       const jsonContent = JSON.stringify(exportData, null, 2);
-      
+
       // حفظ الملف - Save file
       await FileSystem.writeAsStringAsync(filePath, jsonContent, {
-        encoding: FileSystem.EncodingType.UTF8
+        encoding: 'utf8',
       });
 
       return {
@@ -163,7 +165,7 @@ export class DataExporter {
         filePath,
         fileName,
         recordCount: customers.length,
-        format: 'JSON'
+        format: 'JSON',
       };
     } catch (error) {
       console.error('خطأ في تصدير JSON:', error);
@@ -179,22 +181,24 @@ export class DataExporter {
       const filePath = `${this.exportPath}${fileName}`;
 
       // إنشاء ورقة العمل - Create worksheet
-      const ws = XLSX.utils.json_to_sheet(customers.map(customer => ({
-        'الرقم التعريفي': customer.id,
-        'الاسم الأول': customer.firstName,
-        'اسم العائلة': customer.lastName,
-        'البريد الإلكتروني': customer.email,
-        'رقم الهاتف': customer.phone,
-        'نوع العميل': this.getTypeName(customer.type),
-        'مستوى الولاء': this.getTierName(customer.tier),
-        'الحالة': this.getStatusName(customer.status),
-        'تاريخ التسجيل': this.formatDate(customer.registrationDate),
-        'آخر نشاط': this.formatDate(customer.lastActivityDate),
-        'إجمالي المصروفات': customer.statistics?.totalSpent || 0,
-        'عدد المشتريات': customer.statistics?.totalPurchases || 0,
-        'متوسط قيمة الطلب': customer.statistics?.averageOrderValue || 0,
-        'نقاط الولاء': customer.statistics?.loyaltyPoints || 0
-      })));
+      const ws = XLSX.utils.json_to_sheet(
+        customers.map((customer) => ({
+          'الرقم التعريفي': customer.id,
+          'الاسم الأول': customer.firstName,
+          'اسم العائلة': customer.lastName,
+          'البريد الإلكتروني': customer.email,
+          'رقم الهاتف': customer.phone,
+          'نوع العميل': this.getTypeName(customer.type),
+          'مستوى الولاء': this.getTierName(customer.tier),
+          الحالة: this.getStatusName(customer.status),
+          'تاريخ التسجيل': this.formatDate(customer.registrationDate),
+          'آخر نشاط': this.formatDate(customer.lastActivityDate),
+          'إجمالي المصروفات': customer.statistics?.totalSpent || 0,
+          'عدد المشتريات': customer.statistics?.totalPurchases || 0,
+          'متوسط قيمة الطلب': customer.statistics?.averageOrderValue || 0,
+          'نقاط الولاء': customer.statistics?.loyaltyPoints || 0,
+        }))
+      );
 
       // إنشاء الكتاب - Create workbook
       const wb = XLSX.utils.book_new();
@@ -205,7 +209,7 @@ export class DataExporter {
       const base64Data = Buffer.from(excelBuffer, 'base64').toString('base64');
 
       await FileSystem.writeAsStringAsync(filePath, base64Data, {
-        encoding: FileSystem.EncodingType.Base64
+        encoding: 'base64',
       });
 
       return {
@@ -213,7 +217,7 @@ export class DataExporter {
         filePath,
         fileName,
         recordCount: customers.length,
-        format: 'Excel'
+        format: 'Excel',
       };
     } catch (error) {
       console.error('خطأ في تصدير Excel:', error);
@@ -234,13 +238,13 @@ export class DataExporter {
       // إنشاء ملف PDF - Create PDF file
       const { uri } = await Print.printToFileAsync({
         html: htmlContent,
-        base64: false
+        base64: false,
       });
 
       // نقل الملف إلى مجلد التصدير - Move file to export directory
       await FileSystem.moveAsync({
         from: uri,
-        to: filePath
+        to: filePath,
       });
 
       return {
@@ -248,7 +252,7 @@ export class DataExporter {
         filePath,
         fileName,
         recordCount: customers.length,
-        format: 'PDF'
+        format: 'PDF',
       };
     } catch (error) {
       console.error('خطأ في تصدير PDF:', error);
@@ -269,17 +273,17 @@ export class DataExporter {
           backupType: 'full_backup',
           exportedAt: new Date().toISOString(),
           version: '1.0',
-          generatedBy: 'نظام إدارة العملاء'
+          generatedBy: 'نظام إدارة العملاء',
         },
         customers: await customerManager.getAllCustomers({}), // Get all customers
         settings: await this.getApplicationSettings(),
-        statistics: customerManager.getCustomersStatistics()
+        statistics: customerManager.getCustomersStatistics(),
       };
 
       const jsonContent = JSON.stringify(backupData, null, 2);
-      
+
       await FileSystem.writeAsStringAsync(filePath, jsonContent, {
-        encoding: FileSystem.EncodingType.UTF8
+        encoding: 'utf8',
       });
 
       return {
@@ -287,7 +291,7 @@ export class DataExporter {
         filePath,
         fileName,
         backupSize: jsonContent.length,
-        format: 'Full Backup'
+        format: 'Full Backup',
       };
     } catch (error) {
       console.error('خطأ في إنشاء النسخة الاحتياطية:', error);
@@ -304,7 +308,7 @@ export class DataExporter {
 
       await Sharing.shareAsync(filePath, {
         mimeType: this.getMimeType(fileName),
-        dialogTitle: title
+        dialogTitle: title,
       });
 
       return { success: true };
@@ -318,7 +322,7 @@ export class DataExporter {
   async copyToClipboard(data, format = 'text') {
     try {
       let content;
-      
+
       switch (format) {
         case 'json':
           content = JSON.stringify(data, null, 2);
@@ -341,7 +345,7 @@ export class DataExporter {
   // إنشاء محتوى HTML للتقرير - Generate HTML Content for Report
   generatePDFHTML(customers) {
     const totalCustomers = customers.length;
-    const activeCustomers = customers.filter(c => c.status === 'active').length;
+    const activeCustomers = customers.filter((c) => c.status === 'active').length;
     const totalRevenue = customers.reduce((sum, c) => sum + (c.statistics?.totalSpent || 0), 0);
 
     return `
@@ -398,7 +402,9 @@ export class DataExporter {
             </tr>
           </thead>
           <tbody>
-            ${customers.map(customer => `
+            ${customers
+              .map(
+                (customer) => `
               <tr>
                 <td>${customer.id}</td>
                 <td>${customer.firstName} ${customer.lastName}</td>
@@ -408,7 +414,9 @@ export class DataExporter {
                 <td>${this.getStatusName(customer.status)}</td>
                 <td>${(customer.statistics?.totalSpent || 0).toLocaleString('ar-EG')} جنيه</td>
               </tr>
-            `).join('')}
+            `
+              )
+              .join('')}
           </tbody>
         </table>
 
@@ -434,18 +442,18 @@ export class DataExporter {
   // تحويل البيانات إلى CSV - Convert Data to CSV
   convertToCSV(data) {
     if (!Array.isArray(data) || data.length === 0) return '';
-    
+
     const headers = Object.keys(data[0]);
     const csvRows = [headers.join(',')];
-    
-    data.forEach(row => {
-      const values = headers.map(header => {
+
+    data.forEach((row) => {
+      const values = headers.map((header) => {
         const value = row[header];
         return typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value;
       });
       csvRows.push(values.join(','));
     });
-    
+
     return csvRows.join('\n');
   }
 
@@ -453,10 +461,10 @@ export class DataExporter {
   getMimeType(filename) {
     const extension = filename.split('.').pop().toLowerCase();
     const mimeTypes = {
-      'csv': 'text/csv',
-      'json': 'application/json',
-      'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'pdf': 'application/pdf'
+      csv: 'text/csv',
+      json: 'application/json',
+      xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      pdf: 'application/pdf',
     };
     return mimeTypes[extension] || 'application/octet-stream';
   }
@@ -470,9 +478,9 @@ export class DataExporter {
   // الحصول على اسم النوع - Get Type Name
   getTypeName(type) {
     const names = {
-      'individual': 'فردي',
-      'business': 'تجاري',
-      'vip': 'VIP'
+      individual: 'فردي',
+      business: 'تجاري',
+      vip: 'VIP',
     };
     return names[type] || type;
   }
@@ -480,10 +488,10 @@ export class DataExporter {
   // الحصول على اسم المستوى - Get Tier Name
   getTierName(tier) {
     const names = {
-      'bronze': 'برونزي',
-      'silver': 'فضي',
-      'gold': 'ذهبي',
-      'platinum': 'بلاتيني'
+      bronze: 'برونزي',
+      silver: 'فضي',
+      gold: 'ذهبي',
+      platinum: 'بلاتيني',
     };
     return names[tier] || tier;
   }
@@ -491,10 +499,10 @@ export class DataExporter {
   // الحصول على اسم الحالة - Get Status Name
   getStatusName(status) {
     const names = {
-      'active': 'نشط',
-      'inactive': 'غير نشط',
-      'blocked': 'محظور',
-      'pending': 'في الانتظار'
+      active: 'نشط',
+      inactive: 'غير نشط',
+      blocked: 'محظور',
+      pending: 'في الانتظار',
     };
     return names[status] || status;
   }
@@ -503,7 +511,7 @@ export class DataExporter {
 // فئة استيراد البيانات - Data Import Class
 export class DataImporter {
   constructor() {
-    this.importPath = `${FileSystem.documentDirectory}imports/`;
+    this.importPath = `${Paths.cache.uri}imports/`;
     this.ensureImportDirectory();
   }
 
@@ -539,14 +547,14 @@ export class DataImporter {
     try {
       const fileContent = await FileSystem.readAsStringAsync(fileUri);
       const data = JSON.parse(fileContent);
-      
+
       // التحقق من صحة البيانات - Validate data structure
       if (data.customers && Array.isArray(data.customers)) {
         return {
           success: true,
           format: 'JSON',
           recordCount: data.customers.length,
-          customers: data.customers
+          customers: data.customers,
         };
       } else {
         throw new Error('تنسيق ملف JSON غير صحيح');
@@ -560,15 +568,15 @@ export class DataImporter {
   async importFromCSV(fileUri) {
     try {
       const fileContent = await FileSystem.readAsStringAsync(fileUri);
-      const lines = fileContent.split('\n').filter(line => line.trim());
-      
+      const lines = fileContent.split('\n').filter((line) => line.trim());
+
       if (lines.length < 2) {
         throw new Error('ملف CSV فارغ أو لا يحتوي على بيانات');
       }
 
       // تحليل الرأس - Parse header
-      const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-      
+      const headers = lines[0].split(',').map((h) => h.trim().replace(/"/g, ''));
+
       // تحليل البيانات - Parse data
       const customers = [];
       for (let i = 1; i < lines.length; i++) {
@@ -585,7 +593,7 @@ export class DataImporter {
         success: true,
         format: 'CSV',
         recordCount: customers.length,
-        customers
+        customers,
       };
     } catch (error) {
       throw new Error(`فشل في قراءة ملف CSV: ${error.message}`);
@@ -596,9 +604,9 @@ export class DataImporter {
   async importFromExcel(fileUri) {
     try {
       const base64Data = await FileSystem.readAsStringAsync(fileUri, {
-        encoding: FileSystem.EncodingType.Base64
+        encoding: 'base64',
       });
-      
+
       const workbook = XLSX.read(base64Data, { type: 'base64' });
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
@@ -608,7 +616,7 @@ export class DataImporter {
         success: true,
         format: 'Excel',
         recordCount: customers.length,
-        customers: customers.map(row => this.mapExcelToCustomer(row))
+        customers: customers.map((row) => this.mapExcelToCustomer(row)),
       };
     } catch (error) {
       throw new Error(`فشل في قراءة ملف Excel: ${error.message}`);
@@ -620,10 +628,10 @@ export class DataImporter {
     const result = [];
     let current = '';
     let inQuotes = false;
-    
+
     for (let i = 0; i < line.length; i++) {
       const char = line[i];
-      
+
       if (char === '"') {
         inQuotes = !inQuotes;
       } else if (char === ',' && !inQuotes) {
@@ -633,7 +641,7 @@ export class DataImporter {
         current += char;
       }
     }
-    
+
     result.push(current.trim());
     return result;
   }
@@ -642,10 +650,10 @@ export class DataImporter {
   mapCSVToCustomer(headers, values) {
     try {
       const customer = {};
-      
+
       headers.forEach((header, index) => {
         const value = values[index]?.replace(/"/g, '') || '';
-        
+
         switch (header.trim()) {
           case 'الاسم الأول':
             customer.firstName = value;
@@ -674,7 +682,7 @@ export class DataImporter {
         ...customer,
         id: `imported_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         registrationDate: new Date().toISOString(),
-        status: 'active'
+        status: 'active',
       };
     } catch (error) {
       console.error('خطأ في ربط بيانات CSV:', error);
@@ -693,7 +701,7 @@ export class DataImporter {
         phone: row['رقم الهاتف'] || '',
         type: this.getTypeFromName(row['نوع العميل'] || 'individual'),
         registrationDate: new Date().toISOString(),
-        status: 'active'
+        status: 'active',
       };
     } catch (error) {
       console.error('خطأ في ربط بيانات Excel:', error);
@@ -704,12 +712,11 @@ export class DataImporter {
   // الحصول على النوع من الاسم - Get Type from Name
   getTypeFromName(name) {
     const typeMap = {
-      'فردي': 'individual',
-      'تجاري': 'business',
-      'vip': 'vip',
-      'individual': 'individual',
-      'business': 'business',
-      'vip': 'vip'
+      فردي: 'individual',
+      تجاري: 'business',
+      vip: 'vip',
+      individual: 'individual',
+      business: 'business',
     };
     return typeMap[name.toLowerCase()] || 'individual';
   }
@@ -723,7 +730,7 @@ export const dataImporter = new DataImporter();
 export const exportCustomers = async (customers, format, options = {}) => {
   try {
     let result;
-    
+
     switch (format) {
       case SUPPORTED_FORMATS.CSV:
         result = await dataExporter.exportCustomersCSV(customers, options.filename);
@@ -783,5 +790,5 @@ export default {
   exportCustomers,
   importCustomers,
   shareExportedFile,
-  copyDataToClipboard
+  copyDataToClipboard,
 };

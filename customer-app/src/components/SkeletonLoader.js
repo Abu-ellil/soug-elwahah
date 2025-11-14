@@ -25,12 +25,7 @@ const SkeletonLoader = ({ children, style, backgroundColor = '#E0E0E0' }) => {
   return (
     <View style={[styles.container, { backgroundColor }, style]}>
       {children}
-      <Animated.View
-        style={[
-          StyleSheet.absoluteFill,
-          { transform: [{ translateX }] },
-        ]}
-      >
+      <Animated.View style={[StyleSheet.absoluteFill, { transform: [{ translateX }] }]}>
         <LinearGradient
           colors={['transparent', 'rgba(255,255,255,0.3)', 'transparent']}
           start={{ x: 0, y: 0.5 }}

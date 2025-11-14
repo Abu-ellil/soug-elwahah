@@ -11,7 +11,7 @@ const CategoryCard = ({ category, isSelected, onPress }) => {
   return (
     <TouchableOpacity
       onPress={onPress}
-      className="rounded-xl p-4 mx-2 items-center justify-center"
+      className="mx-2 items-center justify-center rounded-xl p-4"
       style={{
         backgroundColor,
         minWidth: 80,
@@ -20,25 +20,18 @@ const CategoryCard = ({ category, isSelected, onPress }) => {
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 2,
-      }}
-    >
+      }}>
       <View
-        className="w-12 h-12 rounded-full items-center justify-center mb-2"
+        className="mb-2 h-12 w-12 items-center justify-center rounded-full"
         style={{
-          backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : category.color + '20'
-        }}
-      >
-        <Ionicons
-          name={category.icon}
-          size={24}
-          color={iconColor}
-        />
+          backgroundColor: isSelected ? 'rgba(255,255,255,0.2)' : category.color + '20',
+        }}>
+        <Ionicons name={category.icon} size={24} color={iconColor} />
       </View>
       <Text
-        className="text-sm font-medium text-center"
+        className="text-center text-sm font-medium"
         style={{ color: textColor }}
-        numberOfLines={2}
-      >
+        numberOfLines={2}>
         {category.name}
       </Text>
     </TouchableOpacity>

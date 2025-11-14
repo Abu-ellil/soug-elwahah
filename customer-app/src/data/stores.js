@@ -7,7 +7,7 @@ export const STORES = [
     rating: 4.5,
     deliveryTime: '20-30 دقيقة',
     isOpen: true,
-    coordinates: { lat: 31.1120, lng: 30.9400 },
+    coordinates: { lat: 31.112, lng: 30.94 },
     villageId: 'v1',
   },
   {
@@ -18,7 +18,7 @@ export const STORES = [
     rating: 4.8,
     deliveryTime: '15-25 دقيقة',
     isOpen: true,
-    coordinates: { lat: 31.1350, lng: 30.6450 },
+    coordinates: { lat: 31.135, lng: 30.645 },
     villageId: 'v2',
   },
   {
@@ -29,7 +29,7 @@ export const STORES = [
     rating: 4.2,
     deliveryTime: '30-45 دقيقة',
     isOpen: true,
-    coordinates: { lat: 30.5520, lng: 30.9850 },
+    coordinates: { lat: 30.552, lng: 30.985 },
     villageId: 'v3',
   },
   {
@@ -40,7 +40,7 @@ export const STORES = [
     rating: 4.6,
     deliveryTime: '10-20 دقيقة',
     isOpen: true,
-    coordinates: { lat: 30.6180, lng: 30.9680 },
+    coordinates: { lat: 30.618, lng: 30.968 },
     villageId: 'v4',
   },
   {
@@ -51,7 +51,7 @@ export const STORES = [
     rating: 4.3,
     deliveryTime: '25-35 دقيقة',
     isOpen: false,
-    coordinates: { lat: 30.4180, lng: 31.0180 },
+    coordinates: { lat: 30.418, lng: 31.018 },
     villageId: 'v5',
   },
   {
@@ -62,7 +62,7 @@ export const STORES = [
     rating: 4.1,
     deliveryTime: '20-30 دقيقة',
     isOpen: true,
-    coordinates: { lat: 31.2850, lng: 30.7850 },
+    coordinates: { lat: 31.285, lng: 30.785 },
     villageId: 'v6',
   },
   {
@@ -73,7 +73,7 @@ export const STORES = [
     rating: 4.7,
     deliveryTime: '30-40 دقيقة',
     isOpen: true,
-    coordinates: { lat: 30.8350, lng: 31.0850 },
+    coordinates: { lat: 30.835, lng: 31.085 },
     villageId: 'v7',
   },
   {
@@ -84,7 +84,7 @@ export const STORES = [
     rating: 4.4,
     deliveryTime: '15-25 دقيقة',
     isOpen: true,
-    coordinates: { lat: 30.7850, lng: 31.0180 },
+    coordinates: { lat: 30.785, lng: 31.018 },
     villageId: 'v8',
   },
   {
@@ -95,7 +95,7 @@ export const STORES = [
     rating: 4.5,
     deliveryTime: '20-30 دقيقة',
     isOpen: true,
-    coordinates: { lat: 30.8680, lng: 31.0850 },
+    coordinates: { lat: 30.868, lng: 31.085 },
     villageId: 'v9',
   },
   {
@@ -106,7 +106,7 @@ export const STORES = [
     rating: 4.6,
     deliveryTime: '25-35 دقيقة',
     isOpen: true,
-    coordinates: { lat: 31.4180, lng: 30.4180 },
+    coordinates: { lat: 31.418, lng: 30.418 },
     villageId: 'v10',
   },
   {
@@ -117,7 +117,7 @@ export const STORES = [
     rating: 4.3,
     deliveryTime: '15-25 دقيقة',
     isOpen: true,
-    coordinates: { lat: 31.1150, lng: 30.9420 },
+    coordinates: { lat: 31.115, lng: 30.942 },
     villageId: 'v1',
   },
   {
@@ -128,7 +128,7 @@ export const STORES = [
     rating: 4.9,
     deliveryTime: '10-20 دقيقة',
     isOpen: true,
-    coordinates: { lat: 31.1300, lng: 30.6400 },
+    coordinates: { lat: 31.13, lng: 30.64 },
     villageId: 'v2',
   },
   {
@@ -139,7 +139,7 @@ export const STORES = [
     rating: 4.4,
     deliveryTime: '35-50 دقيقة',
     isOpen: true,
-    coordinates: { lat: 30.5480, lng: 30.9800 },
+    coordinates: { lat: 30.548, lng: 30.98 },
     villageId: 'v3',
   },
   {
@@ -150,7 +150,7 @@ export const STORES = [
     rating: 4.7,
     deliveryTime: '15-25 دقيقة',
     isOpen: true,
-    coordinates: { lat: 30.6200, lng: 30.9700 },
+    coordinates: { lat: 30.62, lng: 30.97 },
     villageId: 'v4',
   },
   {
@@ -161,7 +161,7 @@ export const STORES = [
     rating: 4.2,
     deliveryTime: '20-30 دقيقة',
     isOpen: true,
-    coordinates: { lat: 30.4200, lng: 31.0200 },
+    coordinates: { lat: 30.42, lng: 31.02 },
     villageId: 'v5',
   },
 ];

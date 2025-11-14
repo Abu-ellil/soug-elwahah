@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -32,28 +32,27 @@ const VillagePicker = ({
     if (visible) {
       loadVillages();
     }
-  }, [visible, currentLocation]);
+  }, [visible, currentLocation, loadVillages]);
 
-  const loadVillages = async () => {
+  const loadVillages = useCallback(async () => {
     setLoading(true);
     try {
-      let availableVillages = VILLAGES.filter(v => v.isActive);
-      
+      let availableVillages = VILLAGES.filter((v) => v.isActive);
+
       if (currentLocation) {
         availableVillages = getAvailableVillages(currentLocation, 50);
       }
-      
+
       setVillages(availableVillages);
     } catch (error) {
       Alert.alert('خطأ', 'فشل في تحميل المناطق');
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentLocation]);
 
-  const filteredVillages = villages.filter(village =>
-    village.name.includes(searchQuery) ||
-    village.region.includes(searchQuery)
+  const filteredVillages = villages.filter(
+    (village) => village.name.includes(searchQuery) || village.region.includes(searchQuery)
   );
 
   const handleSelectVillage = (village) => {
@@ -62,10 +61,7 @@ const VillagePicker = ({
   };
 
   const renderVillageItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.villageItem}
-      onPress={() => handleSelectVillage(item)}
-    >
+    <TouchableOpacity style={styles.villageItem} onPress={() => handleSelectVillage(item)}>
       <View style={styles.villageInfo}>
         <Text style={styles.villageName}>{item.name}</Text>
         <Text style={styles.villageRegion}>{item.region}</Text>
@@ -95,8 +91,7 @@ const VillagePicker = ({
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
+      onRequestClose={onClose}>
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
@@ -124,9 +119,7 @@ const VillagePicker = ({
         {currentLocation && (
           <View style={styles.locationStatus}>
             <MaterialIcons name="my-location" size={16} color={COLORS.primary} />
-            <Text style={styles.locationText}>
-              تم تحديد موقعك الحالي
-            </Text>
+            <Text style={styles.locationText}>تم تحديد موقعك الحالي</Text>
           </View>
         )}
 

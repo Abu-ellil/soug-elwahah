@@ -45,10 +45,7 @@ const ProductCard = ({ product, onPress, onAddToCart }) => {
   };
 
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      style={styles.container}
-    >
+    <TouchableOpacity onPress={onPress} style={styles.container}>
       <View style={styles.imageContainer}>
         <Image source={{ uri: product.image }} style={styles.image} resizeMode="cover" />
         {!product.isAvailable && (
@@ -73,10 +70,7 @@ const ProductCard = ({ product, onPress, onAddToCart }) => {
 
         {product.isAvailable ? (
           <Animated.View style={animatedStyle}>
-            <TouchableOpacity
-              onPress={handleAddToCart}
-              style={styles.addButton}
-            >
+            <TouchableOpacity onPress={handleAddToCart} style={styles.addButton}>
               <MaterialIcons name="add-shopping-cart" size={16} color={COLORS.card} />
               <Text style={styles.addButtonText}>أضف للسلة</Text>
             </TouchableOpacity>

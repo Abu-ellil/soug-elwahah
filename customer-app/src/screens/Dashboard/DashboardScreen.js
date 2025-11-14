@@ -5,8 +5,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Dimensions, StyleSheet } from 'react-native';
 import { LineChart, BarChart, PieChart, ProgressChart } from 'react-native-chart-kit';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { getCustomersStatistics } from '../utils/customerManager';
-import { translationManager, t } from '../utils/localization';
+import { getCustomersStatistics } from '../../utils/customerManager';
+import { translationManager, t } from '../../utils/localization';
 
 // ألوان المخطط - Chart Colors
 const CHART_COLORS = {
@@ -20,19 +20,29 @@ const CHART_COLORS = {
   blue: '#3498DB',
   green: '#2ECC71',
   orange: '#E67E22',
-  red: '#E74C3C'
+  red: '#E74C3C',
 };
 
 // بيانات وهمية للرسوم البيانية - Mock Data for Charts
 const generateMockData = () => {
   const months = [
-    'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-    'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+    'يناير',
+    'فبراير',
+    'مارس',
+    'أبريل',
+    'مايو',
+    'يونيو',
+    'يوليو',
+    'أغسطس',
+    'سبتمبر',
+    'أكتوبر',
+    'نوفمبر',
+    'ديسمبر',
   ];
-  
+
   const currentMonth = new Date().getMonth();
   const recentMonths = months.slice(Math.max(0, currentMonth - 5), currentMonth + 1);
-  
+
   return {
     // نمو العملاء - Customer Growth
     customerGrowth: {
@@ -41,66 +51,132 @@ const generateMockData = () => {
         {
           data: [120, 145, 168, 192, 215, 243],
           color: (opacity = 1) => `rgba(255, 107, 53, ${opacity})`,
-          strokeWidth: 3
-        }
+          strokeWidth: 3,
+        },
       ],
-      legend: ['عدد العملاء']
+      legend: ['عدد العملاء'],
     },
-    
+
     // الإيرادات الشهرية - Monthly Revenue
     monthlyRevenue: {
       labels: recentMonths,
       datasets: [
         {
-          data: [45000, 52000, 48000, 61000, 67000, 73000]
-        }
-      ]
+          data: [45000, 52000, 48000, 61000, 67000, 73000],
+        },
+      ],
     },
-    
+
     // توزيع العملاء حسب النوع - Customer Distribution by Type
     customerTypes: {
       data: [
-        { name: 'فردي', population: 45, color: CHART_COLORS.primary, legendFontColor: '#333', legendFontSize: 14 },
-        { name: 'تجاري', population: 35, color: CHART_COLORS.secondary, legendFontColor: '#333', legendFontSize: 14 },
-        { name: 'VIP', population: 20, color: CHART_COLORS.accent, legendFontColor: '#333', legendFontSize: 14 }
-      ]
+        {
+          name: 'فردي',
+          population: 45,
+          color: CHART_COLORS.primary,
+          legendFontColor: '#333',
+          legendFontSize: 14,
+        },
+        {
+          name: 'تجاري',
+          population: 35,
+          color: CHART_COLORS.secondary,
+          legendFontColor: '#333',
+          legendFontSize: 14,
+        },
+        {
+          name: 'VIP',
+          population: 20,
+          color: CHART_COLORS.accent,
+          legendFontColor: '#333',
+          legendFontSize: 14,
+        },
+      ],
     },
-    
+
     // توزيع العملاء حسب الحالة - Customer Distribution by Status
     customerStatus: {
       data: [
-        { name: 'نشط', population: 70, color: CHART_COLORS.success, legendFontColor: '#333', legendFontSize: 14 },
-        { name: 'غير نشط', population: 20, color: CHART_COLORS.warning, legendFontColor: '#333', legendFontSize: 14 },
-        { name: 'محظور', population: 7, color: CHART_COLORS.danger, legendFontColor: '#333', legendFontSize: 14 },
-        { name: 'في الانتظار', population: 3, color: CHART_COLORS.purple, legendFontColor: '#333', legendFontSize: 14 }
-      ]
+        {
+          name: 'نشط',
+          population: 70,
+          color: CHART_COLORS.success,
+          legendFontColor: '#333',
+          legendFontSize: 14,
+        },
+        {
+          name: 'غير نشط',
+          population: 20,
+          color: CHART_COLORS.warning,
+          legendFontColor: '#333',
+          legendFontSize: 14,
+        },
+        {
+          name: 'محظور',
+          population: 7,
+          color: CHART_COLORS.danger,
+          legendFontColor: '#333',
+          legendFontSize: 14,
+        },
+        {
+          name: 'في الانتظار',
+          population: 3,
+          color: CHART_COLORS.purple,
+          legendFontColor: '#333',
+          legendFontSize: 14,
+        },
+      ],
     },
-    
+
     // مستويات الولاء - Loyalty Tiers
     loyaltyTiers: {
       data: [
-        { name: 'برونزي', population: 30, color: '#CD7F32', legendFontColor: '#333', legendFontSize: 14 },
-        { name: 'فضي', population: 25, color: '#C0C0C0', legendFontColor: '#333', legendFontSize: 14 },
-        { name: 'ذهبي', population: 25, color: '#FFD700', legendFontColor: '#333', legendFontSize: 14 },
-        { name: 'بلاتيني', population: 20, color: '#E5E4E2', legendFontColor: '#333', legendFontSize: 14 }
-      ]
+        {
+          name: 'برونزي',
+          population: 30,
+          color: '#CD7F32',
+          legendFontColor: '#333',
+          legendFontSize: 14,
+        },
+        {
+          name: 'فضي',
+          population: 25,
+          color: '#C0C0C0',
+          legendFontColor: '#333',
+          legendFontSize: 14,
+        },
+        {
+          name: 'ذهبي',
+          population: 25,
+          color: '#FFD700',
+          legendFontColor: '#333',
+          legendFontSize: 14,
+        },
+        {
+          name: 'بلاتيني',
+          population: 20,
+          color: '#E5E4E2',
+          legendFontColor: '#333',
+          legendFontSize: 14,
+        },
+      ],
     },
-    
+
     // أداء المبيعات - Sales Performance
     salesPerformance: {
       labels: ['Q1', 'Q2', 'Q3', 'Q4'],
-      data: [0.4, 0.6, 0.8, 0.9]
+      data: [0.4, 0.6, 0.8, 0.9],
     },
-    
+
     // متوسط قيمة الطلب - Average Order Value Trend
     averageOrderValue: {
       labels: recentMonths,
       datasets: [
         {
-          data: [250, 280, 260, 320, 340, 380]
-        }
-      ]
-    }
+          data: [250, 280, 260, 320, 340, 380],
+        },
+      ],
+    },
   };
 };
 
@@ -114,7 +190,11 @@ const StatCard = ({ title, value, change, icon, color, subtitle }) => (
     <Text style={styles.statValue}>{value}</Text>
     {subtitle && <Text style={styles.statSubtitle}>{subtitle}</Text>}
     {change && (
-      <Text style={[styles.statChange, { color: change > 0 ? CHART_COLORS.success : CHART_COLORS.danger }]}>
+      <Text
+        style={[
+          styles.statChange,
+          { color: change > 0 ? CHART_COLORS.success : CHART_COLORS.danger },
+        ]}>
         {change > 0 ? '↗' : '↘'} {Math.abs(change)}%
       </Text>
     )}
@@ -124,7 +204,7 @@ const StatCard = ({ title, value, change, icon, color, subtitle }) => (
 // مكون رسم بياني مخصص - Custom Chart Component
 const CustomChart = ({ title, type, data, height = 200 }) => {
   const screenWidth = Dimensions.get('window').width - 40;
-  
+
   const chartConfig = {
     backgroundGradientFrom: '#ffffff',
     backgroundGradientTo: '#ffffff',
@@ -132,13 +212,13 @@ const CustomChart = ({ title, type, data, height = 200 }) => {
     color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
     labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
     style: {
-      borderRadius: 16
+      borderRadius: 16,
     },
     propsForDots: {
       r: '6',
       strokeWidth: '2',
-      stroke: '#ffa726'
-    }
+      stroke: '#ffa726',
+    },
   };
 
   const renderChart = () => {
@@ -154,7 +234,7 @@ const CustomChart = ({ title, type, data, height = 200 }) => {
             style={styles.chartStyle}
           />
         );
-      
+
       case 'bar':
         return (
           <BarChart
@@ -165,7 +245,7 @@ const CustomChart = ({ title, type, data, height = 200 }) => {
             style={styles.chartStyle}
           />
         );
-      
+
       case 'pie':
         return (
           <PieChart
@@ -179,7 +259,7 @@ const CustomChart = ({ title, type, data, height = 200 }) => {
             absolute
           />
         );
-      
+
       case 'progress':
         return (
           <ProgressChart
@@ -190,7 +270,7 @@ const CustomChart = ({ title, type, data, height = 200 }) => {
             style={styles.chartStyle}
           />
         );
-      
+
       default:
         return null;
     }
@@ -210,7 +290,7 @@ const Dashboard = () => {
     stats: null,
     charts: null,
     loading: true,
-    error: null
+    error: null,
   });
 
   useEffect(() => {
@@ -221,22 +301,22 @@ const Dashboard = () => {
     try {
       // تحميل إحصائيات العملاء - Load customer statistics
       const customerStats = getCustomersStatistics();
-      
+
       // إنشاء بيانات وهمية للرسوم البيانية - Generate mock chart data
       const chartData = generateMockData();
-      
+
       setDashboardData({
         stats: customerStats,
         charts: chartData,
         loading: false,
-        error: null
+        error: null,
       });
     } catch (error) {
       console.error('خطأ في تحميل بيانات لوحة التحكم:', error);
-      setDashboardData(prev => ({
+      setDashboardData((prev) => ({
         ...prev,
         loading: false,
-        error: error.message
+        error: error.message,
       }));
     }
   };
@@ -244,7 +324,7 @@ const Dashboard = () => {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('ar-EG', {
       style: 'currency',
-      currency: 'EGP'
+      currency: 'EGP',
     }).format(amount);
   };
 
@@ -333,12 +413,7 @@ const Dashboard = () => {
           <Text style={styles.sectionTitle}>توزيع العملاء</Text>
           <View style={styles.distributionCharts}>
             <View style={styles.chartWrapper}>
-              <CustomChart
-                title="حسب النوع"
-                type="pie"
-                data={charts.customerTypes}
-                height={200}
-              />
+              <CustomChart title="حسب النوع" type="pie" data={charts.customerTypes} height={200} />
             </View>
             <View style={styles.chartWrapper}>
               <CustomChart
@@ -352,12 +427,7 @@ const Dashboard = () => {
         </View>
 
         {/* مستويات الولاء - Loyalty Tiers */}
-        <CustomChart
-          title="مستويات الولاء"
-          type="pie"
-          data={charts.loyaltyTiers}
-          height={250}
-        />
+        <CustomChart title="مستويات الولاء" type="pie" data={charts.loyaltyTiers} height={250} />
 
         {/* أداء المبيعات - Sales Performance */}
         <CustomChart
@@ -378,23 +448,23 @@ const Dashboard = () => {
         {/* مؤشرات الأداء الرئيسية - Key Performance Indicators */}
         <View style={styles.kpiContainer}>
           <Text style={styles.sectionTitle}>مؤشرات الأداء الرئيسية</Text>
-          
+
           <View style={styles.kpiCards}>
             <View style={styles.kpiCard}>
               <Text style={styles.kpiValue}>{(stats?.conversionRate || 0).toFixed(1)}%</Text>
               <Text style={styles.kpiLabel}>معدل التحويل</Text>
             </View>
-            
+
             <View style={styles.kpiCard}>
               <Text style={styles.kpiValue}>{formatCurrency(stats?.averageOrderValue || 0)}</Text>
               <Text style={styles.kpiLabel}>متوسط قيمة الطلب</Text>
             </View>
-            
+
             <View style={styles.kpiCard}>
               <Text style={styles.kpiValue}>4.2</Text>
               <Text style={styles.kpiLabel}>متوسط رضا العملاء</Text>
             </View>
-            
+
             <View style={styles.kpiCard}>
               <Text style={styles.kpiValue}>95.3%</Text>
               <Text style={styles.kpiLabel}>معدل الاحتفاظ</Text>
@@ -405,7 +475,7 @@ const Dashboard = () => {
         {/* أحدث النشاطات - Recent Activities */}
         <View style={styles.activitiesContainer}>
           <Text style={styles.sectionTitle}>أحدث النشاطات</Text>
-          
+
           <View style={styles.activityCard}>
             <Text style={styles.activityIcon}>👤</Text>
             <View style={styles.activityContent}>
@@ -413,7 +483,7 @@ const Dashboard = () => {
               <Text style={styles.activityTime}>منذ ساعتين</Text>
             </View>
           </View>
-          
+
           <View style={styles.activityCard}>
             <Text style={styles.activityIcon}>💰</Text>
             <View style={styles.activityContent}>
@@ -421,7 +491,7 @@ const Dashboard = () => {
               <Text style={styles.activityTime}>منذ 4 ساعات</Text>
             </View>
           </View>
-          
+
           <View style={styles.activityCard}>
             <Text style={styles.activityIcon}>📈</Text>
             <View style={styles.activityContent}>
@@ -441,59 +511,59 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
-  
+
   scrollView: {
     flex: 1,
     padding: 20,
   },
-  
+
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  
+
   loadingText: {
     fontSize: 16,
     color: '#666',
   },
-  
+
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
-  
+
   errorText: {
     fontSize: 16,
     color: '#E74C3C',
     textAlign: 'center',
   },
-  
+
   header: {
     marginBottom: 30,
   },
-  
+
   headerTitle: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#2D3436',
     marginBottom: 8,
   },
-  
+
   headerSubtitle: {
     fontSize: 16,
     color: '#636E72',
   },
-  
+
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     marginBottom: 30,
   },
-  
+
   statCard: {
     width: '48%',
     backgroundColor: 'white',
@@ -507,41 +577,41 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  
+
   statHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
   },
-  
+
   statTitle: {
     fontSize: 14,
     fontWeight: '600',
   },
-  
+
   statIcon: {
     fontSize: 20,
   },
-  
+
   statValue: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#2D3436',
     marginBottom: 4,
   },
-  
+
   statSubtitle: {
     fontSize: 12,
     color: '#636E72',
     marginBottom: 4,
   },
-  
+
   statChange: {
     fontSize: 12,
     fontWeight: '600',
   },
-  
+
   chartContainer: {
     backgroundColor: 'white',
     padding: 20,
@@ -553,12 +623,12 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  
+
   chartStyle: {
     borderRadius: 16,
     marginVertical: 8,
   },
-  
+
   chartTitle: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -566,27 +636,27 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
-  
+
   distributionContainer: {
     marginBottom: 20,
   },
-  
+
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#2D3436',
     marginBottom: 16,
   },
-  
+
   distributionCharts: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  
+
   chartWrapper: {
     width: '48%',
   },
-  
+
   kpiContainer: {
     backgroundColor: 'white',
     padding: 20,
@@ -598,13 +668,13 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  
+
   kpiCards: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
-  
+
   kpiCard: {
     width: '48%',
     alignItems: 'center',
@@ -613,20 +683,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 12,
   },
-  
+
   kpiValue: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#2D3436',
     marginBottom: 4,
   },
-  
+
   kpiLabel: {
     fontSize: 12,
     color: '#636E72',
     textAlign: 'center',
   },
-  
+
   activitiesContainer: {
     backgroundColor: 'white',
     padding: 20,
@@ -638,7 +708,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  
+
   activityCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -646,24 +716,24 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
   },
-  
+
   activityIcon: {
     fontSize: 24,
     marginRight: 16,
     width: 40,
     textAlign: 'center',
   },
-  
+
   activityContent: {
     flex: 1,
   },
-  
+
   activityText: {
     fontSize: 14,
     color: '#2D3436',
     marginBottom: 4,
   },
-  
+
   activityTime: {
     fontSize: 12,
     color: '#636E72',

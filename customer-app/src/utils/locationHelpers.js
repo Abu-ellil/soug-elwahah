@@ -3,9 +3,9 @@ import { VILLAGES } from '../data/villages';
 
 // Check if coordinates are within delivery zone
 export const isInDeliveryZone = (coordinates, villageId) => {
-  const village = VILLAGES.find(v => v.id === villageId);
+  const village = VILLAGES.find((v) => v.id === villageId);
   if (!village) return false;
-  
+
   // For now, use center coordinates as zone center
   const distance = calculateDistance(
     coordinates.lat,
@@ -13,7 +13,7 @@ export const isInDeliveryZone = (coordinates, villageId) => {
     village.coordinates.lat,
     village.coordinates.lng
   );
-  
+
   return distance <= village.deliveryRadius;
 };
 
@@ -22,31 +22,33 @@ export const getAvailableVillages = (userLocation, radius = 50) => {
   if (!VILLAGES) {
     return [];
   }
-  return VILLAGES.filter(village => {
+  return VILLAGES.filter((village) => {
     if (!village.isActive) return false;
-    
+
     const distance = calculateDistance(
       userLocation.lat,
       userLocation.lng,
       village.coordinates.lat,
       village.coordinates.lng
     );
-    
+
     return distance <= radius;
-  }).map(village => ({
-    ...village,
-    distance: calculateDistance(
-      userLocation.lat,
-      userLocation.lng,
-      village.coordinates.lat,
-      village.coordinates.lng
-    )
-  })).sort((a, b) => a.distance - b.distance);
+  })
+    .map((village) => ({
+      ...village,
+      distance: calculateDistance(
+        userLocation.lat,
+        userLocation.lng,
+        village.coordinates.lat,
+        village.coordinates.lng
+      ),
+    }))
+    .sort((a, b) => a.distance - b.distance);
 };
 
 // Get stores filtered by village
 export const getStoresByVillage = (stores, villageId) => {
-  return stores.filter(store => store.villageId === villageId);
+  return stores.filter((store) => store.villageId === villageId);
 };
 
 // Get delivery estimate based on distance

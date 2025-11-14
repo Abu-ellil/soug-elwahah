@@ -12,38 +12,29 @@ const Header = ({
   onLeftPress,
   onRightPress,
   showBack = false,
-  children
+  children,
 }) => {
   return (
-    <SafeAreaView
-      className="bg-white border-b"
-      style={{ borderBottomColor: COLORS.border }}
-    >
+    <SafeAreaView className="border-b bg-white" style={{ borderBottomColor: COLORS.border }}>
       <View
         className="flex-row items-center justify-between px-4 py-3"
-        style={{ height: SIZES.headerHeight }}
-      >
+        style={{ height: SIZES.headerHeight }}>
         <View className="flex-row items-center">
           {showBack && (
             <TouchableOpacity
               onPress={onLeftPress}
-              className="w-10 h-10 rounded-full items-center justify-center mr-2"
-            >
+              className="mr-2 h-10 w-10 items-center justify-center rounded-full">
               <Ionicons name="arrow-back" size={24} color={COLORS.text} />
             </TouchableOpacity>
           )}
           {leftIcon && !showBack && (
             <TouchableOpacity
               onPress={onLeftPress}
-              className="w-10 h-10 rounded-full items-center justify-center mr-2"
-            >
+              className="mr-2 h-10 w-10 items-center justify-center rounded-full">
               <Ionicons name={leftIcon} size={24} color={COLORS.text} />
             </TouchableOpacity>
           )}
-          <Text
-            className="text-xl font-bold"
-            style={{ color: COLORS.text }}
-          >
+          <Text className="text-xl font-bold" style={{ color: COLORS.text }}>
             {title}
           </Text>
         </View>
@@ -53,8 +44,7 @@ const Header = ({
           {rightIcon && (
             <TouchableOpacity
               onPress={onRightPress}
-              className="w-10 h-10 rounded-full items-center justify-center ml-2"
-            >
+              className="ml-2 h-10 w-10 items-center justify-center rounded-full">
               <Ionicons name={rightIcon} size={24} color={COLORS.text} />
             </TouchableOpacity>
           )}

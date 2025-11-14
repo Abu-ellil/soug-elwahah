@@ -20,14 +20,15 @@ const OrderDetailsScreen = () => {
     return (
       <View style={styles.timelineStep}>
         <View style={styles.timelineIconContainer}>
-          <View style={[styles.timelineIcon, isCompleted ? styles.completedIcon : styles.pendingIcon]}>
+          <View
+            style={[styles.timelineIcon, isCompleted ? styles.completedIcon : styles.pendingIcon]}>
             <Feather name={item.icon || 'check-circle'} size={20} color={COLORS.white} />
           </View>
           {!isLastStep && <View style={styles.timelineConnector} />}
         </View>
         <View style={styles.timelineDetails}>
           <RTLText style={styles.statusTitle}>{item.status}</RTLText>
-          <RTLText style={styles.statusDate}>{new Date(item.date).toLocaleString('ar-AE')}</RTLText> 
+          <RTLText style={styles.statusDate}>{new Date(item.date).toLocaleString('ar-AE')}</RTLText>
         </View>
       </View>
     );
@@ -41,16 +42,14 @@ const OrderDetailsScreen = () => {
         <View style={styles.section}>
           <RTLText style={styles.sectionTitle}>تتبع الطلب</RTLText>
           {order.statusHistory.map((item, index) => (
-            <View key={item.status}>
-              {renderTimelineStep({ item, index })}
-            </View>
+            <View key={item.status}>{renderTimelineStep({ item, index })}</View>
           ))}
         </View>
 
         {/* Items List */}
         <View style={styles.section}>
           <RTLText style={styles.sectionTitle}>المنتجات</RTLText>
-          {order.items.map(item => (
+          {order.items.map((item) => (
             <CartItem item={item} key={item.id} isCartScreen={false} />
           ))}
         </View>
@@ -75,10 +74,15 @@ const OrderDetailsScreen = () => {
           <View style={styles.summaryRow}>
             <RTLText style={styles.summaryLabel}>طريقة الدفع</RTLText>
             <RTLText style={styles.summaryValue}>
-              {order.paymentMethod === 'cash' ? 'الدفع عند الاستلام' :
-               order.paymentMethod === 'fawry' ? 'فوري' :
-               order.paymentMethod === 'vodafone_cash' ? 'فودافون كاش' :
-               order.paymentMethod === 'orange_money' ? 'أورانج ماني' : order.paymentMethod}
+              {order.paymentMethod === 'cash'
+                ? 'الدفع عند الاستلام'
+                : order.paymentMethod === 'fawry'
+                  ? 'فوري'
+                  : order.paymentMethod === 'vodafone_cash'
+                    ? 'فودافون كاش'
+                    : order.paymentMethod === 'orange_money'
+                      ? 'أورانج ماني'
+                      : order.paymentMethod}
             </RTLText>
           </View>
           {order.deliverySlot && (
@@ -93,19 +97,19 @@ const OrderDetailsScreen = () => {
           </View>
         </View>
 
-         {/* Customer Information */}
-         {order.customerInfo && (
-           <View style={styles.section}>
+        {/* Customer Information */}
+        {order.customerInfo && (
+          <View style={styles.section}>
             <RTLText style={styles.sectionTitle}>معلومات العميل</RTLText>
             <View style={styles.infoContainer}>
               <RTLText style={styles.infoText}>الاسم: {order.customerInfo.name}</RTLText>
               <RTLText style={styles.infoText}>الهاتف: {order.customerInfo.phone}</RTLText>
             </View>
           </View>
-         )}
+        )}
 
-         {/* Delivery Address */}
-         <View style={styles.section}>
+        {/* Delivery Address */}
+        <View style={styles.section}>
           <RTLText style={styles.sectionTitle}>عنوان التوصيل</RTLText>
           <View style={styles.addressContainer}>
             <RTLText style={styles.addressText}>{order.deliveryAddress.street}</RTLText>
@@ -113,14 +117,13 @@ const OrderDetailsScreen = () => {
           </View>
         </View>
 
-         {/* Order Notes */}
-         {order.notes && order.notes.trim() !== '' && (
-           <View style={styles.section}>
+        {/* Order Notes */}
+        {order.notes && order.notes.trim() !== '' && (
+          <View style={styles.section}>
             <RTLText style={styles.sectionTitle}>ملاحظات</RTLText>
             <RTLText style={styles.notesText}>{order.notes}</RTLText>
           </View>
-         )}
-
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -217,7 +220,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.primary,
   },
-    // Address
+  // Address
   addressContainer: {
     alignItems: 'flex-end',
   },

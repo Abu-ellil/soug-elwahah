@@ -21,13 +21,7 @@ import SIZES from '../../constants/sizes';
 import { formatPrice } from '../../utils/helpers';
 
 const CheckoutScreen = ({ navigation }) => {
-  const {
-    cartItems,
-    getCartSubtotal,
-    getTotalWithDelivery,
-    clearCart,
-    addOrder,
-  } = useCart();
+  const { cartItems, getCartSubtotal, getTotalWithDelivery, clearCart, addOrder } = useCart();
 
   const { selectedVillage, selectVillage } = useLocation();
 
@@ -95,52 +89,57 @@ const CheckoutScreen = ({ navigation }) => {
     const orderId = `ord${timestamp}${randomNum}`;
 
     const newOrder = {
-        id: orderId,
-        userId: 'user1', // Assuming a logged-in user
-        storeId: cartItems[0].storeId, // Assuming all items are from the same store
-        storeName: STORES.find(store => store.id === cartItems[0].storeId)?.name || 'متجر غير معروف',
-        customerInfo: {
-            name: customerInfo.name,
-            phone: customerInfo.phone,
-        },
-        items: cartItems,
-        subtotal: subtotal,
-        deliveryFee: deliveryFee,
-        total: total,
-        status: 'pending',
-        deliveryAddress: {
-            street: customerInfo.address,
-            village: selectedVillage.name,
-        },
-        deliverySlot: deliveryInfo.selectedSlot,
-        paymentMethod: paymentMethod,
-        notes: customerInfo.notes,
-        createdAt: new Date().toISOString(),
-        statusHistory: [
-            { status: 'تم استلام الطلب', date: new Date().toISOString(), icon: 'clipboard' },
-        ],
+      id: orderId,
+      userId: 'user1', // Assuming a logged-in user
+      storeId: cartItems[0].storeId, // Assuming all items are from the same store
+      storeName:
+        STORES.find((store) => store.id === cartItems[0].storeId)?.name || 'متجر غير معروف',
+      customerInfo: {
+        name: customerInfo.name,
+        phone: customerInfo.phone,
+      },
+      items: cartItems,
+      subtotal: subtotal,
+      deliveryFee: deliveryFee,
+      total: total,
+      status: 'pending',
+      deliveryAddress: {
+        street: customerInfo.address,
+        village: selectedVillage.name,
+      },
+      deliverySlot: deliveryInfo.selectedSlot,
+      paymentMethod: paymentMethod,
+      notes: customerInfo.notes,
+      createdAt: new Date().toISOString(),
+      statusHistory: [
+        { status: 'تم استلام الطلب', date: new Date().toISOString(), icon: 'clipboard' },
+      ],
     };
 
     addOrder(newOrder);
     clearCart();
 
     Toast.show({
-        type: 'success',
-        text1: 'تم إنشاء الطلب',
-        text2: 'سيتم التواصل معك قريباً لتأكيد الطلب',
+      type: 'success',
+      text1: 'تم إنشاء الطلب',
+      text2: 'سيتم التواصل معك قريباً لتأكيد الطلب',
     });
 
     navigation.navigate('Orders');
   };
 
-  const renderInput = (label, value, onChangeText, placeholder, keyboardType = 'default', multiline = false) => (
+  const renderInput = (
+    label,
+    value,
+    onChangeText,
+    placeholder,
+    keyboardType = 'default',
+    multiline = false
+  ) => (
     <View style={styles.inputContainer}>
       <Text style={styles.inputLabel}>{label}</Text>
       <TextInput
-        style={[
-          styles.input,
-          multiline && styles.multilineInput
-        ]}
+        style={[styles.input, multiline && styles.multilineInput]}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
@@ -155,21 +154,18 @@ const CheckoutScreen = ({ navigation }) => {
   const renderPaymentMethod = (method) => (
     <TouchableOpacity
       key={method.id}
-      style={[
-        styles.paymentMethod,
-        paymentMethod === method.id && styles.selectedPaymentMethod
-      ]}
-      onPress={() => setPaymentMethod(method.id)}
-    >
-      <MaterialIcons 
-        name={method.icon} 
-        size={24} 
-        color={paymentMethod === method.id ? COLORS.white : method.color} 
+      style={[styles.paymentMethod, paymentMethod === method.id && styles.selectedPaymentMethod]}
+      onPress={() => setPaymentMethod(method.id)}>
+      <MaterialIcons
+        name={method.icon}
+        size={24}
+        color={paymentMethod === method.id ? COLORS.white : method.color}
       />
-      <Text style={[
-        styles.paymentMethodText,
-        paymentMethod === method.id && styles.selectedPaymentMethodText
-      ]}>
+      <Text
+        style={[
+          styles.paymentMethodText,
+          paymentMethod === method.id && styles.selectedPaymentMethodText,
+        ]}>
         {method.name}
       </Text>
       {paymentMethod === method.id && (
@@ -181,16 +177,13 @@ const CheckoutScreen = ({ navigation }) => {
   const renderDeliverySlot = (slot) => (
     <TouchableOpacity
       key={slot.id}
-      style={[
-        styles.slotButton,
-        deliveryInfo.selectedSlot?.id === slot.id && styles.selectedSlot
-      ]}
-      onPress={() => setDeliveryInfo(prev => ({ ...prev, selectedSlot: slot }))}
-    >
-      <Text style={[
-        styles.slotText,
-        deliveryInfo.selectedSlot?.id === slot.id && styles.selectedSlotText
-      ]}>
+      style={[styles.slotButton, deliveryInfo.selectedSlot?.id === slot.id && styles.selectedSlot]}
+      onPress={() => setDeliveryInfo((prev) => ({ ...prev, selectedSlot: slot }))}>
+      <Text
+        style={[
+          styles.slotText,
+          deliveryInfo.selectedSlot?.id === slot.id && styles.selectedSlotText,
+        ]}>
         {slot.name}
       </Text>
     </TouchableOpacity>
@@ -199,28 +192,24 @@ const CheckoutScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <Header
-        title="إتمام الطلب"
-        showBack
-        onLeftPress={() => navigation.goBack()}
-      />
+      <Header title="إتمام الطلب" showBack onLeftPress={() => navigation.goBack()} />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Customer Information */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>معلومات العميل</Text>
-          
+
           {renderInput(
             'الاسم *',
             customerInfo.name,
-            (text) => setCustomerInfo(prev => ({ ...prev, name: text })),
+            (text) => setCustomerInfo((prev) => ({ ...prev, name: text })),
             'أدخل اسمك الكامل'
           )}
 
           {renderInput(
             'رقم الهاتف *',
             customerInfo.phone,
-            (text) => setCustomerInfo(prev => ({ ...prev, phone: text })),
+            (text) => setCustomerInfo((prev) => ({ ...prev, phone: text })),
             '01xxxxxxxxx',
             'phone-pad'
           )}
@@ -229,12 +218,11 @@ const CheckoutScreen = ({ navigation }) => {
         {/* Delivery Information */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>معلومات التوصيل</Text>
-          
+
           {/* Village Selection */}
           <TouchableOpacity
             style={styles.villageSelector}
-            onPress={() => setVillagePickerVisible(true)}
-          >
+            onPress={() => setVillagePickerVisible(true)}>
             <MaterialIcons name="location-on" size={20} color={COLORS.primary} />
             <Text style={styles.villageText}>
               {selectedVillage ? selectedVillage.name : 'اختر المنطقة *'}
@@ -247,23 +235,21 @@ const CheckoutScreen = ({ navigation }) => {
               <Text style={styles.deliveryFee}>
                 رسوم التوصيل: {formatPrice(selectedVillage.deliveryFee)}
               </Text>
-              <Text style={styles.deliveryTime}>
-                وقت التوصيل: {selectedVillage.deliveryTime}
-              </Text>
+              <Text style={styles.deliveryTime}>وقت التوصيل: {selectedVillage.deliveryTime}</Text>
             </View>
           )}
 
           {renderInput(
             'عنوان التوصيل *',
             customerInfo.address,
-            (text) => setCustomerInfo(prev => ({ ...prev, address: text })),
+            (text) => setCustomerInfo((prev) => ({ ...prev, address: text })),
             'أدخل العنوان التفصيلي'
           )}
 
           {renderInput(
             'ملاحظات إضافية',
             customerInfo.notes,
-            (text) => setCustomerInfo(prev => ({ ...prev, notes: text })),
+            (text) => setCustomerInfo((prev) => ({ ...prev, notes: text })),
             'أي ملاحظات خاصة',
             'default',
             true
@@ -274,22 +260,20 @@ const CheckoutScreen = ({ navigation }) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>وقت التوصيل المفضل *</Text>
           <View style={styles.slotsContainer}>
-            {DELIVERY_SLOTS.filter(slot => slot.isAvailable).map(renderDeliverySlot)}
+            {DELIVERY_SLOTS.filter((slot) => slot.isAvailable).map(renderDeliverySlot)}
           </View>
         </View>
 
         {/* Payment Method */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>طريقة الدفع</Text>
-          <View style={styles.paymentMethods}>
-            {paymentMethods.map(renderPaymentMethod)}
-          </View>
+          <View style={styles.paymentMethods}>{paymentMethods.map(renderPaymentMethod)}</View>
         </View>
 
         {/* Order Summary */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>ملخص الطلب</Text>
-          
+
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>المجموع الفرعي</Text>
             <Text style={styles.summaryValue}>{formatPrice(subtotal)}</Text>

@@ -26,7 +26,8 @@ const CategoriesScreen = () => (
 // Home Stack Navigator
 const HomeStack = createNativeStackNavigator();
 const HomeStackNavigator = () => (
-  <HomeStack.Navigator screenOptions={{ headerShown: false, statusBarStyle: 'dark', animation: 'slide_from_right' }}>
+  <HomeStack.Navigator
+    screenOptions={{ headerShown: false, statusBarStyle: 'dark', animation: 'slide_from_right' }}>
     <HomeStack.Screen name="HomeMain" component={HomeScreen} />
     <HomeStack.Screen name="StoreDetails" component={StoreDetailsScreen} />
     <HomeStack.Screen name="Checkout" component={CheckoutScreen} />
@@ -36,19 +37,21 @@ const HomeStackNavigator = () => (
 // Order Stack Navigator
 const OrderStack = createNativeStackNavigator();
 const OrderStackNavigator = () => (
-    <OrderStack.Navigator screenOptions={{ headerShown: false, statusBarStyle: 'dark', animation: 'slide_from_right' }}>
-        <OrderStack.Screen name="OrdersList" component={OrdersScreen} />
-        <OrderStack.Screen name="OrderDetails" component={OrderDetailsScreen} />
-    </OrderStack.Navigator>
+  <OrderStack.Navigator
+    screenOptions={{ headerShown: false, statusBarStyle: 'dark', animation: 'slide_from_right' }}>
+    <OrderStack.Screen name="OrdersList" component={OrdersScreen} />
+    <OrderStack.Screen name="OrderDetails" component={OrderDetailsScreen} />
+  </OrderStack.Navigator>
 );
 
 // Profile Stack Navigator
 const ProfileStack = createNativeStackNavigator();
 const ProfileStackNavigator = () => (
-    <ProfileStack.Navigator screenOptions={{ headerShown: false, statusBarStyle: 'dark', animation: 'slide_from_right' }}>
-        <ProfileStack.Screen name="Settings" component={SettingsScreen} />
-        <ProfileStack.Screen name="Addresses" component={AddressesScreen} />
-    </ProfileStack.Navigator>
+  <ProfileStack.Navigator
+    screenOptions={{ headerShown: false, statusBarStyle: 'dark', animation: 'slide_from_right' }}>
+    <ProfileStack.Screen name="Settings" component={SettingsScreen} />
+    <ProfileStack.Screen name="Addresses" component={AddressesScreen} />
+  </ProfileStack.Navigator>
 );
 
 const Tab = createBottomTabNavigator();

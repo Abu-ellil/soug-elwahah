@@ -1,14 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { I18nManager } from 'react-native';
-import { 
-  ARABIC_TRANSLATIONS, 
-  RTL_CONFIG, 
+import {
+  ARABIC_TRANSLATIONS,
+  RTL_CONFIG,
   t as translate,
   formatArabicDate,
   formatEGPCurrency,
   isRTLSupported,
   toggleRTL,
-  EGYPT_CONFIG
+  EGYPT_CONFIG,
 } from '../utils/arabicLocalization';
 
 // إنشاء سياق التوطين - Create Localization Context
@@ -40,7 +40,7 @@ export const LocalizationProvider = ({ children }) => {
       // التحقق مما إذا كان RTL مدعومًا - Check if RTL is supported
       const rtlSupported = isRTLSupported();
       setIsRTLSupportedState(rtlSupported);
-      
+
       if (rtlSupported) {
         // فرض تخطيط RTL للغة العربية - Force RTL layout for Arabic
         I18nManager.forceRTL(true);
@@ -55,10 +55,10 @@ export const LocalizationProvider = ({ children }) => {
   const changeLanguage = (newLanguage) => {
     const languageCode = newLanguage === 'ar' ? 'ar' : 'en';
     setLanguage(languageCode);
-    
+
     const shouldBeRTL = languageCode === 'ar';
     setIsRTL(shouldBeRTL);
-    
+
     // تحديث I18nManager لـ RTL - Update I18nManager for RTL
     if (shouldBeRTL !== I18nManager.isRTL) {
       I18nManager.forceRTL(shouldBeRTL);
@@ -93,8 +93,8 @@ export const LocalizationProvider = ({ children }) => {
   // دالة الحصول على الأنماط الموطنة (RTL/LTR) - Function to get localized styles (RTL/LTR)
   const getLocalizedStyles = (baseStyles = {}) => {
     const rtlStyles = {};
-    
-    Object.keys(baseStyles).forEach(key => {
+
+    Object.keys(baseStyles).forEach((key) => {
       const style = baseStyles[key];
       if (isRTL) {
         // تطبيق تحويلات RTL - Apply RTL transformations
@@ -111,7 +111,7 @@ export const LocalizationProvider = ({ children }) => {
         rtlStyles[key] = style;
       }
     });
-    
+
     return rtlStyles;
   };
 
@@ -131,7 +131,7 @@ export const LocalizationProvider = ({ children }) => {
     language,
     isRTL,
     isRTLSupported: isRTLSupportedState,
-    
+
     // الإجراءات - Actions
     changeLanguage,
     toggleLanguage,
@@ -140,7 +140,7 @@ export const LocalizationProvider = ({ children }) => {
       setIsRTL(newRTL);
       return newRTL;
     },
-    
+
     // الأدوات المساعدة - Utilities
     t: getText,
     formatDate,
@@ -148,17 +148,13 @@ export const LocalizationProvider = ({ children }) => {
     getLocalizedStyles,
     getDirection,
     getTextAlign,
-    
+
     // الثوابت - Constants
     config: EGYPT_CONFIG,
     translations: ARABIC_TRANSLATIONS,
   };
 
-  return (
-    <LocalizationContext.Provider value={value}>
-      {children}
-    </LocalizationContext.Provider>
-  );
+  return <LocalizationContext.Provider value={value}>{children}</LocalizationContext.Provider>;
 };
 
 export default LocalizationProvider;

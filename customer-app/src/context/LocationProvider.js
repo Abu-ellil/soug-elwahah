@@ -22,7 +22,7 @@ export const LocationProvider = ({ children }) => {
   const [currentVillage, setCurrentVillage] = useState(null); // القرية الأقرب للمستخدم - Nearest village to the user
   const [selectedVillage, setSelectedVillage] = useState(null); // القرية المختارة يدوياً - Manually selected village
   const [availableVillages, setAvailableVillages] = useState([]); // القرى المتاحة بناءً على الموقع - Available villages based on location
-  const [loading, setLoading] = useState(false);  // حالة التحميل - Loading state
+  const [loading, setLoading] = useState(false); // حالة التحميل - Loading state
   const [error, setError] = useState(null); // حالة الخطأ - Error state
 
   // طلب إذن الموقع عند تحميل المكون - Request location permission on component mount
@@ -62,11 +62,12 @@ export const LocationProvider = ({ children }) => {
     let nearestVillage = null;
     let minDistance = Infinity;
 
-    VILLAGES.forEach(village => {
-      const distance = Math.sqrt(
-        Math.pow(location.lat - village.coordinates.lat, 2) +
-        Math.pow(location.lng - village.coordinates.lng, 2)
-      ) * 111; // تحويل تقريبي إلى كيلومتر - Rough conversion to km
+    VILLAGES.forEach((village) => {
+      const distance =
+        Math.sqrt(
+          Math.pow(location.lat - village.coordinates.lat, 2) +
+            Math.pow(location.lng - village.coordinates.lng, 2)
+        ) * 111; // تحويل تقريبي إلى كيلومتر - Rough conversion to km
 
       if (distance < minDistance) {
         minDistance = distance;
@@ -81,7 +82,7 @@ export const LocationProvider = ({ children }) => {
   const getCurrentLocation = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const hasPermission = await requestLocationPermission();
       if (!hasPermission) {
@@ -96,13 +97,13 @@ export const LocationProvider = ({ children }) => {
 
       const { latitude, longitude } = location.coords;
       const newLocation = { lat: latitude, lng: longitude };
-      
+
       setUserLocation(newLocation);
-      
+
       // تحميل القرى المتاحة لهذا الموقع - Load available villages for this location
       const villages = getAvailableVillages(newLocation, 50);
       setAvailableVillages(villages);
-      
+
       return newLocation;
     } catch (error) {
       const errorMessage = error.message || 'فشل في الحصول على الموقع'; // Failed to get location
@@ -121,7 +122,7 @@ export const LocationProvider = ({ children }) => {
 
   // دالة تحديث معلومات التوصيل - Function to update delivery information
   const updateDeliveryInfo = (villageId) => {
-    const village = availableVillages.find(v => v.id === villageId);
+    const village = availableVillages.find((v) => v.id === villageId);
     if (village) {
       setSelectedVillage(village);
     }
@@ -160,23 +161,19 @@ export const LocationProvider = ({ children }) => {
     availableVillages,
     loading,
     error,
-    
+
     // الإجراءات - Actions
     getCurrentLocation,
     selectVillage,
     updateDeliveryInfo,
     clearLocation,
-    
+
     // الأدوات المساعدة - Utilities
     getLocationString,
     isLocationAvailable,
   };
 
-  return (
-    <LocationContext.Provider value={value}>
-      {children}
-    </LocationContext.Provider>
-  );
+  return <LocationContext.Provider value={value}>{children}</LocationContext.Provider>;
 };
 
 export default LocationProvider;

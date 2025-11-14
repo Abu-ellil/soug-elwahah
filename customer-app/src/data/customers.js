@@ -5,20 +5,20 @@ export const CUSTOMER_STATUSES = {
   ACTIVE: 'active',
   INACTIVE: 'inactive',
   BLOCKED: 'blocked',
-  PENDING: 'pending'
+  PENDING: 'pending',
 };
 
 export const CUSTOMER_TIERS = {
   BRONZE: 'bronze',
   SILVER: 'silver',
   GOLD: 'gold',
-  PLATINUM: 'platinum'
+  PLATINUM: 'platinum',
 };
 
 export const CUSTOMER_TYPES = {
   INDIVIDUAL: 'individual',
   BUSINESS: 'business',
-  VIP: 'vip'
+  VIP: 'vip',
 };
 
 // نموذج بيانات العميل - Customer Data Model
@@ -40,8 +40,8 @@ export const CUSTOMER_SCHEMA = {
     country: 'string',
     coordinates: {
       lat: 'number',
-      lng: 'number'
-    }
+      lng: 'number',
+    },
   },
   type: 'enum',
   tier: 'enum',
@@ -60,8 +60,8 @@ export const CUSTOMER_SCHEMA = {
       email: 'boolean',
       sms: 'boolean',
       push: 'boolean',
-      marketing: 'boolean'
-    }
+      marketing: 'boolean',
+    },
   },
   statistics: {
     totalPurchases: 'number',
@@ -69,12 +69,12 @@ export const CUSTOMER_SCHEMA = {
     averageOrderValue: 'number',
     lastPurchaseDate: 'date',
     purchaseFrequency: 'number',
-    loyaltyPoints: 'number'
+    loyaltyPoints: 'number',
   },
   documents: 'array',
   interactions: 'array',
   createdBy: 'string',
-  updatedBy: 'string'
+  updatedBy: 'string',
 };
 
 // بيانات العملاء التجريبية - Sample Customer Data
@@ -97,21 +97,22 @@ export const MOCK_CUSTOMERS = [
       country: 'مصر',
       coordinates: {
         lat: 30.0444,
-        lng: 31.2357
-      }
+        lng: 31.2357,
+      },
     },
     type: CUSTOMER_TYPES.INDIVIDUAL,
     tier: CUSTOMER_TIERS.GOLD,
     status: CUSTOMER_STATUSES.ACTIVE,
     registrationDate: '2024-01-15T10:30:00Z',
     lastActivityDate: '2024-11-10T14:22:00Z',
-    profileImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+    profileImage:
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
     notes: 'عميل مميز، يفضل التواصل عبر واتساب',
     tags: ['VIP', 'عميل مكرر', 'فريق المبيعات'],
     customFields: {
       referredBy: 'emp_001',
       companyName: '',
-      taxNumber: ''
+      taxNumber: '',
     },
     preferences: {
       language: 'ar',
@@ -121,16 +122,16 @@ export const MOCK_CUSTOMERS = [
         email: true,
         sms: false,
         push: true,
-        marketing: true
-      }
+        marketing: true,
+      },
     },
     statistics: {
       totalPurchases: 45,
-      totalSpent: 15750.50,
+      totalSpent: 15750.5,
       averageOrderValue: 350.01,
       lastPurchaseDate: '2024-11-08',
       purchaseFrequency: 3.2,
-      loyaltyPoints: 2450
+      loyaltyPoints: 2450,
     },
     documents: [
       {
@@ -138,8 +139,8 @@ export const MOCK_CUSTOMERS = [
         type: 'national_id',
         name: 'بطاقة الرقم القومي',
         url: 'https://example.com/docs/national_id.pdf',
-        uploadDate: '2024-01-15T10:30:00Z'
-      }
+        uploadDate: '2024-01-15T10:30:00Z',
+      },
     ],
     interactions: [
       {
@@ -148,11 +149,11 @@ export const MOCK_CUSTOMERS = [
         description: 'مكالمة هاتفيه لمناقشة طلب جديد',
         date: '2024-11-10T14:22:00Z',
         userId: 'emp_001',
-        outcome: 'success'
-      }
+        outcome: 'success',
+      },
     ],
     createdBy: 'emp_admin',
-    updatedBy: 'emp_001'
+    updatedBy: 'emp_001',
   },
   {
     id: 'cust_002',
@@ -172,21 +173,22 @@ export const MOCK_CUSTOMERS = [
       country: 'مصر',
       coordinates: {
         lat: 31.2001,
-        lng: 29.9187
-      }
+        lng: 29.9187,
+      },
     },
     type: CUSTOMER_TYPES.BUSINESS,
     tier: CUSTOMER_TIERS.SILVER,
     status: CUSTOMER_STATUSES.ACTIVE,
     registrationDate: '2024-02-20T09:15:00Z',
     lastActivityDate: '2024-11-12T11:45:00Z',
-    profileImage: 'https://images.unsplash.com/photo-1494790108755-2616b612b7a9?w=150&h=150&fit=crop&crop=face',
+    profileImage:
+      'https://images.unsplash.com/photo-1494790108755-2616b612b7a9?w=150&h=150&fit=crop&crop=face',
     notes: 'شركة مقاولات، تتطلب فواتير ضريبية',
     tags: ['عميل تجاري', 'مقاولات', 'فواتير ضريبية'],
     customFields: {
       referredBy: '',
       companyName: 'شركة حسن للمقاولات',
-      taxNumber: '123-456-789'
+      taxNumber: '123-456-789',
     },
     preferences: {
       language: 'ar',
@@ -196,8 +198,8 @@ export const MOCK_CUSTOMERS = [
         email: true,
         sms: true,
         push: false,
-        marketing: false
-      }
+        marketing: false,
+      },
     },
     statistics: {
       totalPurchases: 28,
@@ -205,7 +207,7 @@ export const MOCK_CUSTOMERS = [
       averageOrderValue: 1510.74,
       lastPurchaseDate: '2024-11-12',
       purchaseFrequency: 2.1,
-      loyaltyPoints: 1890
+      loyaltyPoints: 1890,
     },
     documents: [
       {
@@ -213,8 +215,8 @@ export const MOCK_CUSTOMERS = [
         type: 'tax_certificate',
         name: 'شهادة ضريبية',
         url: 'https://example.com/docs/tax_cert.pdf',
-        uploadDate: '2024-02-20T09:15:00Z'
-      }
+        uploadDate: '2024-02-20T09:15:00Z',
+      },
     ],
     interactions: [
       {
@@ -223,11 +225,11 @@ export const MOCK_CUSTOMERS = [
         description: 'إرسال عرض سعر جديد',
         date: '2024-11-12T11:45:00Z',
         userId: 'emp_002',
-        outcome: 'sent'
-      }
+        outcome: 'sent',
+      },
     ],
     createdBy: 'emp_admin',
-    updatedBy: 'emp_002'
+    updatedBy: 'emp_002',
   },
   {
     id: 'cust_003',
@@ -247,21 +249,22 @@ export const MOCK_CUSTOMERS = [
       country: 'مصر',
       coordinates: {
         lat: 30.0131,
-        lng: 31.2089
-      }
+        lng: 31.2089,
+      },
     },
     type: CUSTOMER_TYPES.VIP,
     tier: CUSTOMER_TIERS.PLATINUM,
     status: CUSTOMER_STATUSES.ACTIVE,
     registrationDate: '2023-12-01T16:20:00Z',
     lastActivityDate: '2024-11-13T09:30:00Z',
-    profileImage: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+    profileImage:
+      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
     notes: 'عميل VIP، مدير عام شركة كبرى',
     tags: ['VIP', 'مدير عام', 'شركات كبرى', 'عميل مخلص'],
     customFields: {
       referredBy: '',
       companyName: 'شركة الصناعات الكبرى',
-      taxNumber: '987-654-321'
+      taxNumber: '987-654-321',
     },
     preferences: {
       language: 'ar',
@@ -271,16 +274,16 @@ export const MOCK_CUSTOMERS = [
         email: true,
         sms: true,
         push: true,
-        marketing: false
-      }
+        marketing: false,
+      },
     },
     statistics: {
       totalPurchases: 156,
-      totalSpent: 187500.00,
+      totalSpent: 187500.0,
       averageOrderValue: 1201.92,
       lastPurchaseDate: '2024-11-13',
       purchaseFrequency: 4.8,
-      loyaltyPoints: 8750
+      loyaltyPoints: 8750,
     },
     documents: [
       {
@@ -288,8 +291,8 @@ export const MOCK_CUSTOMERS = [
         type: 'business_license',
         name: 'رخصة تجارية',
         url: 'https://example.com/docs/business_license.pdf',
-        uploadDate: '2023-12-01T16:20:00Z'
-      }
+        uploadDate: '2023-12-01T16:20:00Z',
+      },
     ],
     interactions: [
       {
@@ -298,12 +301,12 @@ export const MOCK_CUSTOMERS = [
         description: 'اجتماع لمناقشة شراكة طويلة المدى',
         date: '2024-11-13T09:30:00Z',
         userId: 'emp_admin',
-        outcome: 'positive'
-      }
+        outcome: 'positive',
+      },
     ],
     createdBy: 'emp_admin',
-    updatedBy: 'emp_admin'
-  }
+    updatedBy: 'emp_admin',
+  },
 ];
 
 // وظائف مساعدة للعملاء - Customer Helper Functions
@@ -321,7 +324,7 @@ export const getCustomerStatusColor = (status) => {
     [CUSTOMER_STATUSES.ACTIVE]: '#10B981', // أخضر
     [CUSTOMER_STATUSES.INACTIVE]: '#F59E0B', // برتقالي
     [CUSTOMER_STATUSES.BLOCKED]: '#EF4444', // أحمر
-    [CUSTOMER_STATUSES.PENDING]: '#8B5CF6' // بنفسجي
+    [CUSTOMER_STATUSES.PENDING]: '#8B5CF6', // بنفسجي
   };
   return colors[status] || '#6B7280';
 };
@@ -331,77 +334,85 @@ export const getCustomerTierColor = (tier) => {
     [CUSTOMER_TIERS.BRONZE]: '#CD7F32',
     [CUSTOMER_TIERS.SILVER]: '#C0C0C0',
     [CUSTOMER_TIERS.GOLD]: '#FFD700',
-    [CUSTOMER_TIERS.PLATINUM]: '#E5E4E2'
+    [CUSTOMER_TIERS.PLATINUM]: '#E5E4E2',
   };
   return colors[tier] || '#6B7280';
 };
 
 export const calculateCustomerMetrics = (customers) => {
   const totalCustomers = customers.length;
-  const activeCustomers = customers.filter(c => c.status === CUSTOMER_STATUSES.ACTIVE).length;
+  const activeCustomers = customers.filter((c) => c.status === CUSTOMER_STATUSES.ACTIVE).length;
   const totalRevenue = customers.reduce((sum, customer) => sum + customer.statistics.totalSpent, 0);
-  const averageOrderValue = customers.length > 0 
-    ? customers.reduce((sum, customer) => sum + customer.statistics.averageOrderValue, 0) / customers.length 
-    : 0;
+  const averageOrderValue =
+    customers.length > 0
+      ? customers.reduce((sum, customer) => sum + customer.statistics.averageOrderValue, 0) /
+        customers.length
+      : 0;
 
   return {
     totalCustomers,
     activeCustomers,
     totalRevenue,
     averageOrderValue,
-    conversionRate: activeCustomers / totalCustomers * 100
+    conversionRate: (activeCustomers / totalCustomers) * 100,
   };
 };
 
 export const searchCustomers = (customers, query) => {
   const searchTerm = query.toLowerCase().trim();
-  
+
   if (!searchTerm) return customers;
-  
-  return customers.filter(customer => {
+
+  return customers.filter((customer) => {
     const fullName = getCustomerDisplayName(customer).toLowerCase();
     const email = customer.email.toLowerCase();
     const phone = customer.phone;
     const company = customer.customFields?.companyName?.toLowerCase() || '';
-    
-    return fullName.includes(searchTerm) ||
-           email.includes(searchTerm) ||
-           phone.includes(searchTerm) ||
-           company.includes(searchTerm);
+
+    return (
+      fullName.includes(searchTerm) ||
+      email.includes(searchTerm) ||
+      phone.includes(searchTerm) ||
+      company.includes(searchTerm)
+    );
   });
 };
 
 export const filterCustomersByStatus = (customers, status) => {
   if (!status || status === 'all') return customers;
-  return customers.filter(customer => customer.status === status);
+  return customers.filter((customer) => customer.status === status);
 };
 
 export const filterCustomersByTier = (customers, tier) => {
   if (!tier || tier === 'all') return customers;
-  return customers.filter(customer => customer.tier === tier);
+  return customers.filter((customer) => customer.tier === tier);
 };
 
 export const sortCustomersByField = (customers, field, direction = 'asc') => {
   return [...customers].sort((a, b) => {
     let aValue = a[field];
     let bValue = b[field];
-    
+
     // Handle nested fields
     if (field.includes('.')) {
       const fields = field.split('.');
       aValue = fields.reduce((obj, key) => obj?.[key], a);
       bValue = fields.reduce((obj, key) => obj?.[key], b);
     }
-    
+
     // Handle different data types
-    if (field === 'registrationDate' || field === 'lastActivityDate' || field === 'lastPurchaseDate') {
+    if (
+      field === 'registrationDate' ||
+      field === 'lastActivityDate' ||
+      field === 'lastPurchaseDate'
+    ) {
       aValue = new Date(aValue);
       bValue = new Date(bValue);
     } else if (typeof aValue === 'string') {
       aValue = aValue.toLowerCase();
       bValue = bValue.toLowerCase();
     }
-    
+
     if (aValue < bValue) return direction === 'asc' ? -1 : 1;
     if (aValue > bValue) return direction === 'asc' ? 1 : -1;
     return 0;

@@ -3,13 +3,13 @@ import { Text, StyleSheet } from 'react-native';
 import { useLocalization } from '../context/LocalizationContext';
 import COLORS from '../constants/colors';
 
-const RTLText = ({ 
-  children, 
-  style, 
+const RTLText = ({
+  children,
+  style,
   variant = 'body', // body, title, caption, etc.
   color = 'text',
   align = 'auto', // auto, left, right, center
-  ...props 
+  ...props
 }) => {
   const { getTextAlign, getLocalizedStyles, isRTL } = useLocalization();
 
@@ -38,7 +38,7 @@ const RTLText = ({
   const baseTextStyle = StyleSheet.flatten([
     variantStyles[variant],
     { color: colorMap[color] || COLORS.text },
-    style
+    style,
   ]);
 
   // Apply RTL transformations

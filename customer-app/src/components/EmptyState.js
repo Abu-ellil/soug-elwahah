@@ -4,11 +4,11 @@ import { Ionicons } from '@expo/vector-icons';
 import COLORS from '../constants/colors';
 
 const EmptyState = ({
-  icon = "document-outline",
-  title = "لا توجد بيانات",
-  message = "لا توجد عناصر لعرضها حالياً",
+  icon = 'document-outline',
+  title = 'لا توجد بيانات',
+  message = 'لا توجد عناصر لعرضها حالياً',
   actionText,
-  onActionPress
+  onActionPress,
 }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -24,35 +24,25 @@ const EmptyState = ({
     <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
       <View className="flex-1 items-center justify-center p-8">
         <View
-          className="w-20 h-20 rounded-full items-center justify-center mb-4"
-          style={{ backgroundColor: COLORS.border + '50' }}
-        >
+          className="mb-4 h-20 w-20 items-center justify-center rounded-full"
+          style={{ backgroundColor: COLORS.border + '50' }}>
           <Ionicons name={icon} size={40} color={COLORS.textSecondary} />
         </View>
 
-        <Text
-          className="text-xl font-bold text-center mb-2"
-          style={{ color: COLORS.text }}
-        >
+        <Text className="mb-2 text-center text-xl font-bold" style={{ color: COLORS.text }}>
           {title}
         </Text>
 
-        <Text
-          className="text-base text-center mb-6"
-          style={{ color: COLORS.textSecondary }}
-        >
+        <Text className="mb-6 text-center text-base" style={{ color: COLORS.textSecondary }}>
           {message}
         </Text>
 
         {actionText && onActionPress && (
           <TouchableOpacity
             onPress={onActionPress}
-            className="px-6 py-3 rounded-xl"
-            style={{ backgroundColor: COLORS.primary }}
-          >
-            <Text className="text-white font-medium">
-              {actionText}
-            </Text>
+            className="rounded-xl px-6 py-3"
+            style={{ backgroundColor: COLORS.primary }}>
+            <Text className="font-medium text-white">{actionText}</Text>
           </TouchableOpacity>
         )}
       </View>

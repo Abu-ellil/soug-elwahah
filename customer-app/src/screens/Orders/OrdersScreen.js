@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -34,28 +34,28 @@ const OrdersScreen = ({ navigation }) => {
 
   useEffect(() => {
     loadOrders();
-  }, []);
+  }, [loadOrders]);
 
   useEffect(() => {
     filterOrders();
-  }, [orders, selectedFilter]);
+  }, [filterOrders]);
 
-  const loadOrders = async () => {
+  const loadOrders = useCallback(async () => {
     try {
       // In a real app, this would fetch from an API
       // For now, we'll use mock data
       setTimeout(() => {
-        const enrichedOrders = MOCK_ORDERS.map(order => {
-          const store = STORES.find(s => s.id === order.storeId);
-          const enrichedItems = order.items.map(item => {
-            const product = PRODUCTS.find(p => p.id === item.productId);
+        const enrichedOrders = MOCK_ORDERS.map((order) => {
+          const store = STORES.find((s) => s.id === order.storeId);
+          const enrichedItems = order.items.map((item) => {
+            const product = PRODUCTS.find((p) => p.id === item.productId);
             return {
               ...item,
               name: product?.name || 'منتج غير معروف',
               image: product?.image || '',
             };
           });
-          
+
           return {
             ...order,
             storeName: store?.name || 'متجر غير معروف',
@@ -63,7 +63,7 @@ const OrdersScreen = ({ navigation }) => {
             items: enrichedItems,
           };
         });
-        
+
         setOrders(enrichedOrders);
         setLoading(false);
       }, 1000);
@@ -71,7 +71,7 @@ const OrdersScreen = ({ navigation }) => {
       console.error('Error loading orders:', error);
       setLoading(false);
     }
-  };
+  }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -79,26 +79,24 @@ const OrdersScreen = ({ navigation }) => {
     setRefreshing(false);
   };
 
-  const filterOrders = () => {
+  const filterOrders = useCallback(() => {
     let filtered = orders;
 
     switch (selectedFilter) {
       case 'current':
-        filtered = orders.filter(order => 
+        filtered = orders.filter((order) =>
           ['pending', 'confirmed', 'delivering'].includes(order.status)
         );
         break;
       case 'completed':
-        filtered = orders.filter(order => 
-          ['delivered', 'cancelled'].includes(order.status)
-        );
+        filtered = orders.filter((order) => ['delivered', 'cancelled'].includes(order.status));
         break;
       default:
         filtered = orders;
     }
 
     setFilteredOrders(filtered);
-  };
+  }, [orders, selectedFilter]);
 
   const getStatusInfo = (status) => {
     const statusMap = {
@@ -108,7 +106,7 @@ const OrdersScreen = ({ navigation }) => {
       delivered: { text: 'تم التوصيل', color: COLORS.success, icon: 'check-circle' },
       cancelled: { text: 'ملغي', color: COLORS.danger, icon: 'cancel' },
     };
-    
+
     return statusMap[status] || statusMap.pending;
   };
 
@@ -127,24 +125,13 @@ const OrdersScreen = ({ navigation }) => {
     const progress = getOrderProgress(item);
 
     return (
-      <TouchableOpacity 
-        style={styles.orderCard}
-        onPress={() => handleOrderPress(item)}
-      >
+      <TouchableOpacity style={styles.orderCard} onPress={() => handleOrderPress(item)}>
         {/* Order Header */}
         <View style={styles.orderHeader}>
           <Text style={styles.orderId}>طلب #{item.id.slice(-4)}</Text>
-          <View style={[
-            styles.statusBadge,
-            { backgroundColor: statusInfo.color + '20' }
-          ]}>
+          <View style={[styles.statusBadge, { backgroundColor: statusInfo.color + '20' }]}>
             <MaterialIcons name={statusInfo.icon} size={14} color={statusInfo.color} />
-            <Text style={[
-              styles.statusText,
-              { color: statusInfo.color }
-            ]}>
-              {statusInfo.text}
-            </Text>
+            <Text style={[styles.statusText, { color: statusInfo.color }]}>{statusInfo.text}</Text>
           </View>
         </View>
 
@@ -166,14 +153,14 @@ const OrdersScreen = ({ navigation }) => {
         {['pending', 'confirmed', 'delivering'].includes(item.status) && (
           <View style={styles.progressContainer}>
             <View style={styles.progressBar}>
-              <View 
+              <View
                 style={[
                   styles.progressFill,
-                  { 
+                  {
                     width: `${progress}%`,
-                    backgroundColor: statusInfo.color 
-                  }
-                ]} 
+                    backgroundColor: statusInfo.color,
+                  },
+                ]}
               />
             </View>
             <Text style={styles.progressText}>{Math.round(progress)}%</Text>
@@ -184,7 +171,8 @@ const OrdersScreen = ({ navigation }) => {
         {item.timeline && item.timeline.length > 0 && (
           <View style={styles.timelinePreview}>
             <Text style={styles.timelineText}>
-              آخر تحديث: {new Date(item.timeline[item.timeline.length - 1].time).toLocaleDateString('ar-EG')}
+              آخر تحديث:{' '}
+              {new Date(item.timeline[item.timeline.length - 1].time).toLocaleDateString('ar-EG')}
             </Text>
           </View>
         )}
@@ -195,16 +183,9 @@ const OrdersScreen = ({ navigation }) => {
   const renderFilterButton = (filter) => (
     <TouchableOpacity
       key={filter.id}
-      style={[
-        styles.filterButton,
-        selectedFilter === filter.id && styles.activeFilter
-      ]}
-      onPress={() => setSelectedFilter(filter.id)}
-    >
-      <Text style={[
-        styles.filterText,
-        selectedFilter === filter.id && styles.activeFilterText
-      ]}>
+      style={[styles.filterButton, selectedFilter === filter.id && styles.activeFilter]}
+      onPress={() => setSelectedFilter(filter.id)}>
+      <Text style={[styles.filterText, selectedFilter === filter.id && styles.activeFilterText]}>
         {filter.name}
       </Text>
       {filter.count > 0 && (
@@ -227,10 +208,7 @@ const OrdersScreen = ({ navigation }) => {
         showBack
         onLeftPress={() => navigation.goBack()}
         rightComponent={
-          <TouchableOpacity 
-            onPress={() => navigation.navigate('Home')}
-            style={styles.shopButton}
-          >
+          <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.shopButton}>
             <MaterialIcons name="shopping-cart" size={24} color={COLORS.primary} />
           </TouchableOpacity>
         }
@@ -257,8 +235,8 @@ const OrdersScreen = ({ navigation }) => {
             keyExtractor={(item) => item.id}
             showsVerticalScrollIndicator={false}
             refreshControl={
-              <RefreshControl 
-                refreshing={refreshing} 
+              <RefreshControl
+                refreshing={refreshing}
                 onRefresh={onRefresh}
                 colors={[COLORS.primary]}
               />
@@ -270,9 +248,7 @@ const OrdersScreen = ({ navigation }) => {
             icon="document-outline"
             title="لا توجد طلبات"
             message={
-              selectedFilter === 'current' 
-                ? 'لا توجد طلبات جارية حالياً' 
-                : 'لم تقم بأي طلبات بعد'
+              selectedFilter === 'current' ? 'لا توجد طلبات جارية حالياً' : 'لم تقم بأي طلبات بعد'
             }
             actionText="تسوق الآن"
             onActionPress={() => navigation.navigate('Home')}
@@ -282,18 +258,12 @@ const OrdersScreen = ({ navigation }) => {
 
       {/* Quick Actions */}
       <View style={styles.quickActions}>
-        <TouchableOpacity 
-          style={styles.actionButton}
-          onPress={() => navigation.navigate('Home')}
-        >
+        <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Home')}>
           <MaterialIcons name="home" size={20} color={COLORS.primary} />
           <Text style={styles.actionText}>الرئيسية</Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.actionButton}
-          onPress={() => navigation.navigate('Cart')}
-        >
+
+        <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Cart')}>
           <MaterialIcons name="shopping-cart" size={20} color={COLORS.primary} />
           <Text style={styles.actionText}>السلة</Text>
         </TouchableOpacity>

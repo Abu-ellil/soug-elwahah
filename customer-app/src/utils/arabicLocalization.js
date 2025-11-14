@@ -10,7 +10,7 @@ export const ARABIC_TRANSLATIONS = {
   'navigation.cart': 'السلة',
   'navigation.orders': 'طلباتي',
   'navigation.profile': 'الملف الشخصي',
-  
+
   // Location & Villages
   'location.select': 'اختر المنطقة',
   'location.myLocation': 'موقعي الحالي',
@@ -18,7 +18,7 @@ export const ARABIC_TRANSLATIONS = {
   'location.delivery': 'التوصيل إلى',
   'location.available': 'متاح للتوصيل',
   'location.unavailable': 'غير متاح',
-  
+
   // Stores & Categories
   'stores.title': 'المتاجر المتاحة',
   'stores.nearby': 'المتاجر القريبة',
@@ -27,16 +27,16 @@ export const ARABIC_TRANSLATIONS = {
   'stores.closed': 'مغلق',
   'stores.rating': 'التقييم',
   'stores.deliveryTime': 'وقت التوصيل',
-  
+
   'categories.title': 'الفئات',
   'categories.all': 'الكل',
-  
+
   // Products
   'products.title': 'المنتجات',
   'products.addToCart': 'أضف للسلة',
   'products.outOfStock': 'غير متوفر',
   'products.available': 'متوفر',
-  
+
   // Cart
   'cart.title': 'سلة التسوق',
   'cart.empty': 'السلة فارغة',
@@ -47,7 +47,7 @@ export const ARABIC_TRANSLATIONS = {
   'cart.deliveryFee': 'رسوم التوصيل',
   'cart.total': 'المجموع الكلي',
   'cart.proceedCheckout': 'إتمام الطلب',
-  
+
   // Checkout
   'checkout.title': 'إتمام الطلب',
   'checkout.customerInfo': 'معلومات العميل',
@@ -58,7 +58,7 @@ export const ARABIC_TRANSLATIONS = {
   'checkout.deliveryTime': 'وقت التوصيل المفضل',
   'checkout.paymentMethod': 'طريقة الدفع',
   'checkout.confirmOrder': 'تأكيد الطلب',
-  
+
   // Payment Methods
   'payment.cash': 'الدفع عند الاستلام',
   'payment.fawry': 'فوري',
@@ -66,7 +66,7 @@ export const ARABIC_TRANSLATIONS = {
   'payment.orangeMoney': 'أورانج ماني',
   'payment.aman': 'أمان',
   'payment.masary': 'مصاري',
-  
+
   // Orders
   'orders.title': 'طلباتي',
   'orders.all': 'الكل',
@@ -79,13 +79,13 @@ export const ARABIC_TRANSLATIONS = {
   'orders.status.cancelled': 'ملغي',
   'orders.items': 'منتج',
   'orders.items_plural': 'منتجات',
-  
+
   // Delivery Slots
   'delivery.morning': 'الصباح (9:00 - 12:00)',
   'delivery.noon': 'الظهيرة (12:00 - 15:00)',
   'delivery.evening': 'المساء (15:00 - 18:00)',
   'delivery.night': 'الليل (18:00 - 21:00)',
-  
+
   // Messages
   'message.success': 'تم بنجاح',
   'message.error': 'حدث خطأ',
@@ -96,7 +96,7 @@ export const ARABIC_TRANSLATIONS = {
   'message.save': 'حفظ',
   'message.edit': 'تعديل',
   'message.delete': 'حذف',
-  
+
   // Time & Numbers
   'time.today': 'اليوم',
   'time.yesterday': 'أمس',
@@ -107,7 +107,7 @@ export const ARABIC_TRANSLATIONS = {
   'time.hour_plural': 'ساعات',
   'time.day': 'يوم',
   'time.day_plural': 'أيام',
-  
+
   // Currency
   'currency.egp': 'جنيه مصري',
   'currency.symbol': 'ج.م',
@@ -118,7 +118,7 @@ export const RTL_CONFIG = {
   isRTL: true,
   textAlign: 'right',
   writingDirection: 'rtl',
-  
+
   // Icon mappings for RTL
   iconMapping: {
     'chevron-left': 'chevron-right',
@@ -128,7 +128,7 @@ export const RTL_CONFIG = {
     'navigate-before': 'navigate-next',
     'navigate-next': 'navigate-before',
   },
-  
+
   // Layout configurations
   styles: {
     container: {
@@ -140,32 +140,32 @@ export const RTL_CONFIG = {
     },
     button: {
       flexDirection: 'row-reverse',
-    }
-  }
+    },
+  },
 };
 
 // Date formatting for Arabic/Egyptian locale
 export const formatArabicDate = (date, format = 'long') => {
   const dateObj = new Date(date);
-  
+
   const options = {
     long: {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
       day: 'numeric',
-      locale: 'ar-EG'
+      locale: 'ar-EG',
     },
     short: {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-      locale: 'ar-EG'
+      locale: 'ar-EG',
     },
     time: {
       hour: '2-digit',
       minute: '2-digit',
-      locale: 'ar-EG'
+      locale: 'ar-EG',
     },
     datetime: {
       weekday: 'short',
@@ -173,10 +173,10 @@ export const formatArabicDate = (date, format = 'long') => {
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-      locale: 'ar-EG'
-    }
+      locale: 'ar-EG',
+    },
   };
-  
+
   return dateObj.toLocaleDateString('ar-EG', options[format] || options.long);
 };
 
@@ -196,26 +196,26 @@ export const formatTimeAgo = (date) => {
   const now = new Date();
   const then = new Date(date);
   const diffInSeconds = Math.floor((now - then) / 1000);
-  
+
   if (diffInSeconds < 60) {
     return 'الآن';
   }
-  
+
   const diffInMinutes = Math.floor(diffInSeconds / 60);
   if (diffInMinutes < 60) {
     return `منذ ${diffInMinutes} ${diffInMinutes === 1 ? 'دقيقة' : 'دقائق'}`;
   }
-  
+
   const diffInHours = Math.floor(diffInMinutes / 60);
   if (diffInHours < 24) {
     return `منذ ${diffInHours} ${diffInHours === 1 ? 'ساعة' : 'ساعات'}`;
   }
-  
+
   const diffInDays = Math.floor(diffInHours / 24);
   if (diffInDays < 7) {
     return `منذ ${diffInDays} ${diffInDays === 1 ? 'يوم' : 'أيام'}`;
   }
-  
+
   return formatArabicDate(date, 'short');
 };
 
@@ -223,7 +223,7 @@ export const formatTimeAgo = (date) => {
 export const formatEgyptianPhone = (phone) => {
   // Remove all non-digits
   const cleaned = phone.replace(/\D/g, '');
-  
+
   // Handle Egyptian phone numbers
   if (cleaned.startsWith('20')) {
     // International format +20xxxxxxxxx
@@ -237,35 +237,35 @@ export const formatEgyptianPhone = (phone) => {
       return `${cleaned.substring(0, 3)} ${cleaned.substring(3, 6)} ${cleaned.substring(6)}`;
     }
   }
-  
+
   return phone; // Return original if can't format
 };
 
 // Validate Egyptian phone number
 export const validateEgyptianPhone = (phone) => {
   const cleaned = phone.replace(/\D/g, '');
-  
+
   // Egyptian mobile numbers start with 01 and have 11 digits
   // Egyptian landline numbers have varying lengths
-  
+
   // Mobile pattern: 01[0-9]{9}
   const mobilePattern = /^01[0-9]{9}$/;
-  
+
   // Landline pattern: 0[1-3][0-9]{8}$ for Cairo and Alexandria
   const landlinePattern = /^0[1-3][0-9]{8}$/;
-  
+
   return mobilePattern.test(cleaned) || landlinePattern.test(cleaned);
 };
 
 // Get localized text
 export const t = (key, params = {}) => {
   let translation = ARABIC_TRANSLATIONS[key] || key;
-  
+
   // Replace parameters in translation
-  Object.keys(params).forEach(param => {
+  Object.keys(params).forEach((param) => {
     translation = translation.replace(`{${param}}`, params[param]);
   });
-  
+
   return translation;
 };
 
@@ -278,10 +278,10 @@ export const isRTLSupported = () => {
 export const toggleRTL = () => {
   const newRTL = !I18nManager.isRTL;
   I18nManager.forceRTL(newRTL);
-  
+
   // Restart the app in development mode to apply changes
   // In production, this would require app restart
-  
+
   return newRTL;
 };
 
@@ -290,19 +290,19 @@ export const getPluralForm = (count, singular, plural, dual = null) => {
   if (count === 0) {
     return plural;
   }
-  
+
   if (count === 1) {
     return singular;
   }
-  
+
   if (count === 2) {
     return dual || plural;
   }
-  
+
   if (count >= 3 && count <= 10) {
     return plural;
   }
-  
+
   return singular;
 };
 
@@ -321,25 +321,47 @@ export const EGYPT_CONFIG = {
     name: 'الجنيه المصري',
     decimals: 2,
   },
-  
+
   phone: {
     countryCode: '+20',
     defaultRegion: 'EG',
     maxLength: 11,
   },
-  
+
   address: {
     postalCodeRequired: false,
     provinces: [
-      'القاهرة', 'الإسكندرية', 'الجيزة', 'الشرقية', 'الدقهلية',
-      'البحيرة', 'الفيوم', 'المنوفية', 'كفر الشيخ', 'الغربية',
-      'دمياط', 'الوادي الجديد', 'البحر الأحمر', 'شمال سيناء',
-      'جنوب سيناء', 'السويس', 'بورسعيد', 'الإسماعيلية', 'الأقصر',
-      'أسوان', 'سوهاج', 'المنيا', 'أسيوط', 'الوادي الجديد',
-      'الفيوم', 'بني سويف', 'قنا', 'الأقصر'
-    ]
+      'القاهرة',
+      'الإسكندرية',
+      'الجيزة',
+      'الشرقية',
+      'الدقهلية',
+      'البحيرة',
+      'الفيوم',
+      'المنوفية',
+      'كفر الشيخ',
+      'الغربية',
+      'دمياط',
+      'الوادي الجديد',
+      'البحر الأحمر',
+      'شمال سيناء',
+      'جنوب سيناء',
+      'السويس',
+      'بورسعيد',
+      'الإسماعيلية',
+      'الأقصر',
+      'أسوان',
+      'سوهاج',
+      'المنيا',
+      'أسيوط',
+      'الوادي الجديد',
+      'الفيوم',
+      'بني سويف',
+      'قنا',
+      'الأقصر',
+    ],
   },
-  
+
   delivery: {
     workingHours: {
       start: '09:00',
@@ -347,5 +369,5 @@ export const EGYPT_CONFIG = {
     },
     estimatedDeliveryTime: '30-45 دقيقة',
     freeDeliveryThreshold: 200, // EGP
-  }
+  },
 };

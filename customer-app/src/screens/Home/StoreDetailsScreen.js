@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -38,32 +38,31 @@ const StoreDetailsScreen = ({ navigation, route }) => {
   useFocusEffect(
     React.useCallback(() => {
       loadStoreData();
-    }, [storeId])
+    }, [loadStoreData])
   );
 
-  const loadStoreData = async () => {
+  const loadStoreData = useCallback(async () => {
     setLoading(true);
     try {
       // Find store
-      const foundStore = STORES.find(s => s.id === storeId);
+      const foundStore = STORES.find((s) => s.id === storeId);
       if (!foundStore) {
         Alert.alert('خطأ', 'المتجر غير موجود');
         navigation.goBack();
         return;
       }
-      
+
       setStore(foundStore);
-      
+
       // Get products for this store
-      const products = PRODUCTS.filter(p => p.storeId === storeId);
+      const products = PRODUCTS.filter((p) => p.storeId === storeId);
       setStoreProducts(products);
-      
+
       // Get store categories
-      const storeCategories = CATEGORIES.filter(cat =>
-        products.some(p => p.categoryId === cat.id)
+      const storeCategories = CATEGORIES.filter((cat) =>
+        products.some((p) => p.categoryId === cat.id)
       );
       setCategories(storeCategories);
-      
     } catch (error) {
       Toast.show({
         type: 'error',
@@ -73,16 +72,14 @@ const StoreDetailsScreen = ({ navigation, route }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [storeId, navigation]);
 
   const filteredProducts = selectedCategory
-    ? storeProducts.filter(product => product.categoryId === selectedCategory.id)
+    ? storeProducts.filter((product) => product.categoryId === selectedCategory.id)
     : storeProducts;
 
   const handleCategoryPress = (category) => {
-    setSelectedCategory(
-      selectedCategory?.id === category.id ? null : category
-    );
+    setSelectedCategory(selectedCategory?.id === category.id ? null : category);
   };
 
   const handleAddToCart = (product, quantity = 1) => {
@@ -140,13 +137,12 @@ const StoreDetailsScreen = ({ navigation, route }) => {
                 <MaterialIcons name="access-time" size={16} color={COLORS.card} />
                 <Text style={styles.detailText}>{store.deliveryTime}</Text>
               </View>
-              <View style={[
-                styles.statusBadge,
-                { backgroundColor: store.isOpen ? COLORS.success : COLORS.danger }
-              ]}>
-                <Text style={styles.statusText}>
-                  {store.isOpen ? 'مفتوح' : 'مغلق'}
-                </Text>
+              <View
+                style={[
+                  styles.statusBadge,
+                  { backgroundColor: store.isOpen ? COLORS.success : COLORS.danger },
+                ]}>
+                <Text style={styles.statusText}>{store.isOpen ? 'مفتوح' : 'مغلق'}</Text>
               </View>
             </View>
           </View>
@@ -154,7 +150,7 @@ const StoreDetailsScreen = ({ navigation, route }) => {
       </View>
 
       {/* Header */}
-      <Header 
+      <Header
         title={store.name}
         showBack
         onLeftPress={() => navigation.goBack()}
@@ -178,36 +174,32 @@ const StoreDetailsScreen = ({ navigation, route }) => {
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              style={styles.categoriesList}
-            >
+              style={styles.categoriesList}>
               <TouchableOpacity
-                style={[
-                  styles.categoryButton,
-                  !selectedCategory && styles.categoryButtonActive
-                ]}
-                onPress={() => setSelectedCategory(null)}
-              >
-                <Text style={[
-                  styles.categoryButtonText,
-                  !selectedCategory && styles.categoryButtonTextActive
-                ]}>
+                style={[styles.categoryButton, !selectedCategory && styles.categoryButtonActive]}
+                onPress={() => setSelectedCategory(null)}>
+                <Text
+                  style={[
+                    styles.categoryButtonText,
+                    !selectedCategory && styles.categoryButtonTextActive,
+                  ]}>
                   الكل
                 </Text>
               </TouchableOpacity>
-              
+
               {categories.map((category) => (
                 <TouchableOpacity
                   key={category.id}
                   style={[
                     styles.categoryButton,
-                    selectedCategory?.id === category.id && styles.categoryButtonActive
+                    selectedCategory?.id === category.id && styles.categoryButtonActive,
                   ]}
-                  onPress={() => handleCategoryPress(category)}
-                >
-                  <Text style={[
-                    styles.categoryButtonText,
-                    selectedCategory?.id === category.id && styles.categoryButtonTextActive
-                  ]}>
+                  onPress={() => handleCategoryPress(category)}>
+                  <Text
+                    style={[
+                      styles.categoryButtonText,
+                      selectedCategory?.id === category.id && styles.categoryButtonTextActive,
+                    ]}>
                     {category.name}
                   </Text>
                 </TouchableOpacity>
@@ -222,9 +214,7 @@ const StoreDetailsScreen = ({ navigation, route }) => {
             <Text style={styles.sectionTitle}>
               {selectedCategory ? selectedCategory.name : 'جميع المنتجات'}
             </Text>
-            <Text style={styles.productCount}>
-              {filteredProducts.length} منتج
-            </Text>
+            <Text style={styles.productCount}>{filteredProducts.length} منتج</Text>
           </View>
 
           {filteredProducts.length > 0 ? (
@@ -248,9 +238,9 @@ const StoreDetailsScreen = ({ navigation, route }) => {
               icon="inventory"
               title="لا توجد منتجات"
               message={
-                selectedCategory ?
-                  `لا توجد منتجات في فئة ${selectedCategory.name}` :
-                  'لا توجد منتجات متاحة حالياً'
+                selectedCategory
+                  ? `لا توجد منتجات في فئة ${selectedCategory.name}`
+                  : 'لا توجد منتجات متاحة حالياً'
               }
             />
           )}
@@ -263,11 +253,9 @@ const StoreDetailsScreen = ({ navigation, route }) => {
             <MaterialIcons name="info" size={20} color={COLORS.primary} />
           </View>
           <Text style={styles.storeInfoText}>
-            متجر متخصص في {categories.map(c => c.name).join('، ')}
+            متجر متخصص في {categories.map((c) => c.name).join('، ')}
           </Text>
-          <Text style={styles.storeInfoText}>
-            وقت التوصيل: {store.deliveryTime}
-          </Text>
+          <Text style={styles.storeInfoText}>وقت التوصيل: {store.deliveryTime}</Text>
         </TouchableOpacity>
       </ScrollView>
 
@@ -275,13 +263,10 @@ const StoreDetailsScreen = ({ navigation, route }) => {
       {getCartItemsCount() > 0 && (
         <TouchableOpacity
           style={styles.floatingCartButton}
-          onPress={() => navigation.navigate('Cart')}
-        >
+          onPress={() => navigation.navigate('Cart')}>
           <MaterialIcons name="shopping-cart" size={24} color={COLORS.white} />
           <View style={styles.floatingCartBadge}>
-            <Text style={styles.floatingCartBadgeText}>
-              {getCartItemsCount()}
-            </Text>
+            <Text style={styles.floatingCartBadgeText}>{getCartItemsCount()}</Text>
           </View>
         </TouchableOpacity>
       )}

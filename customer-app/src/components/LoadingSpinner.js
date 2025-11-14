@@ -3,23 +3,20 @@ import { View, ActivityIndicator, Text } from 'react-native';
 import COLORS from '../constants/colors';
 
 const LoadingSpinner = ({
-  size = "large",
+  size = 'large',
   color = COLORS.primary,
-  text = "جاري التحميل...",
-  fullScreen = false
+  text = 'جاري التحميل...',
+  fullScreen = false,
 }) => {
   const containerClass = fullScreen
-    ? "flex-1 items-center justify-center"
-    : "items-center justify-center py-8";
+    ? 'flex-1 items-center justify-center'
+    : 'items-center justify-center py-8';
 
   return (
     <View className={containerClass}>
       <ActivityIndicator size={size} color={color} />
       {text && (
-        <Text
-          className="text-base mt-4"
-          style={{ color: COLORS.textSecondary }}
-        >
+        <Text className="mt-4 text-base" style={{ color: COLORS.textSecondary }}>
           {text}
         </Text>
       )}

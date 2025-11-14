@@ -3,7 +3,7 @@
 
 export const SUPPORTED_LANGUAGES = {
   ARABIC: 'ar',
-  ENGLISH: 'en'
+  ENGLISH: 'en',
 };
 
 export const RTL_LANGUAGES = ['ar', 'fa', 'he', 'ur'];
@@ -17,7 +17,7 @@ export const ARABIC_TRANSLATIONS = {
     reports: 'التقارير',
     settings: 'الإعدادات',
     profile: 'الملف الشخصي',
-    logout: 'تسجيل الخروج'
+    logout: 'تسجيل الخروج',
   },
 
   // العملاء - Customers
@@ -30,7 +30,7 @@ export const ARABIC_TRANSLATIONS = {
     searchCustomers: 'البحث عن عملاء',
     filterBy: 'تصفية حسب',
     sortBy: 'ترتيب حسب',
-    
+
     // أعمدة الجدول - Table Columns
     name: 'الاسم',
     email: 'البريد الإلكتروني',
@@ -41,23 +41,23 @@ export const ARABIC_TRANSLATIONS = {
     totalSpent: 'إجمالي المصروفات',
     lastActivity: 'آخر نشاط',
     actions: 'الإجراءات',
-    
+
     // أنواع العملاء - Customer Types
     individual: 'فردي',
     business: 'تجاري',
     vip: 'VIP',
-    
+
     // مستويات الولاء - Loyalty Tiers
     bronze: 'برونزي',
     silver: 'فضي',
     gold: 'ذهبي',
     platinum: 'بلاتيني',
-    
+
     // حالات العميل - Customer Status
     active: 'نشط',
     inactive: 'غير نشط',
     blocked: 'محظور',
-    pending: 'في الانتظار'
+    pending: 'في الانتظار',
   },
 
   // لوحة التحكم - Dashboard
@@ -69,22 +69,22 @@ export const ARABIC_TRANSLATIONS = {
     monthlyRevenue: 'الإيرادات الشهرية',
     newCustomers: 'عملاء جدد',
     customerGrowth: 'نمو العملاء',
-    
+
     // إحصائيات سريعة - Quick Stats
     stats: {
       today: 'اليوم',
       thisWeek: 'هذا الأسبوع',
       thisMonth: 'هذا الشهر',
-      thisYear: 'هذا العام'
+      thisYear: 'هذا العام',
     },
-    
+
     // رسوم بيانية - Charts
     charts: {
       customerGrowth: 'نمو العملاء',
       revenueTrends: 'اتجاهات الإيرادات',
       topCustomers: 'أفضل العملاء',
-      customerStatus: 'حالات العملاء'
-    }
+      customerStatus: 'حالات العملاء',
+    },
   },
 
   // النماذج - Forms
@@ -98,24 +98,24 @@ export const ARABIC_TRANSLATIONS = {
     dateOfBirth: 'تاريخ الميلاد',
     gender: 'الجنس',
     nationality: 'الجنسية',
-    
+
     // العنوان - Address
     address: {
       street: 'الشارع',
       city: 'المدينة',
       state: 'المحافظة',
       postalCode: 'الرمز البريدي',
-      country: 'البلد'
+      country: 'البلد',
     },
-    
+
     // التفضيلات - Preferences
     preferences: {
       language: 'اللغة المفضلة',
       timezone: 'المنطقة الزمنية',
       communicationMethod: 'طريقة التواصل',
-      notifications: 'الإشعارات'
+      notifications: 'الإشعارات',
     },
-    
+
     // الأزرار - Buttons
     buttons: {
       save: 'حفظ',
@@ -128,17 +128,17 @@ export const ARABIC_TRANSLATIONS = {
       export: 'تصدير',
       import: 'استيراد',
       submit: 'إرسال',
-      reset: 'إعادة تعيين'
+      reset: 'إعادة تعيين',
     },
-    
+
     // التحقق من صحة البيانات - Validation
     validation: {
       required: 'هذا الحقل مطلوب',
       invalidEmail: 'البريد الإلكتروني غير صحيح',
       invalidPhone: 'رقم الهاتف غير صحيح',
       minLength: 'الحد الأدنى للأحرف',
-      maxLength: 'الحد الأقصى للأحرف'
-    }
+      maxLength: 'الحد الأقصى للأحرف',
+    },
   },
 
   // الرسائل - Messages
@@ -148,22 +148,22 @@ export const ARABIC_TRANSLATIONS = {
       customerUpdated: 'تم تحديث بيانات العميل بنجاح',
       customerDeleted: 'تم حذف العميل بنجاح',
       dataExported: 'تم تصدير البيانات بنجاح',
-      dataImported: 'تم استيراد البيانات بنجاح'
+      dataImported: 'تم استيراد البيانات بنجاح',
     },
-    
+
     error: {
       genericError: 'حدث خطأ غير متوقع',
       networkError: 'خطأ في الاتصال بالشبكة',
       validationError: 'خطأ في التحقق من صحة البيانات',
       unauthorizedError: 'غير مخول للدخول',
-      notFoundError: 'البيانات غير موجودة'
+      notFoundError: 'البيانات غير موجودة',
     },
-    
+
     confirm: {
       deleteCustomer: 'هل أنت متأكد من حذف هذا العميل؟',
       clearData: 'هل أنت متأكد من مسح جميع البيانات؟',
-      logout: 'هل تريد تسجيل الخروج؟'
-    }
+      logout: 'هل تريد تسجيل الخروج؟',
+    },
   },
 
   // الإعدادات - Settings
@@ -174,22 +174,22 @@ export const ARABIC_TRANSLATIONS = {
     notifications: 'الإشعارات',
     backup: 'النسخ الاحتياطي',
     about: 'حول التطبيق',
-    
+
     // إعدادات عامة - General Settings
     general: {
       language: 'اللغة',
       theme: 'المظهر',
       currency: 'العملة',
-      dateFormat: 'تنسيق التاريخ'
+      dateFormat: 'تنسيق التاريخ',
     },
-    
+
     // إعدادات الأمان - Security Settings
     security: {
       changePassword: 'تغيير كلمة المرور',
       twoFactorAuth: 'المصادقة الثنائية',
       biometricLogin: 'تسجيل الدخول البيومتري',
-      sessionTimeout: 'مهلة انتهاء الجلسة'
-    }
+      sessionTimeout: 'مهلة انتهاء الجلسة',
+    },
   },
 
   // التقارير - Reports
@@ -198,7 +198,7 @@ export const ARABIC_TRANSLATIONS = {
     customerReport: 'تقرير العملاء',
     salesReport: 'تقرير المبيعات',
     performanceReport: 'تقرير الأداء',
-    
+
     // فترات زمنية - Date Ranges
     dateRanges: {
       today: 'اليوم',
@@ -208,8 +208,8 @@ export const ARABIC_TRANSLATIONS = {
       last3Months: 'آخر 3 أشهر',
       last6Months: 'آخر 6 أشهر',
       lastYear: 'العام الماضي',
-      custom: 'فترة مخصصة'
-    }
+      custom: 'فترة مخصصة',
+    },
   },
 
   // التواريخ والأوقات - Dates & Times
@@ -217,7 +217,7 @@ export const ARABIC_TRANSLATIONS = {
     today: 'اليوم',
     yesterday: 'أمس',
     tomorrow: 'غداً',
-    
+
     days: {
       sunday: 'الأحد',
       monday: 'الاثنين',
@@ -225,9 +225,9 @@ export const ARABIC_TRANSLATIONS = {
       wednesday: 'الأربعاء',
       thursday: 'الخميس',
       friday: 'الجمعة',
-      saturday: 'السبت'
+      saturday: 'السبت',
     },
-    
+
     months: {
       january: 'يناير',
       february: 'فبراير',
@@ -240,8 +240,8 @@ export const ARABIC_TRANSLATIONS = {
       september: 'سبتمبر',
       october: 'أكتوبر',
       november: 'نوفمبر',
-      december: 'ديسمبر'
-    }
+      december: 'ديسمبر',
+    },
   },
 
   // العملات والأرقام - Currency & Numbers
@@ -249,7 +249,7 @@ export const ARABIC_TRANSLATIONS = {
     egyptianPound: 'جنيه مصري',
     usDollar: 'دولار أمريكي',
     euro: 'يورو',
-    saudiRiyal: 'ريال سعودي'
+    saudiRiyal: 'ريال سعودي',
   },
 
   // حالات التحميل - Loading States
@@ -258,7 +258,7 @@ export const ARABIC_TRANSLATIONS = {
     saving: 'جاري الحفظ...',
     deleting: 'جاري الحذف...',
     exporting: 'جاري التصدير...',
-    importing: 'جاري الاستيراد...'
+    importing: 'جاري الاستيراد...',
   },
 
   // الحالات الفارغة - Empty States
@@ -266,8 +266,8 @@ export const ARABIC_TRANSLATIONS = {
     noCustomers: 'لا توجد عملاء',
     noData: 'لا توجد بيانات',
     noResults: 'لا توجد نتائج',
-    searchToStart: 'ابحث لبدء النتائج'
-  }
+    searchToStart: 'ابحث لبدء النتائج',
+  },
 };
 
 // النصوص الإنجليزية - English Translations
@@ -278,9 +278,9 @@ export const ENGLISH_TRANSLATIONS = {
     reports: 'Reports',
     settings: 'Settings',
     profile: 'Profile',
-    logout: 'Logout'
+    logout: 'Logout',
   },
-  
+
   customers: {
     title: 'Customer Management',
     addCustomer: 'Add New Customer',
@@ -290,7 +290,7 @@ export const ENGLISH_TRANSLATIONS = {
     searchCustomers: 'Search Customers',
     filterBy: 'Filter by',
     sortBy: 'Sort by',
-    
+
     name: 'Name',
     email: 'Email',
     phone: 'Phone',
@@ -300,20 +300,20 @@ export const ENGLISH_TRANSLATIONS = {
     totalSpent: 'Total Spent',
     lastActivity: 'Last Activity',
     actions: 'Actions',
-    
+
     individual: 'Individual',
     business: 'Business',
     vip: 'VIP',
-    
+
     bronze: 'Bronze',
     silver: 'Silver',
     gold: 'Gold',
     platinum: 'Platinum',
-    
+
     active: 'Active',
     inactive: 'Inactive',
     blocked: 'Blocked',
-    pending: 'Pending'
+    pending: 'Pending',
   },
 
   dashboard: {
@@ -324,20 +324,20 @@ export const ENGLISH_TRANSLATIONS = {
     monthlyRevenue: 'Monthly Revenue',
     newCustomers: 'New Customers',
     customerGrowth: 'Customer Growth',
-    
+
     stats: {
       today: 'Today',
       thisWeek: 'This Week',
       thisMonth: 'This Month',
-      thisYear: 'This Year'
+      thisYear: 'This Year',
     },
-    
+
     charts: {
       customerGrowth: 'Customer Growth',
       revenueTrends: 'Revenue Trends',
       topCustomers: 'Top Customers',
-      customerStatus: 'Customer Status'
-    }
+      customerStatus: 'Customer Status',
+    },
   },
 
   forms: {
@@ -349,22 +349,22 @@ export const ENGLISH_TRANSLATIONS = {
     dateOfBirth: 'Date of Birth',
     gender: 'Gender',
     nationality: 'Nationality',
-    
+
     address: {
       street: 'Street',
       city: 'City',
       state: 'State',
       postalCode: 'Postal Code',
-      country: 'Country'
+      country: 'Country',
     },
-    
+
     preferences: {
       language: 'Preferred Language',
       timezone: 'Timezone',
       communicationMethod: 'Communication Method',
-      notifications: 'Notifications'
+      notifications: 'Notifications',
     },
-    
+
     buttons: {
       save: 'Save',
       cancel: 'Cancel',
@@ -376,16 +376,16 @@ export const ENGLISH_TRANSLATIONS = {
       export: 'Export',
       import: 'Import',
       submit: 'Submit',
-      reset: 'Reset'
+      reset: 'Reset',
     },
-    
+
     validation: {
       required: 'This field is required',
       invalidEmail: 'Invalid email format',
       invalidPhone: 'Invalid phone number',
       minLength: 'Minimum length',
-      maxLength: 'Maximum length'
-    }
+      maxLength: 'Maximum length',
+    },
   },
 
   messages: {
@@ -394,22 +394,22 @@ export const ENGLISH_TRANSLATIONS = {
       customerUpdated: 'Customer updated successfully',
       customerDeleted: 'Customer deleted successfully',
       dataExported: 'Data exported successfully',
-      dataImported: 'Data imported successfully'
+      dataImported: 'Data imported successfully',
     },
-    
+
     error: {
       genericError: 'An unexpected error occurred',
       networkError: 'Network connection error',
       validationError: 'Validation error',
       unauthorizedError: 'Unauthorized access',
-      notFoundError: 'Data not found'
+      notFoundError: 'Data not found',
     },
-    
+
     confirm: {
       deleteCustomer: 'Are you sure you want to delete this customer?',
       clearData: 'Are you sure you want to clear all data?',
-      logout: 'Do you want to logout?'
-    }
+      logout: 'Do you want to logout?',
+    },
   },
 
   settings: {
@@ -419,20 +419,20 @@ export const ENGLISH_TRANSLATIONS = {
     notifications: 'Notifications',
     backup: 'Backup',
     about: 'About App',
-    
+
     general: {
       language: 'Language',
       theme: 'Theme',
       currency: 'Currency',
-      dateFormat: 'Date Format'
+      dateFormat: 'Date Format',
     },
-    
+
     security: {
       changePassword: 'Change Password',
       twoFactorAuth: 'Two Factor Authentication',
       biometricLogin: 'Biometric Login',
-      sessionTimeout: 'Session Timeout'
-    }
+      sessionTimeout: 'Session Timeout',
+    },
   },
 
   reports: {
@@ -440,7 +440,7 @@ export const ENGLISH_TRANSLATIONS = {
     customerReport: 'Customer Report',
     salesReport: 'Sales Report',
     performanceReport: 'Performance Report',
-    
+
     dateRanges: {
       today: 'Today',
       yesterday: 'Yesterday',
@@ -449,15 +449,15 @@ export const ENGLISH_TRANSLATIONS = {
       last3Months: 'Last 3 Months',
       last6Months: 'Last 6 Months',
       lastYear: 'Last Year',
-      custom: 'Custom Range'
-    }
+      custom: 'Custom Range',
+    },
   },
 
   dateTime: {
     today: 'Today',
     yesterday: 'Yesterday',
     tomorrow: 'Tomorrow',
-    
+
     days: {
       sunday: 'Sunday',
       monday: 'Monday',
@@ -465,9 +465,9 @@ export const ENGLISH_TRANSLATIONS = {
       wednesday: 'Wednesday',
       thursday: 'Thursday',
       friday: 'Friday',
-      saturday: 'Saturday'
+      saturday: 'Saturday',
     },
-    
+
     months: {
       january: 'January',
       february: 'February',
@@ -480,15 +480,15 @@ export const ENGLISH_TRANSLATIONS = {
       september: 'September',
       october: 'October',
       november: 'November',
-      december: 'December'
-    }
+      december: 'December',
+    },
   },
 
   currency: {
     egyptianPound: 'Egyptian Pound',
     usDollar: 'US Dollar',
     euro: 'Euro',
-    saudiRiyal: 'Saudi Riyal'
+    saudiRiyal: 'Saudi Riyal',
   },
 
   loading: {
@@ -496,15 +496,15 @@ export const ENGLISH_TRANSLATIONS = {
     saving: 'Saving...',
     deleting: 'Deleting...',
     exporting: 'Exporting...',
-    importing: 'Importing...'
+    importing: 'Importing...',
   },
 
   empty: {
     noCustomers: 'No customers',
     noData: 'No data',
     noResults: 'No results',
-    searchToStart: 'Search to start seeing results'
-  }
+    searchToStart: 'Search to start seeing results',
+  },
 };
 
 // Translation Storage and Management
@@ -513,7 +513,7 @@ class TranslationManager {
     this.currentLanguage = SUPPORTED_LANGUAGES.ARABIC;
     this.translations = {
       [SUPPORTED_LANGUAGES.ARABIC]: ARABIC_TRANSLATIONS,
-      [SUPPORTED_LANGUAGES.ENGLISH]: ENGLISH_TRANSLATIONS
+      [SUPPORTED_LANGUAGES.ENGLISH]: ENGLISH_TRANSLATIONS,
     };
   }
 
@@ -530,7 +530,7 @@ class TranslationManager {
   t(keyPath, fallback = '') {
     const keys = keyPath.split('.');
     let current = this.translations[this.currentLanguage];
-    
+
     for (const key of keys) {
       if (current && typeof current === 'object' && key in current) {
         current = current[key];
@@ -538,7 +538,7 @@ class TranslationManager {
         return fallback || keyPath;
       }
     }
-    
+
     return current;
   }
 
@@ -550,7 +550,7 @@ class TranslationManager {
   // Update app locale for RTL support
   updateAppLocale(language) {
     const isRTL = RTL_LANGUAGES.includes(language);
-    
+
     // Set document direction
     if (typeof document !== 'undefined') {
       document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
@@ -570,7 +570,7 @@ class TranslationManager {
     const defaultOptions = {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
     };
     return new Intl.DateTimeFormat(locale, { ...defaultOptions, ...options }).format(date);
   }
@@ -580,7 +580,7 @@ class TranslationManager {
     const locale = this.currentLanguage === SUPPORTED_LANGUAGES.ARABIC ? 'ar-EG' : 'en-US';
     return new Intl.NumberFormat(locale, {
       style: 'currency',
-      currency: currency
+      currency: currency,
     }).format(amount);
   }
 }
@@ -592,12 +592,6 @@ export const translationManager = new TranslationManager();
 export const t = (keyPath, fallback = '') => translationManager.t(keyPath, fallback);
 
 // Export utility functions
-export const {
-  setLanguage,
-  isRTL,
-  formatNumber,
-  formatDate,
-  formatCurrency
-} = translationManager;
+export const { setLanguage, isRTL, formatNumber, formatDate, formatCurrency } = translationManager;
 
 export default translationManager;

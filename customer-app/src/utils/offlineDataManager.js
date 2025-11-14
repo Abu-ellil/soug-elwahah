@@ -23,19 +23,19 @@ export class OfflineDataManager {
     this.isOnline = true;
     this.syncQueue = [];
     this.listeners = [];
-    
+
     this.initializeNetworkListener();
   }
 
   // Network status monitoring
   initializeNetworkListener() {
-    NetInfo.addEventListener(state => {
+    NetInfo.addEventListener((state) => {
       const wasOnline = this.isOnline;
       this.isOnline = state.isConnected;
-      
+
       if (wasOnline !== this.isOnline) {
         this.notifyListeners('network_changed', { isOnline: this.isOnline });
-        
+
         if (this.isOnline) {
           this.handleReconnection();
         }
@@ -49,7 +49,7 @@ export class OfflineDataManager {
       const storeData = {
         data: stores,
         timestamp: Date.now(),
-        version: '1.0'
+        version: '1.0',
       };
       await AsyncStorage.setItem(STORAGE_KEYS.STORES, JSON.stringify(storeData));
       return true;
@@ -83,7 +83,7 @@ export class OfflineDataManager {
       const productData = {
         data: products,
         timestamp: Date.now(),
-        version: '1.0'
+        version: '1.0',
       };
       await AsyncStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(productData));
       return true;
@@ -116,7 +116,7 @@ export class OfflineDataManager {
       const villageData = {
         data: villages,
         timestamp: Date.now(),
-        version: '1.0'
+        version: '1.0',
       };
       await AsyncStorage.setItem(STORAGE_KEYS.VILLAGES, JSON.stringify(villageData));
       return true;
@@ -149,7 +149,7 @@ export class OfflineDataManager {
       const cartData = {
         items: cartItems,
         lastModified: Date.now(),
-        version: '1.0'
+        version: '1.0',
       };
       await AsyncStorage.setItem(STORAGE_KEYS.USER_CART, JSON.stringify(cartData));
       return true;
@@ -182,15 +182,15 @@ export class OfflineDataManager {
         status: 'pending_sync',
         offline: true,
         createdOffline: true,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
-      
+
       offlineOrders.push(newOrder);
       await AsyncStorage.setItem(STORAGE_KEYS.OFFLINE_ORDERS, JSON.stringify(offlineOrders));
-      
+
       // Add to sync queue
       this.addToSyncQueue('create_order', newOrder);
-      
+
       return newOrder;
     } catch (error) {
       console.error('Error saving offline order:', error);
@@ -217,16 +217,16 @@ export class OfflineDataManager {
         action,
         data,
         timestamp: Date.now(),
-        retryCount: 0
+        retryCount: 0,
       };
-      
+
       queue.push(queueItem);
       await AsyncStorage.setItem(STORAGE_KEYS.PENDING_ACTIONS, JSON.stringify(queue));
-      
+
       if (this.isOnline) {
         this.processSyncQueue();
       }
-      
+
       return queueItem;
     } catch (error) {
       console.error('Error adding to sync queue:', error);
@@ -246,16 +246,12 @@ export class OfflineDataManager {
 
   // Handle network reconnection
   async handleReconnection() {
-    Alert.alert(
-      'تم الاتصال بالإنترنت',
-      'جاري مزامنة البيانات...',
-      [
-        {
-          text: 'موافق',
-          onPress: () => this.syncAllData().catch(console.error)
-        }
-      ]
-    );
+    Alert.alert('تم الاتصال بالإنترنت', 'جاري مزامنة البيانات...', [
+      {
+        text: 'موافق',
+        onPress: () => this.syncAllData().catch(console.error),
+      },
+    ]);
   }
 
   // Data synchronization
@@ -263,16 +259,16 @@ export class OfflineDataManager {
     if (!this.isOnline) {
       throw new Error('No internet connection');
     }
-    
+
     try {
       await this.processSyncQueue();
-      
+
       // Update last sync timestamp
       await AsyncStorage.setItem(STORAGE_KEYS.LAST_SYNC, Date.now().toString());
-      
+
       // Notify success
       this.notifyListeners('sync_completed', { timestamp: Date.now() });
-      
+
       return true;
     } catch (error) {
       console.error('Error during data sync:', error);
@@ -294,10 +290,10 @@ export class OfflineDataManager {
   // Mock sync operations (replace with real API calls)
   async processSyncQueue() {
     if (!this.isOnline) return;
-    
+
     try {
       const queue = await this.getSyncQueue();
-      
+
       for (const item of queue) {
         if (item.retryCount >= 3) {
           // Mark as failed after 3 retries
@@ -305,11 +301,11 @@ export class OfflineDataManager {
           item.failedAt = Date.now();
           continue;
         }
-        
+
         try {
           await this.processSyncItem(item);
           // Remove successfully processed item
-          const updatedQueue = queue.filter(q => q.id !== item.id);
+          const updatedQueue = queue.filter((q) => q.id !== item.id);
           await AsyncStorage.setItem(STORAGE_KEYS.PENDING_ACTIONS, JSON.stringify(updatedQueue));
         } catch (error) {
           // Increment retry count
@@ -327,7 +323,7 @@ export class OfflineDataManager {
     switch (item.action) {
       case 'create_order':
         console.log('Syncing order creation:', item.data);
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         return { success: true, syncedOrder: { ...item.data, synced: true } };
       default:
         throw new Error(`Unknown sync action: ${item.action}`);
@@ -337,7 +333,7 @@ export class OfflineDataManager {
   async updateSyncItem(updatedItem) {
     try {
       const queue = await this.getSyncQueue();
-      const index = queue.findIndex(item => item.id === updatedItem.id);
+      const index = queue.findIndex((item) => item.id === updatedItem.id);
       if (index >= 0) {
         queue[index] = updatedItem;
         await AsyncStorage.setItem(STORAGE_KEYS.PENDING_ACTIONS, JSON.stringify(queue));
@@ -362,11 +358,11 @@ export class OfflineDataManager {
   }
 
   removeListener(callback) {
-    this.listeners = this.listeners.filter(listener => listener !== callback);
+    this.listeners = this.listeners.filter((listener) => listener !== callback);
   }
 
   notifyListeners(event, data) {
-    this.listeners.forEach(listener => {
+    this.listeners.forEach((listener) => {
       try {
         listener(event, data);
       } catch (error) {
@@ -385,12 +381,12 @@ export class OfflineDataManager {
     try {
       const keys = Object.values(STORAGE_KEYS);
       const stats = {};
-      
+
       for (const key of keys) {
         const data = await AsyncStorage.getItem(key);
         stats[key] = data ? data.length : 0;
       }
-      
+
       return stats;
     } catch (error) {
       console.error('Error getting storage stats:', error);

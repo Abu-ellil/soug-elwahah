@@ -2,31 +2,31 @@
 // ===================================================================
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { 
-  MOCK_CUSTOMERS, 
-  CUSTOMER_STATUSES, 
-  CUSTOMER_TIERS, 
+import {
+  MOCK_CUSTOMERS,
+  CUSTOMER_STATUSES,
+  CUSTOMER_TIERS,
   CUSTOMER_TYPES,
   getCustomerDisplayName,
   calculateCustomerMetrics,
   searchCustomers,
   filterCustomersByStatus,
   filterCustomersByTier,
-  sortCustomersByField
+  sortCustomersByField,
 } from '../data/customers';
-import { 
-  hasPermission, 
+import {
+  hasPermission,
   hasPermissions,
   encryptSensitiveData,
   decryptSensitiveData,
-  validatePasswordStrength
+  validatePasswordStrength,
 } from './auth';
 
 // مفاتيح التخزين - Storage Keys
 const STORAGE_KEYS = {
   CUSTOMERS: 'customers_data',
   CUSTOMER_ENCRYPTED: 'customers_encrypted',
-  CUSTOMER_BACKUPS: 'customers_backups'
+  CUSTOMER_BACKUPS: 'customers_backups',
 };
 
 // فئة إدارة العملاء - Customer Management Class
@@ -53,20 +53,20 @@ export class CustomerManager {
   async loadCustomers() {
     try {
       const encryptedData = await AsyncStorage.getItem(STORAGE_KEYS.CUSTOMER_ENCRYPTED);
-      
+
       if (encryptedData) {
         // فك تشريع البيانات الحساسة - Decrypt sensitive data
         const decryptedData = decryptSensitiveData(encryptedData, this.encryptionKey);
-        this.customers = new Map(decryptedData.map(customer => [customer.id, customer]));
+        this.customers = new Map(decryptedData.map((customer) => [customer.id, customer]));
       } else {
         // تحميل البيانات التجريبية - Load mock data
-        this.customers = new Map(MOCK_CUSTOMERS.map(customer => [customer.id, customer]));
+        this.customers = new Map(MOCK_CUSTOMERS.map((customer) => [customer.id, customer]));
         await this.saveCustomers();
       }
     } catch (error) {
       console.error('فشل في تحميل البيانات:', error);
       // تحميل البيانات التجريبية كبديل - Load mock data as fallback
-      this.customers = new Map(MOCK_CUSTOMERS.map(customer => [customer.id, customer]));
+      this.customers = new Map(MOCK_CUSTOMERS.map((customer) => [customer.id, customer]));
     }
   }
 
@@ -76,7 +76,7 @@ export class CustomerManager {
       // تشريع البيانات الحساسة - Encrypt sensitive data
       const customerArray = Array.from(this.customers.values());
       const encryptedData = encryptSensitiveData(customerArray, this.encryptionKey);
-      
+
       await AsyncStorage.setItem(STORAGE_KEYS.CUSTOMER_ENCRYPTED, encryptedData);
       console.log('تم حفظ بيانات العملاء بنجاح');
     } catch (error) {
@@ -101,7 +101,7 @@ export class CustomerManager {
 
       // إنشاء معرف فريد - Generate unique ID
       const customerId = this.generateCustomerId();
-      
+
       // إنشاء بيانات العميل - Create customer object
       const newCustomer = {
         id: customerId,
@@ -115,19 +115,19 @@ export class CustomerManager {
           averageOrderValue: 0,
           lastPurchaseDate: null,
           purchaseFrequency: 0,
-          loyaltyPoints: 0
+          loyaltyPoints: 0,
         },
         interactions: [],
         documents: [],
         customFields: customerData.customFields || {},
         createdBy: currentUser.id,
         updatedBy: currentUser.id,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
 
       // حفظ في الذاكرة - Save to memory
       this.customers.set(customerId, newCustomer);
-      
+
       // حفظ في التخزين - Save to storage
       await this.saveCustomers();
 
@@ -183,12 +183,12 @@ export class CustomerManager {
         ...customer,
         ...updateData,
         updatedBy: currentUser.id,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
 
       // حفظ في الذاكرة - Save to memory
       this.customers.set(customerId, updatedCustomer);
-      
+
       // حفظ في التخزين - Save to storage
       await this.saveCustomers();
 
@@ -215,10 +215,10 @@ export class CustomerManager {
 
       // إنشاء نسخة احتياطية - Create backup
       await this.createBackup(customer);
-      
+
       // حذف من الذاكرة - Remove from memory
       this.customers.delete(customerId);
-      
+
       // حفظ في التخزين - Save to storage
       await this.saveCustomers();
 
@@ -269,7 +269,7 @@ export class CustomerManager {
         customers,
         total: this.customers.size,
         filtered: customers.length,
-        ...calculateCustomerMetrics(customers)
+        ...calculateCustomerMetrics(customers),
       };
     } catch (error) {
       console.error('فشل في قراءة جميع العملاء:', error);
@@ -280,7 +280,7 @@ export class CustomerManager {
   // التحقق من صحة البيانات - Validate Customer Data
   validateCustomerData(data, isUpdate = false) {
     const errors = [];
-    
+
     // التحقق من الحقول الإلزامية - Check required fields
     if (!isUpdate || data.firstName !== undefined) {
       if (!data.firstName || data.firstName.trim().length === 0) {
@@ -326,16 +326,18 @@ export class CustomerManager {
 
     // التحقق من التطابق في البيانات - Validate data consistency
     if (data.email && !isUpdate) {
-      const existingCustomer = Array.from(this.customers.values())
-        .find(c => c.email === data.email);
+      const existingCustomer = Array.from(this.customers.values()).find(
+        (c) => c.email === data.email
+      );
       if (existingCustomer) {
         errors.push('البريد الإلكتروني مستخدم بالفعل');
       }
     }
 
     if (data.phone && !isUpdate) {
-      const existingCustomer = Array.from(this.customers.values())
-        .find(c => c.phone === data.phone);
+      const existingCustomer = Array.from(this.customers.values()).find(
+        (c) => c.phone === data.phone
+      );
       if (existingCustomer) {
         errors.push('رقم الهاتف مستخدم بالفعل');
       }
@@ -343,7 +345,7 @@ export class CustomerManager {
 
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -376,9 +378,9 @@ export class CustomerManager {
         customerId: customer.id,
         data: customer,
         timestamp: new Date().toISOString(),
-        reason: 'deletion'
+        reason: 'deletion',
       };
-      
+
       backups.push(backup);
       await AsyncStorage.setItem(STORAGE_KEYS.CUSTOMER_BACKUPS, JSON.stringify(backups));
     } catch (error) {
@@ -406,8 +408,8 @@ export class CustomerManager {
       }
 
       const backups = await this.getBackups();
-      const backup = backups.find(b => b.id === backupId);
-      
+      const backup = backups.find((b) => b.id === backupId);
+
       if (!backup) {
         throw new Error('النسخة الاحتياطية غير موجودة');
       }
@@ -418,13 +420,15 @@ export class CustomerManager {
         id: this.generateCustomerId(), // New ID to avoid conflicts
         restored: true,
         restoredBy: currentUser.id,
-        restoredAt: new Date().toISOString()
+        restoredAt: new Date().toISOString(),
       };
 
       this.customers.set(restoredCustomer.id, restoredCustomer);
       await this.saveCustomers();
 
-      console.log(`تم استعادة العميل من النسخة الاحتياطية: ${getCustomerDisplayName(restoredCustomer)}`);
+      console.log(
+        `تم استعادة العميل من النسخة الاحتياطية: ${getCustomerDisplayName(restoredCustomer)}`
+      );
       return restoredCustomer;
     } catch (error) {
       console.error('فشل في استعادة البيانات:', error);
@@ -469,9 +473,9 @@ export class CustomerManager {
     const registrationDate = new Date(customer.registrationDate);
     const now = new Date();
     const daysDiff = Math.floor((now - registrationDate) / (1000 * 60 * 60 * 24));
-    
+
     if (daysDiff === 0) return customer.statistics.totalPurchases;
-    
+
     return customer.statistics.totalPurchases / (daysDiff / 30); // Monthly frequency
   }
 
@@ -480,7 +484,7 @@ export class CustomerManager {
     const basePoints = stats.totalSpent * 0.01; // 1 point per EGP spent
     const purchaseBonus = stats.totalPurchases * 10; // 10 points per purchase
     const frequencyBonus = stats.purchaseFrequency * 5; // Bonus for regular customers
-    
+
     return Math.floor(basePoints + purchaseBonus + frequencyBonus);
   }
 

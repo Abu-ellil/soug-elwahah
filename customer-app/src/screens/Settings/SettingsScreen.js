@@ -15,7 +15,7 @@ export const SETTINGS_TYPES = {
   NOTIFICATIONS: 'notifications',
   PRIVACY: 'privacy',
   BACKUP: 'backup',
-  ADVANCED: 'advanced'
+  ADVANCED: 'advanced',
 };
 
 // إعدادات التطبيق الافتراضية - Default Application Settings
@@ -30,9 +30,9 @@ export const DEFAULT_SETTINGS = {
     animations: true,
     autoSave: true,
     sessionTimeout: 30, // minutes
-    dataRetentionDays: 365
+    dataRetentionDays: 365,
   },
-  
+
   security: {
     biometricLogin: false,
     twoFactorAuth: false,
@@ -42,9 +42,9 @@ export const DEFAULT_SETTINGS = {
     requirePasswordForActions: true,
     sessionTimeoutWarning: true,
     failedLoginAttempts: 5,
-    accountLockoutDuration: 15 // minutes
+    accountLockoutDuration: 15, // minutes
   },
-  
+
   notifications: {
     pushNotifications: true,
     emailNotifications: true,
@@ -57,15 +57,15 @@ export const DEFAULT_SETTINGS = {
       customerAdded: true,
       customerUpdated: true,
       systemAlerts: true,
-      reminders: true
+      reminders: true,
     },
     quietHours: {
       enabled: false,
       startTime: '22:00',
-      endTime: '08:00'
-    }
+      endTime: '08:00',
+    },
   },
-  
+
   privacy: {
     dataCollection: false,
     analytics: false,
@@ -73,9 +73,9 @@ export const DEFAULT_SETTINGS = {
     locationTracking: false,
     contactSync: false,
     automaticBackups: true,
-    dataSharing: false
+    dataSharing: false,
   },
-  
+
   backup: {
     autoBackup: true,
     backupFrequency: 'daily', // daily, weekly, monthly
@@ -83,9 +83,9 @@ export const DEFAULT_SETTINGS = {
     cloudBackup: false,
     backupRetention: 30, // days
     encryptedBackup: true,
-    backupNotification: true
+    backupNotification: true,
   },
-  
+
   advanced: {
     debugMode: false,
     performanceMode: false,
@@ -94,8 +94,8 @@ export const DEFAULT_SETTINGS = {
     syncFrequency: 5, // minutes
     maxRetries: 3,
     requestTimeout: 30000, // milliseconds
-    networkTimeout: 10000
-  }
+    networkTimeout: 10000,
+  },
 };
 
 // فئة إدارة الإعدادات - Settings Manager Class
@@ -148,13 +148,13 @@ export class SettingsManager {
   // دمج الإعدادات مع القيم الافتراضية - Merge Settings with Defaults
   mergeSettings(defaults, stored) {
     const merged = { ...defaults };
-    
+
     for (const category in defaults) {
       if (stored[category]) {
         merged[category] = { ...defaults[category], ...stored[category] };
       }
     }
-    
+
     return merged;
   }
 
@@ -169,15 +169,15 @@ export class SettingsManager {
       if (!this.settings[category]) {
         this.settings[category] = {};
       }
-      
+
       this.settings[category][key] = value;
-      
+
       // تطبيق الإعداد فوراً - Apply setting immediately
       await this.applySetting(category, key, value);
-      
+
       // حفظ في التخزين - Save to storage
       await this.saveSettings();
-      
+
       return true;
     } catch (error) {
       console.error('خطأ في تحديث الإعداد:', error);
@@ -192,13 +192,13 @@ export class SettingsManager {
         if (!this.settings[category]) {
           this.settings[category] = {};
         }
-        
+
         for (const [key, value] of Object.entries(categoryUpdates)) {
           this.settings[category][key] = value;
           await this.applySetting(category, key, value);
         }
       }
-      
+
       await this.saveSettings();
       return true;
     } catch (error) {
@@ -330,7 +330,7 @@ export class SettingsManager {
       } else {
         this.settings = { ...DEFAULT_SETTINGS };
       }
-      
+
       await this.saveSettings();
       return true;
     } catch (error) {
@@ -345,9 +345,9 @@ export class SettingsManager {
       const exportData = {
         version: '1.0',
         exportedAt: new Date().toISOString(),
-        settings: this.settings
+        settings: this.settings,
       };
-      
+
       return JSON.stringify(exportData, null, 2);
     } catch (error) {
       console.error('خطأ في تصدير الإعدادات:', error);
@@ -359,15 +359,15 @@ export class SettingsManager {
   async importSettings(settingsJson) {
     try {
       const importData = JSON.parse(settingsJson);
-      
+
       if (!importData.settings) {
         throw new Error('ملف الإعدادات غير صحيح');
       }
-      
+
       // دمج الإعدادات المستوردة - Merge imported settings
       this.settings = this.mergeSettings(DEFAULT_SETTINGS, importData.settings);
       await this.saveSettings();
-      
+
       return true;
     } catch (error) {
       console.error('خطأ في استيراد الإعدادات:', error);
@@ -381,7 +381,7 @@ export class SettingsManager {
       this.listeners.set(key, new Set());
     }
     this.listeners.get(key).add(callback);
-    
+
     // إرجاع دالة إلغاء الاشتراك - Return unsubscribe function
     return () => {
       const callbacks = this.listeners.get(key);
@@ -395,7 +395,7 @@ export class SettingsManager {
   notifyListeners() {
     for (const [key, callbacks] of this.listeners.entries()) {
       const value = this.getSettingValue(key);
-      callbacks.forEach(callback => {
+      callbacks.forEach((callback) => {
         try {
           callback(value);
         } catch (error) {
@@ -409,7 +409,7 @@ export class SettingsManager {
   getSettingValue(key) {
     const keys = key.split('.');
     let current = this.settings;
-    
+
     for (const k of keys) {
       if (current && typeof current === 'object' && k in current) {
         current = current[k];
@@ -417,32 +417,38 @@ export class SettingsManager {
         return null;
       }
     }
-    
+
     return current;
   }
 
   // التحقق من صحة الإعدادات - Validate Settings
   validateSettings(settings) {
     const errors = [];
-    
+
     // التحقق من صحة اللغة - Validate language
-    if (settings.general?.language && !Object.values(SUPPORTED_LANGUAGES).includes(settings.general.language)) {
+    if (
+      settings.general?.language &&
+      !Object.values(SUPPORTED_LANGUAGES).includes(settings.general.language)
+    ) {
       errors.push('لغة غير مدعومة');
     }
-    
+
     // التحقق من صحة المظهر - Validate theme
     if (settings.general?.theme && !['light', 'dark', 'auto'].includes(settings.general.theme)) {
       errors.push('مظهر غير مدعوم');
     }
-    
+
     // التحقق من صحة العملة - Validate currency
-    if (settings.general?.currency && !['EGP', 'USD', 'EUR', 'SAR'].includes(settings.general.currency)) {
+    if (
+      settings.general?.currency &&
+      !['EGP', 'USD', 'EUR', 'SAR'].includes(settings.general.currency)
+    ) {
       errors.push('عملة غير مدعومة');
     }
-    
+
     return {
       isValid: errors.length === 0,
-      errors
+      errors,
     };
   }
 }
@@ -458,12 +464,12 @@ const SettingsScreen = ({ navigation }) => {
 
   useEffect(() => {
     loadSettings();
-    
+
     // الاشتراك في تحديثات الإعدادات - Subscribe to settings updates
     const unsubscribe = settingsManager.subscribe('*', (value) => {
       setSettings({ ...settingsManager.settings });
     });
-    
+
     return unsubscribe;
   }, []);
 
@@ -489,32 +495,27 @@ const SettingsScreen = ({ navigation }) => {
   };
 
   const resetCategorySettings = async (category) => {
-    Alert.alert(
-      'تأكيد إعادة التعيين',
-      'هل أنت متأكد من إعادة تعيين جميع إعدادات هذه الفئة؟',
-      [
-        { text: 'إلغاء', style: 'cancel' },
-        {
-          text: 'إعادة تعيين',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await settingsManager.resetSettings(category);
-              setSettings({ ...settingsManager.settings });
-            } catch (error) {
-              Alert.alert('خطأ', 'فشل في إعادة التعيين');
-            }
+    Alert.alert('تأكيد إعادة التعيين', 'هل أنت متأكد من إعادة تعيين جميع إعدادات هذه الفئة؟', [
+      { text: 'إلغاء', style: 'cancel' },
+      {
+        text: 'إعادة تعيين',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await settingsManager.resetSettings(category);
+            setSettings({ ...settingsManager.settings });
+          } catch (error) {
+            Alert.alert('خطأ', 'فشل في إعادة التعيين');
           }
-        }
-      ]
-    );
+        },
+      },
+    ]);
   };
 
   const renderTabButton = (tabType, title, icon) => (
     <TouchableOpacity
       style={[styles.tabButton, activeTab === tabType && styles.activeTabButton]}
-      onPress={() => setActiveTab(tabType)}
-    >
+      onPress={() => setActiveTab(tabType)}>
       <Text style={[styles.tabButtonText, activeTab === tabType && styles.activeTabButtonText]}>
         {icon} {title}
       </Text>
@@ -524,33 +525,39 @@ const SettingsScreen = ({ navigation }) => {
   const renderGeneralSettings = () => (
     <View style={styles.settingsSection}>
       <Text style={styles.sectionTitle}>{t('settings.generalTab')}</Text>
-      
+
       {/* إعدادات اللغة - Language Settings */}
       <View style={styles.settingItem}>
         <Text style={styles.settingLabel}>{t('settings.general.language')}</Text>
-        <Text style={styles.settingValue}>{settings.general?.language === 'ar' ? 'العربية' : 'English'}</Text>
+        <Text style={styles.settingValue}>
+          {settings.general?.language === 'ar' ? 'العربية' : 'English'}
+        </Text>
       </View>
-      
+
       {/* إعدادات المظهر - Theme Settings */}
       <View style={styles.settingItem}>
         <Text style={styles.settingLabel}>{t('settings.general.theme')}</Text>
         <Text style={styles.settingValue}>
-          {settings.general?.theme === 'light' ? 'فاتح' : settings.general?.theme === 'dark' ? 'داكن' : 'تلقائي'}
+          {settings.general?.theme === 'light'
+            ? 'فاتح'
+            : settings.general?.theme === 'dark'
+              ? 'داكن'
+              : 'تلقائي'}
         </Text>
       </View>
-      
+
       {/* إعدادات العملة - Currency Settings */}
       <View style={styles.settingItem}>
         <Text style={styles.settingLabel}>{t('settings.general.currency')}</Text>
         <Text style={styles.settingValue}>{settings.general?.currency}</Text>
       </View>
-      
+
       {/* إعدادات التنسيق - Format Settings */}
       <View style={styles.settingItem}>
         <Text style={styles.settingLabel}>تنسيق التاريخ</Text>
         <Text style={styles.settingValue}>{settings.general?.dateFormat}</Text>
       </View>
-      
+
       {/* تفعيل RTL - RTL Toggle */}
       <View style={styles.settingItem}>
         <Text style={styles.settingLabel}>دعم القراءة من اليمين</Text>
@@ -559,7 +566,7 @@ const SettingsScreen = ({ navigation }) => {
           onValueChange={(value) => updateSetting('general', 'rtl', value)}
         />
       </View>
-      
+
       {/* تفعيل الرسوم المتحركة - Animations Toggle */}
       <View style={styles.settingItem}>
         <Text style={styles.settingLabel}>الرسوم المتحركة</Text>
@@ -574,7 +581,7 @@ const SettingsScreen = ({ navigation }) => {
   const renderSecuritySettings = () => (
     <View style={styles.settingsSection}>
       <Text style={styles.sectionTitle}>{t('settings.securityTab')}</Text>
-      
+
       {/* المصادقة البيومترية - Biometric Authentication */}
       <View style={styles.settingItem}>
         <Text style={styles.settingLabel}>{t('settings.security.biometricLogin')}</Text>
@@ -583,7 +590,7 @@ const SettingsScreen = ({ navigation }) => {
           onValueChange={(value) => updateSetting('security', 'biometricLogin', value)}
         />
       </View>
-      
+
       {/* المصادقة الثنائية - Two Factor Authentication */}
       <View style={styles.settingItem}>
         <Text style={styles.settingLabel}>{t('settings.security.twoFactorAuth')}</Text>
@@ -592,7 +599,7 @@ const SettingsScreen = ({ navigation }) => {
           onValueChange={(value) => updateSetting('security', 'twoFactorAuth', value)}
         />
       </View>
-      
+
       {/* القفل التلقائي - Auto Lock */}
       <View style={styles.settingItem}>
         <Text style={styles.settingLabel}>القفل التلقائي</Text>
@@ -601,7 +608,7 @@ const SettingsScreen = ({ navigation }) => {
           onValueChange={(value) => updateSetting('security', 'autoLock', value)}
         />
       </View>
-      
+
       {/* مهلة انتهاء الجلسة - Session Timeout */}
       <View style={styles.settingItem}>
         <Text style={styles.settingLabel}>مهلة انتهاء الجلسة (دقيقة)</Text>
@@ -613,7 +620,7 @@ const SettingsScreen = ({ navigation }) => {
   const renderNotificationSettings = () => (
     <View style={styles.settingsSection}>
       <Text style={styles.sectionTitle}>الإشعارات</Text>
-      
+
       {/* الإشعارات الدفعية - Push Notifications */}
       <View style={styles.settingItem}>
         <Text style={styles.settingLabel}>الإشعارات الدفعية</Text>
@@ -622,7 +629,7 @@ const SettingsScreen = ({ navigation }) => {
           onValueChange={(value) => updateSetting('notifications', 'pushNotifications', value)}
         />
       </View>
-      
+
       {/* الإشعارات البريدية - Email Notifications */}
       <View style={styles.settingItem}>
         <Text style={styles.settingLabel}>الإشعارات البريدية</Text>
@@ -631,7 +638,7 @@ const SettingsScreen = ({ navigation }) => {
           onValueChange={(value) => updateSetting('notifications', 'emailNotifications', value)}
         />
       </View>
-      
+
       {/* أصوات الإشعارات - Notification Sounds */}
       <View style={styles.settingItem}>
         <Text style={styles.settingLabel}>أصوات الإشعارات</Text>
@@ -640,7 +647,7 @@ const SettingsScreen = ({ navigation }) => {
           onValueChange={(value) => updateSetting('notifications', 'sound', value)}
         />
       </View>
-      
+
       {/* الاهتزاز - Vibration */}
       <View style={styles.settingItem}>
         <Text style={styles.settingLabel}>الاهتزاز</Text>
@@ -652,13 +659,10 @@ const SettingsScreen = ({ navigation }) => {
     </View>
   );
 
-    const renderAccountSettings = () => (
+  const renderAccountSettings = () => (
     <View style={styles.settingsSection}>
       <Text style={styles.sectionTitle}>الحساب</Text>
-      <TouchableOpacity
-        style={styles.settingItem}
-        onPress={() => navigation.navigate('Addresses')}
-      >
+      <TouchableOpacity style={styles.settingItem} onPress={() => navigation.navigate('Addresses')}>
         <Text style={styles.settingLabel}>إدارة العناوين</Text>
         <Text style={styles.settingValue}>&gt;</Text>
       </TouchableOpacity>
@@ -685,7 +689,7 @@ const SettingsScreen = ({ navigation }) => {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{t('settings.title')}</Text>
       </View>
-      
+
       {/* تبويبات الإعدادات - Settings Tabs */}
       <View style={styles.tabContainer}>
         {renderTabButton(SETTINGS_TYPES.GENERAL, 'عام', '⚙️')}
@@ -693,20 +697,19 @@ const SettingsScreen = ({ navigation }) => {
         {renderTabButton(SETTINGS_TYPES.NOTIFICATIONS, 'إشعارات', '🔔')}
         {renderTabButton('account', 'الحساب', '👤')}
       </View>
-      
+
       {/* محتوى الإعدادات - Settings Content */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {renderActiveTab()}
-        
+
         {/* أزرار الإعدادات - Settings Actions */}
         <View style={styles.actionsContainer}>
           <TouchableOpacity
             style={styles.resetButton}
-            onPress={() => resetCategorySettings(activeTab)}
-          >
+            onPress={() => resetCategorySettings(activeTab)}>
             <Text style={styles.resetButtonText}>إعادة تعيين الفئة</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={styles.exportButton}
             onPress={async () => {
@@ -717,8 +720,7 @@ const SettingsScreen = ({ navigation }) => {
               } catch (error) {
                 Alert.alert('خطأ', 'فشل في تصدير الإعدادات');
               }
-            }}
-          >
+            }}>
             <Text style={styles.exportButtonText}>تصدير الإعدادات</Text>
           </TouchableOpacity>
         </View>
@@ -733,20 +735,20 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
-  
+
   header: {
     padding: 20,
     backgroundColor: 'white',
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
-  
+
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#2D3436',
   },
-  
+
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: 'white',
@@ -755,7 +757,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
   },
-  
+
   tabButton: {
     flex: 1,
     paddingVertical: 12,
@@ -765,26 +767,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F5',
     alignItems: 'center',
   },
-  
+
   activeTabButton: {
     backgroundColor: '#FF6B35',
   },
-  
+
   tabButtonText: {
     fontSize: 14,
     fontWeight: '500',
     color: '#666',
   },
-  
+
   activeTabButtonText: {
     color: 'white',
   },
-  
+
   content: {
     flex: 1,
     padding: 20,
   },
-  
+
   settingsSection: {
     backgroundColor: 'white',
     borderRadius: 12,
@@ -796,14 +798,14 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  
+
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#2D3436',
     marginBottom: 16,
   },
-  
+
   settingItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -812,23 +814,23 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F0F0F0',
   },
-  
+
   settingLabel: {
     fontSize: 16,
     color: '#2D3436',
     flex: 1,
   },
-  
+
   settingValue: {
     fontSize: 14,
     color: '#666',
     marginRight: 16,
   },
-  
+
   actionsContainer: {
     marginTop: 20,
   },
-  
+
   resetButton: {
     backgroundColor: '#EF476F',
     padding: 16,
@@ -836,20 +838,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
-  
+
   resetButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
   },
-  
+
   exportButton: {
     backgroundColor: '#4ECDC4',
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
   },
-  
+
   exportButtonText: {
     color: 'white',
     fontSize: 16,

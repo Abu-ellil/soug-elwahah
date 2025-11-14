@@ -11,69 +11,47 @@ const OrderCard = ({ order, onPress }) => {
   return (
     <TouchableOpacity
       onPress={onPress}
-      className="bg-white rounded-xl shadow-sm mx-4 my-2 p-4"
+      className="mx-4 my-2 rounded-xl bg-white p-4 shadow-sm"
       style={{
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
         elevation: 3,
-      }}
-    >
-      <View className="flex-row items-center justify-between mb-3">
-        <Text
-          className="text-lg font-bold"
-          style={{ color: COLORS.text }}
-        >
+      }}>
+      <View className="mb-3 flex-row items-center justify-between">
+        <Text className="text-lg font-bold" style={{ color: COLORS.text }}>
           طلب #{order.id.slice(-4)}
         </Text>
-        <View
-          className="px-3 py-1 rounded-full"
-          style={{ backgroundColor: statusColor + '20' }}
-        >
-          <Text
-            className="text-sm font-medium"
-            style={{ color: statusColor }}
-          >
+        <View className="rounded-full px-3 py-1" style={{ backgroundColor: statusColor + '20' }}>
+          <Text className="text-sm font-medium" style={{ color: statusColor }}>
             {statusText}
           </Text>
         </View>
       </View>
 
-      <View className="flex-row items-center mb-2">
+      <View className="mb-2 flex-row items-center">
         <Ionicons name="storefront-outline" size={16} color={COLORS.textSecondary} />
-        <Text
-          className="text-sm mr-2"
-          style={{ color: COLORS.textSecondary }}
-        >
+        <Text className="mr-2 text-sm" style={{ color: COLORS.textSecondary }}>
           {order.storeName || 'اسم المحل'}
         </Text>
       </View>
 
-      <View className="flex-row items-center justify-between mb-2">
+      <View className="mb-2 flex-row items-center justify-between">
         <View className="flex-row items-center">
           <Ionicons name="cube-outline" size={16} color={COLORS.textSecondary} />
-          <Text
-            className="text-sm mr-2"
-            style={{ color: COLORS.textSecondary }}
-          >
+          <Text className="mr-2 text-sm" style={{ color: COLORS.textSecondary }}>
             {order.items?.length || 0} منتج
           </Text>
         </View>
-        <Text
-          className="text-lg font-bold"
-          style={{ color: COLORS.primary }}
-        >
+        <Text className="text-lg font-bold" style={{ color: COLORS.primary }}>
           {formatPrice(order.total)}
         </Text>
       </View>
 
       <View className="flex-row items-center">
         <Ionicons name="calendar-outline" size={16} color={COLORS.textSecondary} />
-        <Text
-          className="text-sm mr-2"
-          style={{ color: COLORS.textSecondary }}
-        >
+        <Text className="mr-2 text-sm" style={{ color: COLORS.textSecondary }}>
           {formatDate(order.createdAt)}
         </Text>
       </View>

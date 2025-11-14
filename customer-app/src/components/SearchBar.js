@@ -6,8 +6,8 @@ import COLORS from '../constants/colors';
 const SearchBar = ({
   value,
   onChangeText,
-  placeholder = "البحث في المحلات والمنتجات...",
-  onClear
+  placeholder = 'البحث في المحلات والمنتجات...',
+  onClear,
 }) => {
   const handleClear = () => {
     onChangeText('');
@@ -15,14 +15,14 @@ const SearchBar = ({
   };
 
   return (
-    <View className="flex-row items-center bg-white rounded-xl mx-4 my-2 px-4 py-3 shadow-sm">
+    <View className="mx-4 my-2 flex-row items-center rounded-xl bg-white px-4 py-3 shadow-sm">
       <Ionicons name="search" size={20} color={COLORS.textSecondary} />
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={COLORS.textSecondary}
-        className="flex-1 mr-3 text-base"
+        className="mr-3 flex-1 text-base"
         style={{ color: COLORS.text, textAlign: 'right' }}
         returnKeyType="search"
       />

@@ -2,11 +2,20 @@
 // ================================================================
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, TextInput, ScrollView, StyleSheet, TouchableOpacity, FlatList, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+  Alert,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { customerManager } from '../utils/customerManager';
-import { t, translationManager } from '../utils/localization';
-import { hasPermission } from '../utils/auth';
+import { customerManager } from '../../utils/customerManager';
+import { t, translationManager } from '../../utils/localization';
+import { hasPermission } from '../../utils/auth';
 
 // أنواع الفلاتر - Filter Types
 export const FILTER_TYPES = {
@@ -16,7 +25,7 @@ export const FILTER_TYPES = {
   SELECT: 'select',
   MULTISELECT: 'multiselect',
   BOOLEAN: 'boolean',
-  RANGE: 'range'
+  RANGE: 'range',
 };
 
 // معايير البحث - Search Criteria
@@ -32,7 +41,7 @@ export const SEARCH_CRITERIA = {
   TOTAL_SPENT: 'totalSpent',
   TOTAL_PURCHASES: 'totalPurchases',
   LOYALTY_POINTS: 'loyaltyPoints',
-  CUSTOM_FIELD: 'customField'
+  CUSTOM_FIELD: 'customField',
 };
 
 // فلاتر البحث المسبقة - Predefined Search Filters
@@ -41,19 +50,19 @@ export const PREDEFINED_FILTERS = {
     id: 'active_customers',
     name: 'العملاء النشطون',
     icon: '✅',
-    filters: { status: ['active'] }
+    filters: { status: ['active'] },
   },
-  
+
   HIGH_VALUE_CUSTOMERS: {
     id: 'high_value_customers',
     name: 'العملاء ذوو القيمة العالية',
     icon: '💎',
-    filters: { 
+    filters: {
       minTotalSpent: 10000,
-      minTotalPurchases: 20
-    }
+      minTotalPurchases: 20,
+    },
   },
-  
+
   RECENT_CUSTOMERS: {
     id: 'recent_customers',
     name: 'العملاء الجدد',
@@ -61,43 +70,43 @@ export const PREDEFINED_FILTERS = {
     filters: {
       registrationDateRange: {
         from: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-        to: new Date().toISOString()
-      }
-    }
+        to: new Date().toISOString(),
+      },
+    },
   },
-  
+
   VIP_CUSTOMERS: {
     id: 'vip_customers',
     name: 'عملاء VIP',
     icon: '👑',
-    filters: { tier: ['platinum', 'gold'] }
+    filters: { tier: ['platinum', 'gold'] },
   },
-  
+
   INACTIVE_CUSTOMERS: {
     id: 'inactive_customers',
     name: 'العملاء غير النشطين',
     icon: '⏸️',
-    filters: { 
-      inactiveDays: 30
-    }
+    filters: {
+      inactiveDays: 30,
+    },
   },
-  
+
   COMMERCIAL_CUSTOMERS: {
     id: 'commercial_customers',
     name: 'العملاء التجاريون',
     icon: '🏢',
-    filters: { type: ['business'] }
-  }
+    filters: { type: ['business'] },
+  },
 };
 
 // مكون شريط البحث - Search Bar Component
-const SearchBar = ({ 
-  searchQuery, 
-  onSearchChange, 
-  onFilterToggle, 
+const SearchBar = ({
+  searchQuery,
+  onSearchChange,
+  onFilterToggle,
   activeFilters,
   placeholder = 'البحث عن عملاء...',
-  showFilters = true 
+  showFilters = true,
 }) => {
   return (
     <View style={styles.searchContainer}>
@@ -113,27 +122,19 @@ const SearchBar = ({
           returnKeyType="search"
         />
         {searchQuery.length > 0 && (
-          <TouchableOpacity
-            style={styles.clearButton}
-            onPress={() => onSearchChange('')}
-          >
+          <TouchableOpacity style={styles.clearButton} onPress={() => onSearchChange('')}>
             <Text style={styles.clearIcon}>✕</Text>
           </TouchableOpacity>
         )}
       </View>
-      
+
       {showFilters && (
-        <TouchableOpacity
-          style={styles.filterButton}
-          onPress={onFilterToggle}
-        >
+        <TouchableOpacity style={styles.filterButton} onPress={onFilterToggle}>
           <Text style={styles.filterIcon}>🔽</Text>
           <Text style={styles.filterButtonText}>الفلاتر</Text>
           {Object.keys(activeFilters).length > 0 && (
             <View style={styles.filterBadge}>
-              <Text style={styles.filterBadgeText}>
-                {Object.keys(activeFilters).length}
-              </Text>
+              <Text style={styles.filterBadgeText}>{Object.keys(activeFilters).length}</Text>
             </View>
           )}
         </TouchableOpacity>
@@ -143,13 +144,7 @@ const SearchBar = ({
 };
 
 // مكون اختيار الفلاتر - Filter Selection Component
-const FilterSelector = ({ 
-  visible, 
-  filters, 
-  onFilterChange, 
-  onClose,
-  currentFilters 
-}) => {
+const FilterSelector = ({ visible, filters, onFilterChange, onClose, currentFilters }) => {
   const [localFilters, setLocalFilters] = useState(currentFilters);
 
   useEffect(() => {
@@ -189,25 +184,25 @@ const FilterSelector = ({
           <View style={styles.filterGroup}>
             <Text style={styles.filterGroupTitle}>نوع العميل</Text>
             <View style={styles.filterOptions}>
-              {['individual', 'business', 'vip'].map(type => (
+              {['individual', 'business', 'vip'].map((type) => (
                 <TouchableOpacity
                   key={type}
                   style={[
                     styles.filterOption,
-                    localFilters.type?.includes(type) && styles.filterOptionActive
+                    localFilters.type?.includes(type) && styles.filterOptionActive,
                   ]}
                   onPress={() => {
                     const currentTypes = localFilters.type || [];
                     const newTypes = currentTypes.includes(type)
-                      ? currentTypes.filter(t => t !== type)
+                      ? currentTypes.filter((t) => t !== type)
                       : [...currentTypes, type];
                     handleFilterChange('type', newTypes.length > 0 ? newTypes : undefined);
-                  }}
-                >
-                  <Text style={[
-                    styles.filterOptionText,
-                    localFilters.type?.includes(type) && styles.filterOptionActiveText
-                  ]}>
+                  }}>
+                  <Text
+                    style={[
+                      styles.filterOptionText,
+                      localFilters.type?.includes(type) && styles.filterOptionActiveText,
+                    ]}>
                     {type === 'individual' ? 'فردي' : type === 'business' ? 'تجاري' : 'VIP'}
                   </Text>
                 </TouchableOpacity>
@@ -219,28 +214,32 @@ const FilterSelector = ({
           <View style={styles.filterGroup}>
             <Text style={styles.filterGroupTitle}>مستوى الولاء</Text>
             <View style={styles.filterOptions}>
-              {['bronze', 'silver', 'gold', 'platinum'].map(tier => (
+              {['bronze', 'silver', 'gold', 'platinum'].map((tier) => (
                 <TouchableOpacity
                   key={tier}
                   style={[
                     styles.filterOption,
-                    localFilters.tier?.includes(tier) && styles.filterOptionActive
+                    localFilters.tier?.includes(tier) && styles.filterOptionActive,
                   ]}
                   onPress={() => {
                     const currentTiers = localFilters.tier || [];
                     const newTiers = currentTiers.includes(tier)
-                      ? currentTiers.filter(t => t !== tier)
+                      ? currentTiers.filter((t) => t !== tier)
                       : [...currentTiers, tier];
                     handleFilterChange('tier', newTiers.length > 0 ? newTiers : undefined);
-                  }}
-                >
-                  <Text style={[
-                    styles.filterOptionText,
-                    localFilters.tier?.includes(tier) && styles.filterOptionActiveText
-                  ]}>
-                    {tier === 'bronze' ? 'برونزي' : 
-                     tier === 'silver' ? 'فضي' : 
-                     tier === 'gold' ? 'ذهبي' : 'بلاتيني'}
+                  }}>
+                  <Text
+                    style={[
+                      styles.filterOptionText,
+                      localFilters.tier?.includes(tier) && styles.filterOptionActiveText,
+                    ]}>
+                    {tier === 'bronze'
+                      ? 'برونزي'
+                      : tier === 'silver'
+                        ? 'فضي'
+                        : tier === 'gold'
+                          ? 'ذهبي'
+                          : 'بلاتيني'}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -251,28 +250,32 @@ const FilterSelector = ({
           <View style={styles.filterGroup}>
             <Text style={styles.filterGroupTitle}>الحالة</Text>
             <View style={styles.filterOptions}>
-              {['active', 'inactive', 'blocked', 'pending'].map(status => (
+              {['active', 'inactive', 'blocked', 'pending'].map((status) => (
                 <TouchableOpacity
                   key={status}
                   style={[
                     styles.filterOption,
-                    localFilters.status?.includes(status) && styles.filterOptionActive
+                    localFilters.status?.includes(status) && styles.filterOptionActive,
                   ]}
                   onPress={() => {
                     const currentStatuses = localFilters.status || [];
                     const newStatuses = currentStatuses.includes(status)
-                      ? currentStatuses.filter(s => s !== status)
+                      ? currentStatuses.filter((s) => s !== status)
                       : [...currentStatuses, status];
                     handleFilterChange('status', newStatuses.length > 0 ? newStatuses : undefined);
-                  }}
-                >
-                  <Text style={[
-                    styles.filterOptionText,
-                    localFilters.status?.includes(status) && styles.filterOptionActiveText
-                  ]}>
-                    {status === 'active' ? 'نشط' : 
-                     status === 'inactive' ? 'غير نشط' : 
-                     status === 'blocked' ? 'محظور' : 'في الانتظار'}
+                  }}>
+                  <Text
+                    style={[
+                      styles.filterOptionText,
+                      localFilters.status?.includes(status) && styles.filterOptionActiveText,
+                    ]}>
+                    {status === 'active'
+                      ? 'نشط'
+                      : status === 'inactive'
+                        ? 'غير نشط'
+                        : status === 'blocked'
+                          ? 'محظور'
+                          : 'في الانتظار'}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -287,7 +290,9 @@ const FilterSelector = ({
                 style={styles.rangeInput}
                 placeholder="من"
                 value={localFilters.minTotalSpent?.toString() || ''}
-                onChangeText={(value) => handleFilterChange('minTotalSpent', value ? parseFloat(value) : undefined)}
+                onChangeText={(value) =>
+                  handleFilterChange('minTotalSpent', value ? parseFloat(value) : undefined)
+                }
                 keyboardType="numeric"
               />
               <Text style={styles.rangeSeparator}>-</Text>
@@ -295,7 +300,9 @@ const FilterSelector = ({
                 style={styles.rangeInput}
                 placeholder="إلى"
                 value={localFilters.maxTotalSpent?.toString() || ''}
-                onChangeText={(value) => handleFilterChange('maxTotalSpent', value ? parseFloat(value) : undefined)}
+                onChangeText={(value) =>
+                  handleFilterChange('maxTotalSpent', value ? parseFloat(value) : undefined)
+                }
                 keyboardType="numeric"
               />
             </View>
@@ -309,7 +316,9 @@ const FilterSelector = ({
                 style={styles.rangeInput}
                 placeholder="من"
                 value={localFilters.minTotalPurchases?.toString() || ''}
-                onChangeText={(value) => handleFilterChange('minTotalPurchases', value ? parseInt(value) : undefined)}
+                onChangeText={(value) =>
+                  handleFilterChange('minTotalPurchases', value ? parseInt(value) : undefined)
+                }
                 keyboardType="numeric"
               />
               <Text style={styles.rangeSeparator}>-</Text>
@@ -317,7 +326,9 @@ const FilterSelector = ({
                 style={styles.rangeInput}
                 placeholder="إلى"
                 value={localFilters.maxTotalPurchases?.toString() || ''}
-                onChangeText={(value) => handleFilterChange('maxTotalPurchases', value ? parseInt(value) : undefined)}
+                onChangeText={(value) =>
+                  handleFilterChange('maxTotalPurchases', value ? parseInt(value) : undefined)
+                }
                 keyboardType="numeric"
               />
             </View>
@@ -338,37 +349,27 @@ const FilterSelector = ({
 };
 
 // مكون الفرز السريع - Quick Sort Component
-const QuickSort = ({ 
-  sortOptions, 
-  currentSort, 
-  onSortChange,
-  sortOrder,
-  onSortOrderChange 
-}) => {
+const QuickSort = ({ sortOptions, currentSort, onSortChange, sortOrder, onSortOrderChange }) => {
   return (
     <View style={styles.sortContainer}>
       <Text style={styles.sortLabel}>ترتيب حسب:</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.sortOptions}>
-        {sortOptions.map(option => (
+        {sortOptions.map((option) => (
           <TouchableOpacity
             key={option.value}
-            style={[
-              styles.sortOption,
-              currentSort === option.value && styles.sortOptionActive
-            ]}
-            onPress={() => onSortChange(option.value)}
-          >
-            <Text style={[
-              styles.sortOptionText,
-              currentSort === option.value && styles.sortOptionActiveText
-            ]}>
+            style={[styles.sortOption, currentSort === option.value && styles.sortOptionActive]}
+            onPress={() => onSortChange(option.value)}>
+            <Text
+              style={[
+                styles.sortOptionText,
+                currentSort === option.value && styles.sortOptionActiveText,
+              ]}>
               {option.label}
             </Text>
             {currentSort === option.value && (
-              <TouchableOpacity onPress={() => onSortOrderChange(sortOrder === 'asc' ? 'desc' : 'asc')}>
-                <Text style={styles.sortOrderIcon}>
-                  {sortOrder === 'asc' ? '↑' : '↓'}
-                </Text>
+              <TouchableOpacity
+                onPress={() => onSortOrderChange(sortOrder === 'asc' ? 'desc' : 'asc')}>
+                <Text style={styles.sortOrderIcon}>{sortOrder === 'asc' ? '↑' : '↓'}</Text>
               </TouchableOpacity>
             )}
           </TouchableOpacity>
@@ -379,27 +380,20 @@ const QuickSort = ({
 };
 
 // مكون الفلاتر السريعة - Quick Filters Component
-const QuickFilters = ({ 
-  predefinedFilters, 
-  onFilterSelect,
-  activeQuickFilter 
-}) => {
+const QuickFilters = ({ predefinedFilters, onFilterSelect, activeQuickFilter }) => {
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.quickFilters}>
-      {predefinedFilters.map(filter => (
+      {predefinedFilters.map((filter) => (
         <TouchableOpacity
           key={filter.id}
-          style={[
-            styles.quickFilter,
-            activeQuickFilter === filter.id && styles.quickFilterActive
-          ]}
-          onPress={() => onFilterSelect(activeQuickFilter === filter.id ? null : filter.id)}
-        >
+          style={[styles.quickFilter, activeQuickFilter === filter.id && styles.quickFilterActive]}
+          onPress={() => onFilterSelect(activeQuickFilter === filter.id ? null : filter.id)}>
           <Text style={styles.quickFilterIcon}>{filter.icon}</Text>
-          <Text style={[
-            styles.quickFilterText,
-            activeQuickFilter === filter.id && styles.quickFilterActiveText
-          ]}>
+          <Text
+            style={[
+              styles.quickFilterText,
+              activeQuickFilter === filter.id && styles.quickFilterActiveText,
+            ]}>
             {filter.name}
           </Text>
         </TouchableOpacity>
@@ -441,7 +435,7 @@ export class SearchEngine {
         filteredCount: results.length,
         searchQuery: query,
         appliedFilters: filters,
-        sortOptions
+        sortOptions,
       };
     } catch (error) {
       console.error('خطأ في البحث:', error);
@@ -451,24 +445,30 @@ export class SearchEngine {
 
   // تطبيق البحث النصي - Apply Text Search
   applyTextSearch(customers, query) {
-    const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 0);
-    
-    return customers.filter(customer => {
+    const searchTerms = query
+      .toLowerCase()
+      .split(' ')
+      .filter((term) => term.length > 0);
+
+    return customers.filter((customer) => {
       const searchableFields = [
         customer.firstName,
         customer.lastName,
         customer.email,
         customer.phone,
-        customer.customFields?.companyName
-      ].filter(Boolean).join(' ').toLowerCase();
+        customer.customFields?.companyName,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
 
-      return searchTerms.every(term => searchableFields.includes(term));
+      return searchTerms.every((term) => searchableFields.includes(term));
     });
   }
 
   // تطبيق الفلاتر - Apply Filters
   applyFilters(customers, filters) {
-    return customers.filter(customer => {
+    return customers.filter((customer) => {
       // فلتر نوع العميل - Customer Type Filter
       if (filters.type && filters.type.length > 0) {
         if (!filters.type.includes(customer.type)) return false;
@@ -488,7 +488,7 @@ export class SearchEngine {
       if (filters.minTotalSpent !== undefined) {
         if ((customer.statistics?.totalSpent || 0) < filters.minTotalSpent) return false;
       }
-      
+
       if (filters.maxTotalSpent !== undefined) {
         if ((customer.statistics?.totalSpent || 0) > filters.maxTotalSpent) return false;
       }
@@ -497,7 +497,7 @@ export class SearchEngine {
       if (filters.minTotalPurchases !== undefined) {
         if ((customer.statistics?.totalPurchases || 0) < filters.minTotalPurchases) return false;
       }
-      
+
       if (filters.maxTotalPurchases !== undefined) {
         if ((customer.statistics?.totalPurchases || 0) > filters.maxTotalPurchases) return false;
       }
@@ -505,7 +505,9 @@ export class SearchEngine {
       // فلتر العملاء غير النشطين - Inactive Customers Filter
       if (filters.inactiveDays) {
         const lastActivity = new Date(customer.lastActivityDate);
-        const daysSinceActivity = Math.floor((Date.now() - lastActivity.getTime()) / (1000 * 60 * 60 * 24));
+        const daysSinceActivity = Math.floor(
+          (Date.now() - lastActivity.getTime()) / (1000 * 60 * 60 * 24)
+        );
         if (daysSinceActivity < filters.inactiveDays) return false;
       }
 
@@ -544,7 +546,7 @@ export class SearchEngine {
         aValue = new Date(aValue);
         bValue = new Date(bValue);
       }
-      
+
       // التعامل مع النصوص - Handle Strings
       if (typeof aValue === 'string') {
         aValue = aValue.toLowerCase();
@@ -565,7 +567,7 @@ export class SearchEngine {
     const suggestions = new Set();
     const searchTerm = query.toLowerCase();
 
-    customers.forEach(customer => {
+    customers.forEach((customer) => {
       // إضافة أسماء العملاء - Add Customer Names
       if (customer.firstName?.toLowerCase().includes(searchTerm)) {
         suggestions.add(`${customer.firstName} ${customer.lastName}`);
@@ -591,31 +593,33 @@ export class SearchEngine {
   // البحث المتقدم بالأوامر - Advanced Search with Commands
   executeAdvancedSearch(customers, command) {
     const { type, params } = command;
-    
+
     switch (type) {
       case 'recent':
         const daysAgo = params.days || 30;
         const cutoffDate = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000);
-        return customers.filter(c => new Date(c.registrationDate) >= cutoffDate);
-      
+        return customers.filter((c) => new Date(c.registrationDate) >= cutoffDate);
+
       case 'highValue':
         const minSpent = params.minAmount || 10000;
-        return customers.filter(c => (c.statistics?.totalSpent || 0) >= minSpent);
-      
+        return customers.filter((c) => (c.statistics?.totalSpent || 0) >= minSpent);
+
       case 'inactive':
         const inactiveDays = params.days || 30;
-        return customers.filter(c => {
+        return customers.filter((c) => {
           const lastActivity = new Date(c.lastActivityDate);
-          const daysSinceActivity = Math.floor((Date.now() - lastActivity.getTime()) / (1000 * 60 * 60 * 24));
+          const daysSinceActivity = Math.floor(
+            (Date.now() - lastActivity.getTime()) / (1000 * 60 * 60 * 24)
+          );
           return daysSinceActivity >= inactiveDays;
         });
-      
+
       case 'byType':
-        return customers.filter(c => c.type === params.type);
-      
+        return customers.filter((c) => c.type === params.type);
+
       case 'byTier':
-        return customers.filter(c => c.tier === params.tier);
-      
+        return customers.filter((c) => c.tier === params.tier);
+
       default:
         return customers;
     }
@@ -626,17 +630,17 @@ export class SearchEngine {
 export const searchEngine = new SearchEngine();
 
 // مكون البحث الرئيسي - Main Search Component
-const CustomerSearchScreen = ({ 
-  customers = [], 
+const CustomerSearchScreen = ({
+  customers = [],
   onCustomerSelect,
   currentUser,
-  showCustomerDetails = true 
+  showCustomerDetails = true,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({});
   const [sortOptions, setSortOptions] = useState({
     field: 'firstName',
-    order: 'asc'
+    order: 'asc',
   });
   const [showFilterSelector, setShowFilterSelector] = useState(false);
   const [activeQuickFilter, setActiveQuickFilter] = useState(null);
@@ -644,7 +648,7 @@ const CustomerSearchScreen = ({
     results: customers,
     totalCount: customers.length,
     filteredCount: customers.length,
-    loading: false
+    loading: false,
   });
   const [searchSuggestions, setSearchSuggestions] = useState([]);
 
@@ -662,33 +666,44 @@ const CustomerSearchScreen = ({
     { value: 'registrationDate', label: 'تاريخ التسجيل' },
     { value: 'lastActivityDate', label: 'آخر نشاط' },
     { value: 'statistics.totalSpent', label: 'إجمالي المصروفات' },
-    { value: 'statistics.totalPurchases', label: 'عدد المشتريات' }
+    { value: 'statistics.totalPurchases', label: 'عدد المشتريات' },
   ];
 
   // تنفيذ البحث - Execute Search
   const executeSearch = useMemo(() => {
-    return async (query = searchQuery, currentFilters = filters, currentSortOptions = sortOptions) => {
+    return async (
+      query = searchQuery,
+      currentFilters = filters,
+      currentSortOptions = sortOptions
+    ) => {
       if (!canSearch) {
         Alert.alert('خطأ', 'غير مخول للبحث في بيانات العملاء');
         return;
       }
 
-      setSearchResults(prev => ({ ...prev, loading: true }));
+      setSearchResults((prev) => ({ ...prev, loading: true }));
 
       try {
         // تطبيق الفلتر السريع المحدد - Apply Selected Quick Filter
         let finalFilters = { ...currentFilters };
         if (activeQuickFilter) {
-          const quickFilter = Object.values(PREDEFINED_FILTERS).find(f => f.id === activeQuickFilter);
+          const quickFilter = Object.values(PREDEFINED_FILTERS).find(
+            (f) => f.id === activeQuickFilter
+          );
           if (quickFilter) {
             finalFilters = { ...finalFilters, ...quickFilter.filters };
           }
         }
 
-        const results = await searchEngine.search(customers, query, finalFilters, currentSortOptions);
+        const results = await searchEngine.search(
+          customers,
+          query,
+          finalFilters,
+          currentSortOptions
+        );
         setSearchResults({
           ...results,
-          loading: false
+          loading: false,
         });
 
         // تحديث اقتراحات البحث - Update Search Suggestions
@@ -700,9 +715,9 @@ const CustomerSearchScreen = ({
         }
       } catch (error) {
         console.error('خطأ في البحث:', error);
-        setSearchResults(prev => ({
+        setSearchResults((prev) => ({
           ...prev,
-          loading: false
+          loading: false,
         }));
         Alert.alert('خطأ', 'حدث خطأ أثناء البحث');
       }
@@ -731,17 +746,17 @@ const CustomerSearchScreen = ({
 
   // تطبيق ترتيب جديد - Apply New Sort
   const handleSortChange = (field) => {
-    setSortOptions(prev => ({
+    setSortOptions((prev) => ({
       ...prev,
-      field
+      field,
     }));
   };
 
   // تغيير اتجاه الترتيب - Change Sort Order
   const handleSortOrderChange = (order) => {
-    setSortOptions(prev => ({
+    setSortOptions((prev) => ({
       ...prev,
-      order
+      order,
     }));
   };
 
@@ -791,7 +806,9 @@ const CustomerSearchScreen = ({
       <View style={styles.resultsContainer}>
         <View style={styles.resultsHeader}>
           <Text style={styles.resultsCount}>
-            {searchResults.loading ? 'جاري البحث...' : `${searchResults.filteredCount} من أصل ${searchResults.totalCount} عميل`}
+            {searchResults.loading
+              ? 'جاري البحث...'
+              : `${searchResults.filteredCount} من أصل ${searchResults.totalCount} عميل`}
           </Text>
         </View>
 
@@ -805,8 +822,7 @@ const CustomerSearchScreen = ({
               renderItem={({ item, index }) => (
                 <TouchableOpacity
                   style={styles.suggestion}
-                  onPress={() => handleSuggestionSelect(item)}
-                >
+                  onPress={() => handleSuggestionSelect(item)}>
                   <Text style={styles.suggestionText}>{item}</Text>
                 </TouchableOpacity>
               )}
@@ -834,8 +850,8 @@ const CustomerSearchScreen = ({
             !searchResults.loading && (
               <View style={styles.emptyResults}>
                 <Text style={styles.emptyResultsText}>
-                  {searchQuery || Object.keys(filters).length > 0 
-                    ? 'لا توجد نتائج مطابقة للبحث' 
+                  {searchQuery || Object.keys(filters).length > 0
+                    ? 'لا توجد نتائج مطابقة للبحث'
                     : 'لا توجد عملاء'}
                 </Text>
               </View>
@@ -863,7 +879,7 @@ const CustomerListItem = ({ customer, onPress, showDetails }) => {
       active: '#10B981',
       inactive: '#F59E0B',
       blocked: '#EF4444',
-      pending: '#8B5CF6'
+      pending: '#8B5CF6',
     };
     return colors[status] || '#6B7280';
   };
@@ -873,7 +889,7 @@ const CustomerListItem = ({ customer, onPress, showDetails }) => {
       bronze: '#CD7F32',
       silver: '#C0C0C0',
       gold: '#FFD700',
-      platinum: '#E5E4E2'
+      platinum: '#E5E4E2',
     };
     return colors[tier] || '#6B7280';
   };
@@ -884,14 +900,15 @@ const CustomerListItem = ({ customer, onPress, showDetails }) => {
         <Text style={styles.customerName}>
           {customer.firstName} {customer.lastName}
         </Text>
-        <View style={[
-          styles.statusBadge,
-          { backgroundColor: getStatusColor(customer.status) }
-        ]}>
+        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(customer.status) }]}>
           <Text style={styles.statusText}>
-            {customer.status === 'active' ? 'نشط' : 
-             customer.status === 'inactive' ? 'غير نشط' : 
-             customer.status === 'blocked' ? 'محظور' : 'في الانتظار'}
+            {customer.status === 'active'
+              ? 'نشط'
+              : customer.status === 'inactive'
+                ? 'غير نشط'
+                : customer.status === 'blocked'
+                  ? 'محظور'
+                  : 'في الانتظار'}
           </Text>
         </View>
       </View>
@@ -900,23 +917,27 @@ const CustomerListItem = ({ customer, onPress, showDetails }) => {
         <View style={styles.customerDetails}>
           <Text style={styles.customerEmail}>{customer.email}</Text>
           <Text style={styles.customerPhone}>{customer.phone}</Text>
-          
+
           <View style={styles.customerMeta}>
             <View style={styles.customerType}>
               <Text style={styles.customerTypeText}>
-                {customer.type === 'individual' ? 'فردي' : 
-                 customer.type === 'business' ? 'تجاري' : 'VIP'}
+                {customer.type === 'individual'
+                  ? 'فردي'
+                  : customer.type === 'business'
+                    ? 'تجاري'
+                    : 'VIP'}
               </Text>
             </View>
-            
-            <View style={[
-              styles.tierBadge,
-              { borderColor: getTierColor(customer.tier) }
-            ]}>
+
+            <View style={[styles.tierBadge, { borderColor: getTierColor(customer.tier) }]}>
               <Text style={styles.tierText}>
-                {customer.tier === 'bronze' ? 'برونزي' : 
-                 customer.tier === 'silver' ? 'فضي' : 
-                 customer.tier === 'gold' ? 'ذهبي' : 'بلاتيني'}
+                {customer.tier === 'bronze'
+                  ? 'برونزي'
+                  : customer.tier === 'silver'
+                    ? 'فضي'
+                    : customer.tier === 'gold'
+                      ? 'ذهبي'
+                      : 'بلاتيني'}
               </Text>
             </View>
           </View>
@@ -926,9 +947,7 @@ const CustomerListItem = ({ customer, onPress, showDetails }) => {
               <Text style={styles.customerStat}>
                 مصروفات: {customer.statistics.totalSpent?.toLocaleString('ar-EG')} جنيه
               </Text>
-              <Text style={styles.customerStat}>
-                مشتريات: {customer.statistics.totalPurchases}
-              </Text>
+              <Text style={styles.customerStat}>مشتريات: {customer.statistics.totalPurchases}</Text>
             </View>
           )}
         </View>

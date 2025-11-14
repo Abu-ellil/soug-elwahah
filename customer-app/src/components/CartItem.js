@@ -14,34 +14,26 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
     if (item.quantity > 1) {
       onUpdateQuantity(item.productId, item.quantity - 1);
     } else {
-      Alert.alert(
-        'تأكيد الحذف',
-        'هل تريد حذف هذا المنتج من السلة؟',
-        [
-          { text: 'إلغاء', style: 'cancel' },
-          { 
-            text: 'حذف', 
-            style: 'destructive',
-            onPress: () => onRemove(item.productId)
-          }
-        ]
-      );
+      Alert.alert('تأكيد الحذف', 'هل تريد حذف هذا المنتج من السلة؟', [
+        { text: 'إلغاء', style: 'cancel' },
+        {
+          text: 'حذف',
+          style: 'destructive',
+          onPress: () => onRemove(item.productId),
+        },
+      ]);
     }
   };
 
   const handleRemove = () => {
-    Alert.alert(
-      'حذف المنتج',
-      `هل تريد حذف "${item.name}" من السلة؟`,
-      [
-        { text: 'إلغاء', style: 'cancel' },
-        { 
-          text: 'حذف', 
-          style: 'destructive',
-          onPress: () => onRemove(item.productId)
-        }
-      ]
-    );
+    Alert.alert('حذف المنتج', `هل تريد حذف "${item.name}" من السلة؟`, [
+      { text: 'إلغاء', style: 'cancel' },
+      {
+        text: 'حذف',
+        style: 'destructive',
+        onPress: () => onRemove(item.productId),
+      },
+    ]);
   };
 
   const itemTotal = item.price * item.quantity;
@@ -57,11 +49,10 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
           <Text style={styles.name} numberOfLines={2}>
             {item.name}
           </Text>
-          <TouchableOpacity 
-            onPress={handleRemove} 
+          <TouchableOpacity
+            onPress={handleRemove}
             style={styles.removeButton}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <MaterialIcons name="close" size={20} color={COLORS.gray} />
           </TouchableOpacity>
         </View>
@@ -72,15 +63,14 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
 
         <View style={styles.footer}>
           <View style={styles.quantityControls}>
-            <TouchableOpacity 
-              onPress={handleDecrease} 
+            <TouchableOpacity
+              onPress={handleDecrease}
               style={styles.quantityButton}
-              disabled={item.quantity <= 1}
-            >
-              <MaterialIcons 
-                name="remove" 
-                size={16} 
-                color={item.quantity <= 1 ? COLORS.gray : COLORS.text} 
+              disabled={item.quantity <= 1}>
+              <MaterialIcons
+                name="remove"
+                size={16}
+                color={item.quantity <= 1 ? COLORS.gray : COLORS.text}
               />
             </TouchableOpacity>
 
@@ -88,17 +78,14 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
               {item.quantity}
             </Text>
 
-            <TouchableOpacity 
-              onPress={handleIncrease} 
-              style={[styles.quantityButton, styles.increaseButton]}
-            >
+            <TouchableOpacity
+              onPress={handleIncrease}
+              style={[styles.quantityButton, styles.increaseButton]}>
               <MaterialIcons name="add" size={16} color={COLORS.card} />
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.totalPrice}>
-            {formatPrice(itemTotal)}
-          </Text>
+          <Text style={styles.totalPrice}>{formatPrice(itemTotal)}</Text>
         </View>
       </View>
     </View>

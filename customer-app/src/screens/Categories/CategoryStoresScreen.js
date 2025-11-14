@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  RefreshControl,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useLocation } from '../../context/LocationProvider';
@@ -26,18 +19,18 @@ const CategoryStoresScreen = ({ route }) => {
 
   // Get category info
   const category = useMemo(() => {
-    return CATEGORIES.find(cat => cat.id === categoryId);
+    return CATEGORIES.find((cat) => cat.id === categoryId);
   }, [categoryId]);
 
   // Filter stores by category
   const categoryStores = useMemo(() => {
     if (!category) return [];
-    return STORES.filter(store => store.categoryId === categoryId);
-  }, [categoryId]);
+    return STORES.filter((store) => store.categoryId === categoryId);
+  }, [category, categoryId]);
 
   // Calculate store distances from current location
   const storesWithDistance = useMemo(() => {
-    return categoryStores.map(store => {
+    return categoryStores.map((store) => {
       let distance = null;
       if (currentVillage && store.coordinates && currentVillage.coordinates) {
         // Simple distance calculation (in a real app, you'd use proper distance calculation)
@@ -64,14 +57,12 @@ const CategoryStoresScreen = ({ route }) => {
   const renderHeader = () => (
     <View style={styles.header}>
       <View style={styles.headerTop}>
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>المتاجر</Text>
       </View>
-      
+
       {category && (
         <View style={styles.categoryInfo}>
           <View style={[styles.categoryIcon, { backgroundColor: category.color }]}>
@@ -79,9 +70,7 @@ const CategoryStoresScreen = ({ route }) => {
           </View>
           <View style={styles.categoryDetails}>
             <Text style={styles.categoryName}>{category.name}</Text>
-            <Text style={styles.storeCount}>
-              {categoryStores.length} متجر متاح
-            </Text>
+            <Text style={styles.storeCount}>{categoryStores.length} متجر متاح</Text>
           </View>
         </View>
       )}
@@ -89,10 +78,7 @@ const CategoryStoresScreen = ({ route }) => {
   );
 
   const renderStore = ({ item: store }) => (
-    <StoreCard
-      store={store}
-      onPress={() => handleStorePress(store)}
-    />
+    <StoreCard store={store} onPress={() => handleStorePress(store)} />
   );
 
   const renderEmpty = () => (
@@ -121,7 +107,7 @@ const CategoryStoresScreen = ({ route }) => {
         ListEmptyComponent={renderEmpty}
         contentContainerStyle={[
           styles.listContainer,
-          storesWithDistance.length === 0 && styles.emptyListContainer
+          storesWithDistance.length === 0 && styles.emptyListContainer,
         ]}
         refreshControl={
           <RefreshControl
