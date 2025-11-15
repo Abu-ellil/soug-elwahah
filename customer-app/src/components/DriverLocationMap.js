@@ -1,39 +1,55 @@
 import React from 'react';
-import { View, StyleSheet, Dimensions } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import COLORS from '../constants/colors';
+import { View } from 'react-native';
+import MapView from 'expo-maps';
 import RTLText from './RTLText';
-
+import { isValidCoordinate } from '../utils/locationHelpers';
 const DriverLocationMap = ({ driverLocation, deliveryAddress, orderStatus }) => {
-  if (!driverLocation || !deliveryAddress) {
+  if (!driverLocation || !deliveryAddress.coordinates) {
     return (
-      <View style={styles.container}>
-        <RTLText style={styles.errorText}>لا توجد معلومات عن موقع السائق</RTLText>
+      <View className="my-4 h-[300px] w-full items-center justify-center overflow-hidden rounded-xl bg-white p-5">
+        <RTLText className="p-5 text-center text-red-50">لا توجد معلومات عن موقع السائق</RTLText>
       </View>
     );
   }
 
   // Calculate region to show both driver and delivery locations
-  const getRegionForCoordinates = () => {
-    const coordinates = [driverLocation, deliveryAddress.coordinates];
+  const getMapRegion = () => {
+    const driverCoord = [driverLocation.lng, driverLocation.lat];
+    const deliveryCoord = [deliveryAddress.coordinates.lng, deliveryAddress.coordinates.lat];
 
-    let minLat = Math.min(...coordinates.map((coord) => coord.lat));
-    let maxLat = Math.max(...coordinates.map((coord) => coord.lat));
-    let minLng = Math.min(...coordinates.map((coord) => coord.lng));
-    let maxLng = Math.max(...coordinates.map((coord) => coord.lng));
+    // Validate coordinates
+    if (!isValidCoordinate(driverCoord) || !isValidCoordinate(deliveryCoord)) {
+      // Return a default region if coordinates are invalid (Cairo fallback)
+      return {
+        latitude: 31.2357, // latitude
+        longitude: 30.0444, // longitude
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0421,
+      };
+    }
 
-    const latDelta = Math.max(maxLat - minLat, 0.01) * 1.5;
-    const lngDelta = Math.max(maxLng - minLng, 0.01) * 1.5;
+    const coordinates = [driverCoord, deliveryCoord];
+    let minLng = Math.min(...coordinates.map((coord) => coord[0]));
+    let maxLng = Math.max(...coordinates.map((coord) => coord[0]));
+    let minLat = Math.min(...coordinates.map((coord) => coord[1]));
+    let maxLat = Math.max(...coordinates.map((coord) => coord[1]));
+
+    const centerLng = (minLng + maxLng) / 2;
+    const centerLat = (minLat + maxLat) / 2;
+
+    // Calculate region deltas based on the span of coordinates
+    const lngDelta = Math.max(0.01, (maxLng - minLng) * 1.5); // Add padding
+    const latDelta = Math.max(0.01, (maxLat - minLat) * 1.5); // Add padding
 
     return {
-      latitude: (minLat + maxLat) / 2,
-      longitude: (minLng + maxLng) / 2,
+      latitude: centerLat,
+      longitude: centerLng,
       latitudeDelta: latDelta,
       longitudeDelta: lngDelta,
     };
   };
 
-  const region = getRegionForCoordinates();
+  const mapRegion = getMapRegion();
 
   // Calculate distance between two points using Haversine formula (in km)
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -69,149 +85,65 @@ const DriverLocationMap = ({ driverLocation, deliveryAddress, orderStatus }) => 
   };
 
   const estimatedDeliveryTime = calculateEstimatedDeliveryTime();
-
   return (
-    <View style={styles.container}>
+    <View className="my-4 h-[300px] w-full items-center justify-center overflow-hidden rounded-xl bg-white p-5">
       <MapView
-        style={styles.map}
-        provider={PROVIDER_GOOGLE}
-        region={region}
-        showsUserLocation={false}
-        showsMyLocationButton={false}
-        zoomEnabled={true}
-        scrollEnabled={true}>
-        {/* Driver Location Marker */}
-        <Marker
+        style={{ flex: 1 }}
+        initialRegion={mapRegion}
+        showsUserLocation={true}
+        showsMyLocationButton={true}>
+        {/* Driver Marker */}
+        <MapView.Marker
           coordinate={{
             latitude: driverLocation.lat,
             longitude: driverLocation.lng,
           }}
           title="موقع السائق"
-          description="السائق في الطريق إليك"
-          pinColor={COLORS.primary}>
-          <View style={styles.driverMarker}>
-            <View style={styles.driverMarkerInner} />
-          </View>
-        </Marker>
+          pinColor="#FF6B35"
+        />
 
-        {/* Delivery Address Marker */}
-        <Marker
+        {/* Delivery Marker */}
+        <MapView.Marker
           coordinate={{
             latitude: deliveryAddress.coordinates.lat,
             longitude: deliveryAddress.coordinates.lng,
           }}
           title="عنوان التوصيل"
-          description={deliveryAddress.street}
-          pinColor={COLORS.success}>
-          <View style={styles.deliveryMarker}>
-            <View style={styles.deliveryMarkerInner} />
-          </View>
-        </Marker>
-      </MapView>
+          pinColor="#06D6A0"
+        />
 
+        {/* Route line between driver and delivery location */}
+        <MapView.Polyline
+          coordinates={[
+            { latitude: driverLocation.lat, longitude: driverLocation.lng },
+            {
+              latitude: deliveryAddress.coordinates.lat,
+              longitude: deliveryAddress.coordinates.lng,
+            },
+          ]}
+          strokeColor="#FF6B35"
+          strokeWidth={3}
+        />
+      </MapView>
       {/* Estimated delivery time info */}
-      <View style={styles.infoContainer}>
-        <RTLText style={styles.infoText}>
+      <View className="items-center bg-orange-500 p-3">
+        <RTLText className="text-center text-base font-bold text-white">
           الوقت المتوقع للوصول: {estimatedDeliveryTime} دقيقة
         </RTLText>
       </View>
 
-      <View style={styles.legend}>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: COLORS.primary }]} />
-          <RTLText style={styles.legendText}>موقع السائق</RTLText>
+      <View className="flex-row justify-around border-t border-gray-200 bg-white py-2">
+        <View className="flex-row items-center">
+          <View className="mx-1 h-3 w-3 rounded bg-orange-50" />
+          <RTLText className="text-xs text-gray-600">موقع السائق</RTLText>
         </View>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: COLORS.success }]} />
-          <RTLText style={styles.legendText}>عنوان التوصيل</RTLText>
+        <View className="flex-row items-center">
+          <View className="mx-1 h-3 w-3 rounded bg-green-500" />
+          <RTLText className="text-xs text-gray-600">عنوان التوصيل</RTLText>
         </View>
       </View>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    height: 300,
-    width: '100%',
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginVertical: 16,
-  },
-  map: {
-    flex: 1,
-  },
-  driverMarker: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: COLORS.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: COLORS.white,
-  },
-  driverMarkerInner: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: COLORS.white,
-  },
-  deliveryMarker: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: COLORS.success,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: COLORS.white,
-  },
-  deliveryMarkerInner: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: COLORS.white,
-  },
-  infoContainer: {
-    backgroundColor: COLORS.primary,
-    padding: 12,
-    alignItems: 'center',
-  },
-  infoText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: COLORS.white,
-    textAlign: 'center',
-  },
-  legend: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 8,
-    backgroundColor: COLORS.white,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.lightGray,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  legendDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginHorizontal: 4,
-  },
-  legendText: {
-    fontSize: 12,
-    color: COLORS.darkGray,
-  },
-  errorText: {
-    textAlign: 'center',
-    color: COLORS.danger,
-    padding: 20,
-  },
-});
 
 export default DriverLocationMap;

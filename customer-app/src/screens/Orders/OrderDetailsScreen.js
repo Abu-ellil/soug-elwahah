@@ -13,7 +13,7 @@ import SIZES from '../../constants/sizes';
 
 const OrderDetailsScreen = () => {
   const route = useRoute();
-  const { order, focusOnDriverLocation } = route.params;
+  const { order, focusOnDriverLocation } = route.params || {};
   const scrollViewRef = useRef(null);
 
   useEffect(() => {
@@ -26,13 +26,13 @@ const OrderDetailsScreen = () => {
   }, [focusOnDriverLocation]);
 
   const handleCallDriver = () => {
-    if (order.driverInfo && order.driverInfo.phone) {
+    if (order && order.driverInfo && order.driverInfo.phone) {
       Linking.openURL(`tel:${order.driverInfo.phone}`);
     }
   };
 
   const renderTimelineStep = ({ item, index }) => {
-    const isLastStep = index === order.statusHistory.length - 1;
+    const isLastStep = order.statusHistory && index === order.statusHistory.length - 1;
     const isCompleted = true; // In a real app, you'd compare with current status
     return (
       <View style={styles.timelineStep}>
@@ -51,27 +51,40 @@ const OrderDetailsScreen = () => {
     );
   };
 
+  if (!order) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Header title="تفاصيل الطلب" showBackButton={true} />
+        <View style={styles.centerContainer}>
+          <RTLText style={styles.errorText}>لم يتم العثور على تفاصيل الطلب</RTLText>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
-      <Header title={`الطلب #${order.id}`} showBackButton={true} />
+      <Header title={`الطلب #${order.id || 'N/A'}`} showBackButton={true} />
       <ScrollView ref={scrollViewRef}>
         {/* Order Timeline */}
         <View style={styles.section}>
           <RTLText style={styles.sectionTitle}>تتبع الطلب</RTLText>
-          {order.statusHistory.map((item, index) => (
-            <Fragment key={item.id || item.date || index}>
-              {renderTimelineStep({ item, index })}
-            </Fragment>
-          ))}
+          {order.statusHistory && order.statusHistory.length > 0
+            ? order.statusHistory.map((item, index) => (
+                <Fragment key={item.id || item.date || index}>
+                  {renderTimelineStep({ item, index })}
+                </Fragment>
+              ))
+            : null}
         </View>
 
         {/* Driver Location Map - Only show for delivering orders */}
-        {order.status === 'delivering' && order.driverLocation && (
+        {order.status === 'delivering' && order.driverLocation && order.deliveryAddress && (
           <View style={styles.section}>
             <RTLText style={styles.sectionTitle}>موقع السائق</RTLText>
 
             {/* Driver Information */}
-            {order.driverInfo && (
+            {order.driverInfo && order.driverInfo.name && (
               <View style={styles.driverInfoContainer}>
                 <View style={styles.driverInfoRow}>
                   <Feather name="user" size={20} color={COLORS.primary} />
@@ -100,19 +113,23 @@ const OrderDetailsScreen = () => {
         {/* Items List */}
         <View style={styles.section}>
           <RTLText style={styles.sectionTitle}>المنتجات</RTLText>
-          {order.items.map((item) => (
-            <CartItem
-              item={item}
-              key={item.id || item.productId || Math.random()}
-              isCartScreen={false}
-            />
-          ))}
+          {order.items && order.items.length > 0
+            ? order.items
+                .filter(Boolean)
+                .map((item) => (
+                  <CartItem
+                    item={item}
+                    key={item.id || item.productId || Math.random()}
+                    isCartScreen={false}
+                  />
+                ))
+            : null}
         </View>
 
         {/* Order Summary */}
         <View style={styles.section}>
           <RTLText style={styles.sectionTitle}>ملخص الطلب</RTLText>
-          {order.storeName && (
+          {order && order.storeName && (
             <View style={styles.summaryRow}>
               <RTLText style={styles.summaryLabel}>المتجر</RTLText>
               <RTLText style={styles.summaryValue}>{order.storeName}</RTLText>
@@ -140,7 +157,7 @@ const OrderDetailsScreen = () => {
                       : order.paymentMethod}
             </RTLText>
           </View>
-          {order.deliverySlot && (
+          {order && order.deliverySlot && (
             <View style={styles.summaryRow}>
               <RTLText style={styles.summaryLabel}>وقت التوصيل</RTLText>
               <RTLText style={styles.summaryValue}>{order.deliverySlot.name}</RTLText>
@@ -153,7 +170,7 @@ const OrderDetailsScreen = () => {
         </View>
 
         {/* Customer Information */}
-        {order.customerInfo && (
+        {order && order.customerInfo && (
           <View style={styles.section}>
             <RTLText style={styles.sectionTitle}>معلومات العميل</RTLText>
             <View style={styles.infoContainer}>
@@ -167,13 +184,21 @@ const OrderDetailsScreen = () => {
         <View style={styles.section}>
           <RTLText style={styles.sectionTitle}>عنوان التوصيل</RTLText>
           <View style={styles.addressContainer}>
-            <RTLText style={styles.addressText}>{order.deliveryAddress.street}</RTLText>
-            <RTLText style={styles.addressText}>{order.deliveryAddress.village}</RTLText>
+            <RTLText style={styles.addressText}>
+              {order.deliveryAddress && order.deliveryAddress.street
+                ? order.deliveryAddress.street
+                : 'N/A'}
+            </RTLText>
+            <RTLText style={styles.addressText}>
+              {order.deliveryAddress && order.deliveryAddress.village
+                ? order.deliveryAddress.village
+                : 'N/A'}
+            </RTLText>
           </View>
         </View>
 
         {/* Order Notes */}
-        {order.notes && order.notes.trim() !== '' && (
+        {order && order.notes && order.notes.trim() !== '' && (
           <View style={styles.section}>
             <RTLText style={styles.sectionTitle}>ملاحظات</RTLText>
             <RTLText style={styles.notesText}>{order.notes}</RTLText>
@@ -327,6 +352,17 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SIZES.padding * 2,
+  },
+  errorText: {
+    fontSize: SIZES.h3,
+    color: COLORS.danger,
+    textAlign: 'center',
   },
 });
 

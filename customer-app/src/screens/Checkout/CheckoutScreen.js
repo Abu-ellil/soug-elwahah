@@ -145,7 +145,7 @@ const CheckoutScreen = ({ navigation }) => {
 
       console.log('🚀 Starting order creation process...');
       console.log('📦 New order data:', JSON.stringify(newOrder, null, 2));
-      
+
       // Add order and wait for it to complete
       console.log('➕ Calling addOrder function...');
       await addOrder(newOrder);

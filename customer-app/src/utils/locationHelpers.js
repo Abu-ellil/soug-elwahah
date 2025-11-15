@@ -1,6 +1,17 @@
 import { calculateDistance } from './distance';
 import { VILLAGES } from '../data/villages';
 
+// Validate coordinate array [longitude, latitude]
+export const isValidCoordinate = (coord) => {
+  return (
+    coord &&
+    typeof coord[0] === 'number' && // longitude
+    typeof coord[1] === 'number' && // latitude
+    !isNaN(coord[0]) &&
+    !isNaN(coord[1])
+  );
+};
+
 // Check if coordinates are within delivery zone
 export const isInDeliveryZone = (coordinates, villageId) => {
   const village = VILLAGES.find((v) => v.id === villageId);

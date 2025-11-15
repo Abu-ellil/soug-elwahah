@@ -168,10 +168,18 @@ const OrdersScreen = ({ navigation }) => {
   };
 
   const handleOrderPress = (order) => {
+    if (!order) {
+      console.error('Order is undefined or null');
+      return;
+    }
     navigation.navigate('OrderDetails', { order });
   };
 
   const handleShowDriverLocation = (order) => {
+    if (!order) {
+      console.error('Order is undefined or null');
+      return;
+    }
     // Navigate directly to order details with focus on driver location
     navigation.navigate('OrderDetails', { order, focusOnDriverLocation: true });
   };
@@ -277,7 +285,9 @@ const OrdersScreen = ({ navigation }) => {
         showBack
         onLeftPress={() => navigation.goBack()}
         rightComponent={
-          <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.shopButton}>
+          <TouchableOpacity
+            onPress={() => navigation.getParent().navigate('Home')}
+            style={styles.shopButton}>
             <MaterialIcons name="shopping-cart" size={24} color={COLORS.primary} />
           </TouchableOpacity>
         }
@@ -320,14 +330,16 @@ const OrdersScreen = ({ navigation }) => {
               selectedFilter === 'current' ? 'لا توجد طلبات جارية حالياً' : 'لم تقم بأي طلبات بعد'
             }
             actionText="تسوق الآن"
-            onActionPress={() => navigation.navigate('Home')}
+            onActionPress={() => navigation.getParent().navigate('Home')}
           />
         )}
       </View>
 
       {/* Quick Actions */}
       <View style={styles.quickActions}>
-        <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Home')}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => navigation.getParent().navigate('Home')}>
           <MaterialIcons name="home" size={20} color={COLORS.primary} />
           <Text style={styles.actionText}>الرئيسية</Text>
         </TouchableOpacity>

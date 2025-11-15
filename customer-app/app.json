@@ -18,12 +18,19 @@
         {
           "locationAlwaysAndWhenInUsePermission": "This app needs access to location to show nearby stores."
         }
+      ],
+      [
+        "expo-maps",
+        {
+          "locationWhenInUsePermission": "This app needs access to location to show maps."
+        }
       ]
     ],
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "This app needs access to location to show nearby stores."
+        "NSLocationWhenInUseUsageDescription": "This app needs access to location to show nearby stores.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to location to show maps."
       }
     },
     "android": {
@@ -32,7 +39,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION"]
+      "permissions": ["ACCESS_FINE_LOCATION", "ACCESS_COARSE_LOCATION", "ACCESS_NETWORK_STATE"]
     },
     "web": {
       "favicon": "./assets/favicon.png"

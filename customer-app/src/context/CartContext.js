@@ -13,7 +13,7 @@ export const useCart = () => {
   if (!context) {
     throw new Error('يجب استخدام useCart داخل CartProvider'); // useCart must be used within a CartProvider
   }
-  return context; 
+  return context;
 };
 
 // مزود سياق سلة التسوق - Cart Context Provider Component
@@ -21,9 +21,6 @@ export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]); // حالة عناصر السلة - Cart items state
   const [orders, setOrders] = useState(MOCK_ORDERS); // حالة الطلبات - Orders state
   const [isLoading, setIsLoading] = useState(true); // حالة التحميل - Loading state
-
-
-
 
   // تحميل بيانات السلة عند تحميل المكون - Load cart data on component mount
   useEffect(() => {
@@ -151,13 +148,13 @@ export const CartProvider = ({ children }) => {
     try {
       console.log('📝 Starting addOrder process...');
       console.log('📋 Original order data:', JSON.stringify(order, null, 2));
-      
+
       // Clean the order data to ensure no React elements are included
       const cleanOrder = JSON.parse(JSON.stringify(order));
-      
+
       console.log('✅ Order cleaned successfully');
       console.log('🧹 Cleaned order data:', JSON.stringify(cleanOrder, null, 2));
-      
+
       // Add to state first
       setOrders((prevOrders) => {
         const updatedOrders = [cleanOrder, ...prevOrders];
@@ -182,7 +179,7 @@ export const CartProvider = ({ children }) => {
       } else {
         console.log('⚠️  Offline data manager not available');
       }
-      
+
       console.log('🎉 addOrder process completed successfully!');
     } catch (error) {
       console.error('❌ Error adding order:', error);

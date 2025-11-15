@@ -15,7 +15,7 @@ import { formatPrice } from '../../utils/helpers';
 
 const CartScreen = ({ navigation }) => {
   const {
-    cartItems, 
+    cartItems,
     isLoading,
     updateQuantity,
     removeFromCart,

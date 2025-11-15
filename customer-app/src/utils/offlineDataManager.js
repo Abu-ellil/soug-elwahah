@@ -180,7 +180,7 @@ export class OfflineDataManager {
     try {
       // Clean the order data to ensure no React elements are included
       const cleanOrder = JSON.parse(JSON.stringify(order));
-      
+
       const offlineOrders = await this.getOfflineOrders();
       const newOrder = {
         ...cleanOrder,
@@ -218,11 +218,11 @@ export class OfflineDataManager {
   async addToSyncQueue(action, data) {
     try {
       console.log(`📝 Adding ${action} to sync queue...`);
-      
+
       // Clean the data before adding to queue
       const cleanData = JSON.parse(JSON.stringify(data));
       console.log('✅ Data cleaned for sync queue');
-      
+
       const queue = await this.getSyncQueue();
       const queueItem = {
         id: this.generateSyncId(),
@@ -234,7 +234,7 @@ export class OfflineDataManager {
 
       queue.push(queueItem);
       await AsyncStorage.setItem(STORAGE_KEYS.PENDING_ACTIONS, JSON.stringify(queue));
-      
+
       console.log(`✅ ${action} added to sync queue successfully`);
 
       if (this.isOnline) {
@@ -345,11 +345,11 @@ export class OfflineDataManager {
       case 'create_order':
         console.log('🔄 Syncing order creation...');
         console.log('📋 Sync item data:', JSON.stringify(item.data, null, 2));
-        
+
         // Ensure data is clean before processing
         const cleanData = JSON.parse(JSON.stringify(item.data));
         console.log('✅ Sync data cleaned successfully');
-        
+
         await new Promise((resolve) => setTimeout(resolve, 1000));
         return { success: true, syncedOrder: { ...cleanData, synced: true } };
       default:

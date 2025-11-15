@@ -188,7 +188,33 @@ const HomeScreen = ({ navigation }) => {
         {/* Random Products Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>منتجات  قد تهمك</Text>
+            <Text style={styles.sectionTitle}>منتجات قد تهمك</Text>
+          </View>
+          <FlatList
+            data={randomProducts}
+            vertical
+              numColumns={2}
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <View  className='bg-red500'>
+                <ProductCard
+                  product={item}
+                  onPress={() => {
+                    // Navigate to the store that has this product
+                    navigation.navigate('StoreDetails2', { storeId: item.storeId });
+                  }}
+                  onAddToCart={(product) => {
+                    // Add to cart functionality can be implemented here
+                    console.log('Add to cart:', product.name);
+                  }}
+                />
+              </View>
+            )}
+            contentContainerStyle={styles.productsList}
+          />
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>منتجات قد تهمك</Text>
           </View>
           <FlatList
             data={randomProducts}
@@ -406,6 +432,7 @@ const styles = StyleSheet.create({
   productCard: {
     width: 150,
     marginRight: SIZES.base,
+  
   },
   storesList: {
     paddingHorizontal: SIZES.padding,
