@@ -24,7 +24,7 @@ export const MOCK_USERS = [
     name: 'فاطمة علي',
     phone: '01098765432',
     password: '123456',
-    addresses: [
+    addresses: [ 
       {
         id: 'addr3',
         type: 'home',

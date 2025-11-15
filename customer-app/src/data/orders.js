@@ -54,6 +54,10 @@ export const MOCK_ORDERS = [
       coordinates: { lat: 31.111, lng: 30.942 },
     },
     driverLocation: { lat: 31.105, lng: 30.938 },
+    driverInfo: {
+      name: 'أحمد سعيد',
+      phone: '01012345678',
+    },
     customerInfo: {
       name: 'فاطمة علي',
       phone: '01098765432',

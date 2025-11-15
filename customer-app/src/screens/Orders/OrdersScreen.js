@@ -14,24 +14,11 @@ import { useCart } from '../../context/CartContext';
 const OrdersScreen = ({ navigation }) => {
   const { orders: cartOrders } = useCart();
 
-  // Debug: Log orders data from context
-  console.log('🛒 OrdersScreen - cartOrders received:', cartOrders);
-  console.log('📊 OrdersScreen - cartOrders count:', cartOrders?.length || 0);
-  console.log('🎯 OrdersScreen - first order sample:', cartOrders?.[0]);
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [selectedFilter, setSelectedFilter] = useState('all'); // all, current, completed
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-
-  // Debug: Log initial state
-  useEffect(() => {
-    console.log('🎯 OrdersScreen - Initial render');
-    console.log('📋 OrdersScreen - Initial cartOrders:', cartOrders);
-    console.log('🎯 OrdersScreen - Initial selectedFilter:', selectedFilter);
-    console.log('📊 OrdersScreen - Initial orders state:', orders);
-    console.log('📋 OrdersScreen - Initial filteredOrders:', filteredOrders);
-  }, []);
 
   const getFilterCounts = () => {
     const currentOrders = orders.filter((order) =>
@@ -64,47 +51,24 @@ const OrdersScreen = ({ navigation }) => {
   }, [cartOrders]);
 
   useEffect(() => {
-    console.log('🔄 OrdersScreen - Orders changed, triggering filter');
-    console.log('📋 OrdersScreen - New orders count:', orders.length);
-
     if (orders.length > 0) {
-      console.log('✅ OrdersScreen - Calling filterOrders with new orders');
       filterOrders();
     } else {
-      console.log('⚠️ OrdersScreen - No orders to filter');
       setFilteredOrders([]);
     }
   }, [orders]);
 
   useEffect(() => {
-    console.log('🔄 OrdersScreen - Filter changed, re-filtering');
-    console.log('🎯 OrdersScreen - New selectedFilter:', selectedFilter);
-    console.log('📋 OrdersScreen - Current orders count:', orders.length);
-
     if (orders.length > 0) {
-      console.log('✅ OrdersScreen - Calling filterOrders with new filter');
       filterOrders();
     }
   }, [selectedFilter]);
 
-  // Debug: Log filteredOrders changes
-  useEffect(() => {
-    console.log('📋 OrdersScreen - filteredOrders updated:', filteredOrders.length);
-    console.log('🎯 OrdersScreen - Current selectedFilter:', selectedFilter);
-    console.log('📊 OrdersScreen - Total orders:', orders.length);
-  }, [filteredOrders]);
-
   const loadOrders = useCallback(async () => {
     try {
-      console.log('🔄 OrdersScreen - Starting to load orders...');
-      console.log('📋 OrdersScreen - cartOrders data:', cartOrders);
-
       // Use orders from CartContext instead of mock data
       setTimeout(() => {
-        console.log('⚡ OrdersScreen - Processing orders in setTimeout');
-
         if (!cartOrders || !Array.isArray(cartOrders)) {
-          console.log('⚠️ OrdersScreen - cartOrders is not an array or is undefined');
           setOrders([]);
           setLoading(false);
           return;
@@ -112,10 +76,7 @@ const OrdersScreen = ({ navigation }) => {
 
         const enrichedOrders = cartOrders
           .map((order, index) => {
-            console.log(`📝 Processing order ${index}:`, order);
-
             if (!order || typeof order !== 'object') {
-              console.log(`⚠️ Order ${index} is invalid:`, order);
               return null;
             }
 
@@ -139,15 +100,10 @@ const OrdersScreen = ({ navigation }) => {
           })
           .filter(Boolean); // Remove null entries
 
-        console.log('✅ OrdersScreen - Enriched orders:', enrichedOrders);
-        console.log('📊 OrdersScreen - Final orders count:', enrichedOrders.length);
-
         setOrders(enrichedOrders);
         setLoading(false);
 
         // Debug: Check if filterOrders will be triggered after setting orders
-        console.log('🔄 OrdersScreen - Orders set, should trigger filterOrders useEffect');
-        console.log('📊 OrdersScreen - Enriched orders count after set:', enrichedOrders.length);
       }, 1000);
     } catch (error) {
       console.error('❌ Error loading orders:', error);
@@ -162,12 +118,7 @@ const OrdersScreen = ({ navigation }) => {
   };
 
   const filterOrders = useCallback(() => {
-    console.log('🔍 OrdersScreen - Filtering orders...');
-    console.log('📋 OrdersScreen - All orders count:', orders.length);
-    console.log('🎯 OrdersScreen - Selected filter:', selectedFilter);
-
     if (!orders || orders.length === 0) {
-      console.log('⚠️ OrdersScreen - No orders to filter');
       setFilteredOrders([]);
       return;
     }
@@ -192,12 +143,8 @@ const OrdersScreen = ({ navigation }) => {
       case 'all':
       default:
         filtered = orders;
-        console.log('📋 OrdersScreen - Showing all orders');
         break;
     }
-
-    console.log('✅ OrdersScreen - Filtered orders count:', filtered.length);
-    console.log('📊 OrdersScreen - First 3 filtered orders:', filtered.slice(0, 3));
 
     setFilteredOrders(filtered);
   }, [orders, selectedFilter]);
@@ -299,20 +246,20 @@ const OrdersScreen = ({ navigation }) => {
     );
   };
 
-  const renderFilterButton = (filter) => (
+  const renderFilterButton = ({ item }) => (
     <TouchableOpacity
-      key={filter.id}
-      style={[styles.filterButton, selectedFilter === filter.id && styles.activeFilter]}
+      key={item.id}
+      style={[styles.filterButton, selectedFilter === item.id && styles.activeFilter]}
       onPress={() => {
-        console.log(`🎯 Filter button pressed: ${filter.id} (${filter.name})`);
-        setSelectedFilter(filter.id);
+        console.log(`🎯 Filter button pressed: ${item.id} (${item.name})`);
+        setSelectedFilter(item.id);
       }}>
-      <Text style={[styles.filterText, selectedFilter === filter.id && styles.activeFilterText]}>
-        {filter.name}
+      <Text style={[styles.filterText, selectedFilter === item.id && styles.activeFilterText]}>
+        {item.name}
       </Text>
-      {filter.count > 0 && (
+      {item.count > 0 && (
         <View style={styles.filterBadge}>
-          <Text style={styles.filterBadgeText}>{filter.count}</Text>
+          <Text style={styles.filterBadgeText}>{item.count}</Text>
         </View>
       )}
     </TouchableOpacity>
@@ -340,7 +287,7 @@ const OrdersScreen = ({ navigation }) => {
       <View style={styles.filtersContainer}>
         <FlatList
           data={filters}
-          renderItem={({ item }) => renderFilterButton(item)}
+          renderItem={renderFilterButton}
           keyExtractor={(item) => item.id}
           horizontal
           showsHorizontalScrollIndicator={false}

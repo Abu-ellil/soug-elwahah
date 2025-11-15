@@ -35,6 +35,41 @@ const DriverLocationMap = ({ driverLocation, deliveryAddress, orderStatus }) => 
 
   const region = getRegionForCoordinates();
 
+  // Calculate distance between two points using Haversine formula (in km)
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Earth's radius in km
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in km
+  };
+
+  // Calculate estimated delivery time (in minutes)
+  const calculateEstimatedDeliveryTime = () => {
+    const distance = calculateDistance(
+      driverLocation.lat,
+      driverLocation.lng,
+      deliveryAddress.coordinates.lat,
+      deliveryAddress.coordinates.lng
+    );
+
+    // Assuming average delivery speed of 20 km/h
+    const averageSpeedKmPerHour = 20;
+    const estimatedTimeHours = distance / averageSpeedKmPerHour;
+    const estimatedTimeMinutes = Math.round(estimatedTimeHours * 60);
+
+    // Add some buffer time (2-5 minutes) for stops, parking, etc.
+    return estimatedTimeMinutes + Math.floor(Math.random() * 4) + 2;
+  };
+
+  const estimatedDeliveryTime = calculateEstimatedDeliveryTime();
+
   return (
     <View style={styles.container}>
       <MapView
@@ -73,6 +108,13 @@ const DriverLocationMap = ({ driverLocation, deliveryAddress, orderStatus }) => 
           </View>
         </Marker>
       </MapView>
+
+      {/* Estimated delivery time info */}
+      <View style={styles.infoContainer}>
+        <RTLText style={styles.infoText}>
+          الوقت المتوقع للوصول: {estimatedDeliveryTime} دقيقة
+        </RTLText>
+      </View>
 
       <View style={styles.legend}>
         <View style={styles.legendItem}>
@@ -131,6 +173,17 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
     backgroundColor: COLORS.white,
+  },
+  infoContainer: {
+    backgroundColor: COLORS.primary,
+    padding: 12,
+    alignItems: 'center',
+  },
+  infoText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: COLORS.white,
+    textAlign: 'center',
   },
   legend: {
     flexDirection: 'row',

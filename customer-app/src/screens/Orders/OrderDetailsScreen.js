@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import React, { useEffect, useRef, Fragment } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
@@ -24,6 +24,12 @@ const OrderDetailsScreen = () => {
       }, 500);
     }
   }, [focusOnDriverLocation]);
+
+  const handleCallDriver = () => {
+    if (order.driverInfo && order.driverInfo.phone) {
+      Linking.openURL(`tel:${order.driverInfo.phone}`);
+    }
+  };
 
   const renderTimelineStep = ({ item, index }) => {
     const isLastStep = index === order.statusHistory.length - 1;
@@ -53,7 +59,9 @@ const OrderDetailsScreen = () => {
         <View style={styles.section}>
           <RTLText style={styles.sectionTitle}>تتبع الطلب</RTLText>
           {order.statusHistory.map((item, index) => (
-            <View key={item.status}>{renderTimelineStep({ item, index })}</View>
+            <Fragment key={item.id || item.date || index}>
+              {renderTimelineStep({ item, index })}
+            </Fragment>
           ))}
         </View>
 
@@ -61,6 +69,26 @@ const OrderDetailsScreen = () => {
         {order.status === 'delivering' && order.driverLocation && (
           <View style={styles.section}>
             <RTLText style={styles.sectionTitle}>موقع السائق</RTLText>
+
+            {/* Driver Information */}
+            {order.driverInfo && (
+              <View style={styles.driverInfoContainer}>
+                <View style={styles.driverInfoRow}>
+                  <Feather name="user" size={20} color={COLORS.primary} />
+                  <RTLText style={styles.driverInfoText}>
+                    {order.driverInfo.name} - سائق التوصيل
+                  </RTLText>
+                </View>
+                <View style={[styles.driverInfoRow, styles.driverInfoActions]}>
+                  <Feather name="phone" size={20} color={COLORS.primary} />
+                  <RTLText style={styles.driverInfoText}>{order.driverInfo.phone}</RTLText>
+                  <TouchableOpacity style={styles.callButton} onPress={handleCallDriver}>
+                    <Feather name="phone-call" size={16} color={COLORS.white} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
             <DriverLocationMap
               driverLocation={order.driverLocation}
               deliveryAddress={order.deliveryAddress}
@@ -73,7 +101,11 @@ const OrderDetailsScreen = () => {
         <View style={styles.section}>
           <RTLText style={styles.sectionTitle}>المنتجات</RTLText>
           {order.items.map((item) => (
-            <CartItem item={item} key={item.id} isCartScreen={false} />
+            <CartItem
+              item={item}
+              key={item.id || item.productId || Math.random()}
+              isCartScreen={false}
+            />
           ))}
         </View>
 
@@ -267,6 +299,34 @@ const styles = StyleSheet.create({
     color: COLORS.dark,
     textAlign: 'right',
     lineHeight: SIZES.body3 * 1.5,
+  },
+  // Driver Info
+  driverInfoContainer: {
+    backgroundColor: COLORS.lightGray,
+    borderRadius: SIZES.radius,
+    padding: SIZES.base,
+    marginBottom: SIZES.base,
+  },
+  driverInfoRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    marginBottom: SIZES.base / 2,
+  },
+  driverInfoActions: {
+    justifyContent: 'space-between',
+  },
+  driverInfoText: {
+    fontSize: SIZES.body3,
+    color: COLORS.dark,
+    marginRight: SIZES.base,
+  },
+  callButton: {
+    backgroundColor: COLORS.primary,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
