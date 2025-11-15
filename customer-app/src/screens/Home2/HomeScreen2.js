@@ -185,6 +185,70 @@ const HomeScreen = ({ navigation }) => {
           />
         </View>
 
+
+      {/* Stores Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>المتاجر</Text>
+          
+        </View>
+
+        {/* Stores Section Header */}
+        <View style={styles.sectionHeader}>
+         
+      
+        </View>
+
+        {/* Stores List */}
+        {error ? (
+          <EmptyState
+            icon="error-outline" 
+            title="خطأ في تحميل البيانات"
+            message={error}
+            actionText="إعادة المحاولة"
+            onActionPress={getCurrentLocation}
+          />
+        ) : filteredStores.length > 0 ? (
+          <FlatList
+            data={filteredStores}
+            horizontal
+            numColumns={1} 
+            renderItem={({ item }) => (
+              <StoreCard
+                store={item} 
+                onPress={() => handleStorePress(item)}
+                userLocation={userLocation}
+              />
+            )}
+            keyExtractor={(item) => item.id}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.storesList}
+          />
+        ) : searchQuery || selectedCategory ? (
+          <EmptyState
+            icon="search-off" 
+            message={
+              searchQuery
+                ? `لا توجد متاجر تحتوي على "${searchQuery}"`
+                : 'لا توجد متاجر في هذه الفئة'
+            }
+            actionText="مسح البحث"
+            onActionPress={() => {
+              setSearchQuery('');
+              setSelectedCategory(null);
+            }}
+          />
+        ) : (
+          <EmptyState
+            icon="storefront"
+            title="لا توجد متاجر"
+            message="لا توجد متاجر متاحة في هذه المنطقة حالياً"
+            actionText="تغيير المنطقة"
+            onActionPress={handleLocationPress}
+          />
+        )}
+
+
+
         {/* Random Products Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -198,6 +262,7 @@ const HomeScreen = ({ navigation }) => {
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <View  className='bg-red500'>
+                <View style={styles.productCard}></View>
                 <ProductCard
                   product={item}
                   onPress={() => {
@@ -240,86 +305,7 @@ const HomeScreen = ({ navigation }) => {
           />
         </View>
 
-        {/* Stores Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>المتاجر</Text>
-          <FlatList
-            data={STORES.slice(0, 10)} // Show first 10 stores
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.storeCard}
-                onPress={() => navigation.navigate('StoreDetails2', { storeId: item.id })}>
-                <Image source={{ uri: item.image }} style={styles.storeImage} />
-                <Text style={styles.storeName} numberOfLines={1}>
-                  {item.name}
-                </Text>
-              </TouchableOpacity>
-            )}
-            contentContainerStyle={styles.storesList}
-          />
-        </View>
-
-        {/* Stores Section Header */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
-            {selectedCategory
-              ? `${selectedCategory.name} في ${selectedVillage?.name || 'المنطقة المختارة'}`
-              : 'المتاجر المتاحة'}
-          </Text>
-          <Text style={styles.storesCountText}>{filteredStores.length} متجر</Text>
-        </View>
-
-        {/* Stores List */}
-        {error ? (
-          <EmptyState
-            icon="error-outline"
-            title="خطأ في تحميل البيانات"
-            message={error}
-            actionText="إعادة المحاولة"
-            onActionPress={getCurrentLocation}
-          />
-        ) : filteredStores.length > 0 ? (
-          <FlatList
-            data={filteredStores}
-            renderItem={({ item }) => (
-              <StoreCard
-                store={item}
-                onPress={() => handleStorePress(item)}
-                userLocation={userLocation}
-              />
-            )}
-            keyExtractor={(item) => item.id}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.storesList}
-          />
-        ) : searchQuery || selectedCategory ? (
-          <EmptyState
-            icon="search-off"
-            title="لا توجد نتائج"
-            message={
-              searchQuery
-                ? `لا توجد متاجر تحتوي على "${searchQuery}"`
-                : 'لا توجد متاجر في هذه الفئة'
-            }
-            actionText="مسح البحث"
-            onActionPress={() => {
-              setSearchQuery('');
-              setSelectedCategory(null);
-            }}
-          />
-        ) : (
-          <EmptyState
-            icon="storefront"
-            title="لا توجد متاجر"
-            message="لا توجد متاجر متاحة في هذه المنطقة حالياً"
-            actionText="تغيير المنطقة"
-            onActionPress={handleLocationPress}
-          />
-        )}
-
+  
         {/* Quick Actions */}
         <View style={styles.quickActions}>
           <TouchableOpacity
@@ -430,7 +416,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: SIZES.padding,
   },
   productCard: {
-    width: 150,
+    width: 200,
     marginRight: SIZES.base,
   
   },
