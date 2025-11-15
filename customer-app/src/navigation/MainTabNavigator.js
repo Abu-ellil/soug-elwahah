@@ -7,7 +7,6 @@ import { useCart } from '../context/CartContext';
 import HomeScreen from '../screens/Home/HomeScreen';
 import StoreDetailsScreen from '../screens/Home/StoreDetailsScreen';
 import HomeScreen2 from '../screens/Home2/HomeScreen2';
-import StoreDetailsScreen2 from '../screens/Home2/StoreDetailsScreen2';
 import CategoryStoresScreen from '../screens/Categories/CategoryStoresScreen';
 import CartScreen from '../screens/Cart/CartScreen';
 import OrdersScreen from '../screens/Orders/OrdersScreen';
@@ -23,7 +22,7 @@ const CategoriesScreen = () => (
   <View className="flex-1 items-center justify-center bg-white">
     <Text>Categories Screen</Text>
   </View>
-);
+); 
 
 // Home Stack Navigator
 const HomeStack = createNativeStackNavigator();
@@ -32,6 +31,7 @@ const HomeStackNavigator = () => (
     screenOptions={{ headerShown: false, statusBarStyle: 'dark', animation: 'slide_from_right' }}>
     <HomeStack.Screen name="HomeMain" component={HomeScreen} />
     <HomeStack.Screen name="StoreDetails" component={StoreDetailsScreen} />
+    <HomeStack.Screen name="CategoryStores" component={CategoryStoresScreen} />
     <HomeStack.Screen name="Checkout" component={CheckoutScreen} />
   </HomeStack.Navigator>
 );
@@ -42,7 +42,8 @@ const Home2StackNavigator = () => (
   <Home2Stack.Navigator
     screenOptions={{ headerShown: false, statusBarStyle: 'dark', animation: 'slide_from_right' }}>
     <Home2Stack.Screen name="Home2Main" component={HomeScreen2} />
-    <Home2Stack.Screen name="StoreDetails2" component={StoreDetailsScreen2} />
+    <Home2Stack.Screen name="StoreDetails" component={StoreDetailsScreen} />
+    <Home2Stack.Screen name="CategoryStores" component={CategoryStoresScreen} />
     <Home2Stack.Screen name="Checkout" component={CheckoutScreen} />
   </Home2Stack.Navigator>
 );

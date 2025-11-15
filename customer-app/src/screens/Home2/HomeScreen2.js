@@ -25,10 +25,10 @@ import VillagePicker from '../../components/VillagePicker';
 import COLORS from '../../constants/colors';
 import SIZES from '../../constants/sizes';
 import HomeScreenSkeleton from '../../components/HomeScreenSkeleton';
-import { formatDistance } from '../../utils/distance';
+import { formatDistance, calculateDistance } from '../../utils/distance';
 import { getStoresByVillage } from '../../utils/locationHelpers';
 
-const HomeScreen = ({ navigation }) => {
+const HomeScreen2 = ({ navigation }) => {
   const {
     userLocation,
     selectedVillage,
@@ -63,7 +63,20 @@ const HomeScreen = ({ navigation }) => {
       stores = stores
         .map((store) => ({
           ...store,
-          distance: userLocation ? calculateDistance(userLocation, store.coordinates) : 0,
+          distance:
+            userLocation &&
+            store.coordinates &&
+            userLocation.lat !== undefined &&
+            userLocation.lng !== undefined &&
+            store.coordinates.lat !== undefined &&
+            store.coordinates.lng !== undefined
+              ? calculateDistance(
+                  userLocation.lat,
+                  userLocation.lng,
+                  store.coordinates.lat,
+                  store.coordinates.lng
+                )
+              : 0,
         }))
         .sort((a, b) => a.distance - b.distance);
     }
@@ -78,19 +91,7 @@ const HomeScreen = ({ navigation }) => {
     setRandomProducts(getRandomProducts());
   }, [selectedVillage, userLocation]);
 
-  const calculateDistance = (loc1, loc2) => {
-    const R = 6371; // Earth's radius in km
-    const dLat = ((loc2.lat - loc1.lat) * Math.PI) / 180;
-    const dLng = ((loc2.lng - loc1.lng) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((loc1.lat * Math.PI) / 180) *
-        Math.cos((loc2.lat * Math.PI) / 180) *
-        Math.sin(dLng / 2) *
-        Math.sin(dLng / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  };
+  // The calculateDistance function is now imported from '../../utils/distance'
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -185,23 +186,18 @@ const HomeScreen = ({ navigation }) => {
           />
         </View>
 
-
-      {/* Stores Section */}
+        {/* Stores Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>المتاجر</Text>
-          
         </View>
 
         {/* Stores Section Header */}
-        <View style={styles.sectionHeader}>
-         
-      
-        </View>
+        <View style={styles.sectionHeader}></View>
 
         {/* Stores List */}
         {error ? (
           <EmptyState
-            icon="error-outline" 
+            icon="error-outline"
             title="خطأ في تحميل البيانات"
             message={error}
             actionText="إعادة المحاولة"
@@ -211,10 +207,10 @@ const HomeScreen = ({ navigation }) => {
           <FlatList
             data={filteredStores}
             horizontal
-            numColumns={1} 
+            numColumns={1}
             renderItem={({ item }) => (
               <StoreCard
-                store={item} 
+                store={item}
                 onPress={() => handleStorePress(item)}
                 userLocation={userLocation}
               />
@@ -225,7 +221,7 @@ const HomeScreen = ({ navigation }) => {
           />
         ) : searchQuery || selectedCategory ? (
           <EmptyState
-            icon="search-off" 
+            icon="search-off"
             message={
               searchQuery
                 ? `لا توجد متاجر تحتوي على "${searchQuery}"`
@@ -247,37 +243,8 @@ const HomeScreen = ({ navigation }) => {
           />
         )}
 
-
-
         {/* Random Products Section */}
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>منتجات قد تهمك</Text>
-          </View>
-          <FlatList
-            data={randomProducts}
-            vertical
-              numColumns={2}
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <View  className='bg-red500'>
-                <View style={styles.productCard}></View>
-                <ProductCard
-                  product={item}
-                  onPress={() => {
-                    // Navigate to the store that has this product
-                    navigation.navigate('StoreDetails2', { storeId: item.storeId });
-                  }}
-                  onAddToCart={(product) => {
-                    // Add to cart functionality can be implemented here
-                    console.log('Add to cart:', product.name);
-                  }}
-                />
-              </View>
-            )}
-            contentContainerStyle={styles.productsList}
-          />
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>منتجات قد تهمك</Text>
           </View>
@@ -292,7 +259,9 @@ const HomeScreen = ({ navigation }) => {
                   product={item}
                   onPress={() => {
                     // Navigate to the store that has this product
-                    navigation.navigate('StoreDetails2', { storeId: item.storeId });
+                    if (item.storeId) {
+                      navigation.navigate('StoreDetails', { storeId: item.storeId });
+                    }
                   }}
                   onAddToCart={(product) => {
                     // Add to cart functionality can be implemented here
@@ -305,7 +274,6 @@ const HomeScreen = ({ navigation }) => {
           />
         </View>
 
-  
         {/* Quick Actions */}
         <View style={styles.quickActions}>
           <TouchableOpacity
@@ -418,7 +386,6 @@ const styles = StyleSheet.create({
   productCard: {
     width: 200,
     marginRight: SIZES.base,
-  
   },
   storesList: {
     paddingHorizontal: SIZES.padding,
@@ -447,4 +414,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default HomeScreen;
+export default HomeScreen2;

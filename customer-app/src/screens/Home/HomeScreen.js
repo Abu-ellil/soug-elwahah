@@ -22,7 +22,7 @@ import VillagePicker from '../../components/VillagePicker';
 import COLORS from '../../constants/colors';
 import SIZES from '../../constants/sizes';
 import HomeScreenSkeleton from '../../components/HomeScreenSkeleton';
-import { formatDistance } from '../../utils/distance';
+import { formatDistance, calculateDistance } from '../../utils/distance';
 import { getStoresByVillage } from '../../utils/locationHelpers';
 
 const HomeScreen = ({ navigation }) => {
@@ -59,27 +59,26 @@ const HomeScreen = ({ navigation }) => {
       stores = stores
         .map((store) => ({
           ...store,
-          distance: userLocation ? calculateDistance(userLocation, store.coordinates) : 0,
+          distance:
+            userLocation &&
+            store.coordinates &&
+            userLocation.lat !== undefined &&
+            userLocation.lng !== undefined &&
+            store.coordinates.lat !== undefined &&
+            store.coordinates.lng !== undefined
+              ? calculateDistance(
+                  userLocation.lat,
+                  userLocation.lng,
+                  store.coordinates.lat,
+                  store.coordinates.lng
+                )
+              : 0,
         }))
         .sort((a, b) => a.distance - b.distance);
     }
 
     setNearbyStores(stores);
   }, [selectedVillage, userLocation]);
-
-  const calculateDistance = (loc1, loc2) => {
-    const R = 6371; // Earth's radius in km
-    const dLat = ((loc2.lat - loc1.lat) * Math.PI) / 180;
-    const dLng = ((loc2.lng - loc1.lng) * Math.PI) / 180;
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((loc1.lat * Math.PI) / 180) *
-        Math.cos((loc2.lat * Math.PI) / 180) *
-        Math.sin(dLng / 2) *
-        Math.sin(dLng / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-  };
 
   const onRefresh = async () => {
     setRefreshing(true);

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, Fragment } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Linking } from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
@@ -16,11 +16,53 @@ const OrderDetailsScreen = () => {
   const { order, focusOnDriverLocation } = route.params || {};
   const scrollViewRef = useRef(null);
 
+  // Helper function to get flat list data
+  const getFlatListData = () => {
+    const data = [];
+
+    // Add driver location map if applicable
+    if (order.status === 'delivering' && order.driverLocation && order.deliveryAddress) {
+      data.push({ type: 'driver-map', order });
+    }
+
+    // Add items list
+    if (order.items && order.items.length > 0) {
+      data.push({ type: 'items', items: order.items.filter(Boolean) });
+    }
+
+    // Add order summary
+    data.push({ type: 'summary', order });
+
+    // Add customer information if exists
+    if (order.customerInfo) {
+      data.push({ type: 'customer', order });
+    }
+
+    // Add delivery address
+    data.push({ type: 'address', order });
+
+    // Add order notes if exists
+    if (order.notes && order.notes.trim() !== '') {
+      data.push({ type: 'notes', order });
+    }
+
+    return data;
+  };
+
   useEffect(() => {
     if (focusOnDriverLocation && scrollViewRef.current) {
       // Scroll to the map section after components are rendered
       setTimeout(() => {
-        scrollViewRef.current?.scrollTo({ y: 400, animated: true });
+        // Find the index of the driver map in the data array
+        const data = getFlatListData();
+        const driverMapIndex = data.findIndex((item) => item.type === 'driver-map');
+
+        if (driverMapIndex !== -1) {
+          scrollViewRef.current?.scrollToIndex({
+            index: driverMapIndex + 1, // +1 because timeline is in ListHeaderComponent
+            animated: true,
+          });
+        }
       }, 500);
     }
   }, [focusOnDriverLocation]);
@@ -62,39 +104,25 @@ const OrderDetailsScreen = () => {
     );
   }
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <Header title={`الطلب #${order.id || 'N/A'}`} showBackButton={true} />
-      <ScrollView ref={scrollViewRef}>
-        {/* Order Timeline */}
-        <View style={styles.section}>
-          <RTLText style={styles.sectionTitle}>تتبع الطلب</RTLText>
-          {order.statusHistory && order.statusHistory.length > 0
-            ? order.statusHistory.map((item, index) => (
-                <Fragment key={item.id || item.date || index}>
-                  {renderTimelineStep({ item, index })}
-                </Fragment>
-              ))
-            : null}
-        </View>
-
-        {/* Driver Location Map - Only show for delivering orders */}
-        {order.status === 'delivering' && order.driverLocation && order.deliveryAddress && (
+  const renderFlatListItem = ({ item }) => {
+    switch (item.type) {
+      case 'driver-map':
+        return (
           <View style={styles.section}>
             <RTLText style={styles.sectionTitle}>موقع السائق</RTLText>
 
             {/* Driver Information */}
-            {order.driverInfo && order.driverInfo.name && (
+            {item.order.driverInfo && item.order.driverInfo.name && (
               <View style={styles.driverInfoContainer}>
                 <View style={styles.driverInfoRow}>
                   <Feather name="user" size={20} color={COLORS.primary} />
                   <RTLText style={styles.driverInfoText}>
-                    {order.driverInfo.name} - سائق التوصيل
+                    {item.order.driverInfo.name} - سائق التوصيل
                   </RTLText>
                 </View>
                 <View style={[styles.driverInfoRow, styles.driverInfoActions]}>
                   <Feather name="phone" size={20} color={COLORS.primary} />
-                  <RTLText style={styles.driverInfoText}>{order.driverInfo.phone}</RTLText>
+                  <RTLText style={styles.driverInfoText}>{item.order.driverInfo.phone}</RTLText>
                   <TouchableOpacity style={styles.callButton} onPress={handleCallDriver}>
                     <Feather name="phone-call" size={16} color={COLORS.white} />
                   </TouchableOpacity>
@@ -103,108 +131,139 @@ const OrderDetailsScreen = () => {
             )}
 
             <DriverLocationMap
-              driverLocation={order.driverLocation}
-              deliveryAddress={order.deliveryAddress}
-              orderStatus={order.status}
+              driverLocation={item.order.driverLocation}
+              deliveryAddress={item.order.deliveryAddress}
+              orderStatus={item.order.status}
             />
           </View>
-        )}
+        );
 
-        {/* Items List */}
-        <View style={styles.section}>
-          <RTLText style={styles.sectionTitle}>المنتجات</RTLText>
-          {order.items && order.items.length > 0
-            ? order.items
-                .filter(Boolean)
-                .map((item) => (
-                  <CartItem
-                    item={item}
-                    key={item.id || item.productId || Math.random()}
-                    isCartScreen={false}
-                  />
-                ))
-            : null}
-        </View>
+      case 'items':
+        return (
+          <View style={styles.section}>
+            <RTLText style={styles.sectionTitle}>المنتجات</RTLText>
+            {item.items.map((item) => (
+              <CartItem
+                item={item}
+                key={item.id || item.productId || Math.random()}
+                isCartScreen={false}
+              />
+            ))}
+          </View>
+        );
 
-        {/* Order Summary */}
-        <View style={styles.section}>
-          <RTLText style={styles.sectionTitle}>ملخص الطلب</RTLText>
-          {order && order.storeName && (
+      case 'summary':
+        return (
+          <View style={styles.section}>
+            <RTLText style={styles.sectionTitle}>ملخص الطلب</RTLText>
+            {item.order && item.order.storeName && (
+              <View style={styles.summaryRow}>
+                <RTLText style={styles.summaryLabel}>المتجر</RTLText>
+                <RTLText style={styles.summaryValue}>{item.order.storeName}</RTLText>
+              </View>
+            )}
             <View style={styles.summaryRow}>
-              <RTLText style={styles.summaryLabel}>المتجر</RTLText>
-              <RTLText style={styles.summaryValue}>{order.storeName}</RTLText>
+              <RTLText style={styles.summaryLabel}>المجموع الفرعي</RTLText>
+              <RTLText style={styles.summaryValue}>د.إ {item.order.subtotal.toFixed(2)}</RTLText>
             </View>
-          )}
-          <View style={styles.summaryRow}>
-            <RTLText style={styles.summaryLabel}>المجموع الفرعي</RTLText>
-            <RTLText style={styles.summaryValue}>د.إ {order.subtotal.toFixed(2)}</RTLText>
-          </View>
-          <View style={styles.summaryRow}>
-            <RTLText style={styles.summaryLabel}>رسوم التوصيل</RTLText>
-            <RTLText style={styles.summaryValue}>د.إ {order.deliveryFee.toFixed(2)}</RTLText>
-          </View>
-          <View style={styles.summaryRow}>
-            <RTLText style={styles.summaryLabel}>طريقة الدفع</RTLText>
-            <RTLText style={styles.summaryValue}>
-              {order.paymentMethod === 'cash'
-                ? 'الدفع عند الاستلام'
-                : order.paymentMethod === 'fawry'
-                  ? 'فوري'
-                  : order.paymentMethod === 'vodafone_cash'
-                    ? 'فودافون كاش'
-                    : order.paymentMethod === 'orange_money'
-                      ? 'أورانج ماني'
-                      : order.paymentMethod}
-            </RTLText>
-          </View>
-          {order && order.deliverySlot && (
             <View style={styles.summaryRow}>
-              <RTLText style={styles.summaryLabel}>وقت التوصيل</RTLText>
-              <RTLText style={styles.summaryValue}>{order.deliverySlot.name}</RTLText>
+              <RTLText style={styles.summaryLabel}>رسوم التوصيل</RTLText>
+              <RTLText style={styles.summaryValue}>د.إ {item.order.deliveryFee.toFixed(2)}</RTLText>
             </View>
-          )}
-          <View style={styles.summaryRowTotal}>
-            <RTLText style={styles.summaryLabelTotal}>المجموع الكلي</RTLText>
-            <RTLText style={styles.summaryValueTotal}>د.إ {order.total.toFixed(2)}</RTLText>
+            <View style={styles.summaryRow}>
+              <RTLText style={styles.summaryLabel}>طريقة الدفع</RTLText>
+              <RTLText style={styles.summaryValue}>
+                {item.order.paymentMethod === 'cash'
+                  ? 'الدفع عند الاستلام'
+                  : item.order.paymentMethod === 'fawry'
+                    ? 'فوري'
+                    : item.order.paymentMethod === 'vodafone_cash'
+                      ? 'فودافون كاش'
+                      : item.order.paymentMethod === 'orange_money'
+                        ? 'أورانج ماني'
+                        : item.order.paymentMethod}
+              </RTLText>
+            </View>
+            {item.order && item.order.deliverySlot && (
+              <View style={styles.summaryRow}>
+                <RTLText style={styles.summaryLabel}>وقت التوصيل</RTLText>
+                <RTLText style={styles.summaryValue}>{item.order.deliverySlot.name}</RTLText>
+              </View>
+            )}
+            <View style={styles.summaryRowTotal}>
+              <RTLText style={styles.summaryLabelTotal}>المجموع الكلي</RTLText>
+              <RTLText style={styles.summaryValueTotal}>د.إ {item.order.total.toFixed(2)}</RTLText>
+            </View>
           </View>
-        </View>
+        );
 
-        {/* Customer Information */}
-        {order && order.customerInfo && (
+      case 'customer':
+        return (
           <View style={styles.section}>
             <RTLText style={styles.sectionTitle}>معلومات العميل</RTLText>
             <View style={styles.infoContainer}>
-              <RTLText style={styles.infoText}>الاسم: {order.customerInfo.name}</RTLText>
-              <RTLText style={styles.infoText}>الهاتف: {order.customerInfo.phone}</RTLText>
+              <RTLText style={styles.infoText}>الاسم: {item.order.customerInfo.name}</RTLText>
+              <RTLText style={styles.infoText}>الهاتف: {item.order.customerInfo.phone}</RTLText>
             </View>
           </View>
-        )}
+        );
 
-        {/* Delivery Address */}
-        <View style={styles.section}>
-          <RTLText style={styles.sectionTitle}>عنوان التوصيل</RTLText>
-          <View style={styles.addressContainer}>
-            <RTLText style={styles.addressText}>
-              {order.deliveryAddress && order.deliveryAddress.street
-                ? order.deliveryAddress.street
-                : 'N/A'}
-            </RTLText>
-            <RTLText style={styles.addressText}>
-              {order.deliveryAddress && order.deliveryAddress.village
-                ? order.deliveryAddress.village
-                : 'N/A'}
-            </RTLText>
+      case 'address':
+        return (
+          <View style={styles.section}>
+            <RTLText style={styles.sectionTitle}>عنوان التوصيل</RTLText>
+            <View style={styles.addressContainer}>
+              <RTLText style={styles.addressText}>
+                {item.order.deliveryAddress && item.order.deliveryAddress.street
+                  ? item.order.deliveryAddress.street
+                  : 'N/A'}
+              </RTLText>
+              <RTLText style={styles.addressText}>
+                {item.order.deliveryAddress && item.order.deliveryAddress.village
+                  ? item.order.deliveryAddress.village
+                  : 'N/A'}
+              </RTLText>
+            </View>
           </View>
-        </View>
+        );
 
-        {/* Order Notes */}
-        {order && order.notes && order.notes.trim() !== '' && (
+      case 'notes':
+        return (
           <View style={styles.section}>
             <RTLText style={styles.sectionTitle}>ملاحظات</RTLText>
-            <RTLText style={styles.notesText}>{order.notes}</RTLText>
+            <RTLText style={styles.notesText}>{item.order.notes}</RTLText>
           </View>
-        )}
-      </ScrollView>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <Header title={`الطلب #${order.id || 'N/A'}`} showBackButton={true} />
+      <FlatList
+        ref={scrollViewRef}
+        data={getFlatListData()}
+        keyExtractor={(item, index) => `${item.type}-${index}`}
+        renderItem={renderFlatListItem}
+        showsVerticalScrollIndicator={false}
+        scrollEventThrottle={16}
+        ListHeaderComponent={
+          // Order Timeline (moved to ListHeaderComponent to appear first)
+          <View style={styles.section}>
+            <RTLText style={styles.sectionTitle}>تتبع الطلب</RTLText>
+            {order.statusHistory && order.statusHistory.length > 0
+              ? order.statusHistory.map((item, index) => (
+                  <Fragment key={item.id || item.date || index}>
+                    {renderTimelineStep({ item, index })}
+                  </Fragment>
+                ))
+              : null}
+          </View>
+        }
+      />
     </SafeAreaView>
   );
 };

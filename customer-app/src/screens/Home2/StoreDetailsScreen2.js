@@ -25,7 +25,7 @@ import StoreDetailsScreenSkeleton from '../../components/StoreDetailsScreenSkele
 import Toast from 'react-native-toast-message';
 import { useCart } from '../../context/CartContext';
 
-const StoreDetailsScreen = ({ navigation, route }) => {
+const StoreDetailsScreen2 = ({ navigation, route }) => {
   const { storeId } = route.params;
   const { getCartItemsCount, addToCart } = useCart();
 
@@ -463,4 +463,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default StoreDetailsScreen;
+export default StoreDetailsScreen2;

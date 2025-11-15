@@ -1,10 +1,11 @@
 import React from 'react';
 import { View } from 'react-native';
-import MapView from 'expo-maps';
+import MapView, { Marker } from 'react-native-maps';
 import RTLText from './RTLText';
 import { isValidCoordinate } from '../utils/locationHelpers';
+
 const DriverLocationMap = ({ driverLocation, deliveryAddress, orderStatus }) => {
-  if (!driverLocation || !deliveryAddress.coordinates) {
+  if (!driverLocation || !deliveryAddress || !deliveryAddress.coordinates) {
     return (
       <View className="my-4 h-[300px] w-full items-center justify-center overflow-hidden rounded-xl bg-white p-5">
         <RTLText className="p-5 text-center text-red-50">لا توجد معلومات عن موقع السائق</RTLText>
@@ -14,6 +15,25 @@ const DriverLocationMap = ({ driverLocation, deliveryAddress, orderStatus }) => 
 
   // Calculate region to show both driver and delivery locations
   const getMapRegion = () => {
+    // Check if coordinates exist before accessing them
+    if (
+      !driverLocation ||
+      !driverLocation.lng ||
+      !driverLocation.lat ||
+      !deliveryAddress ||
+      !deliveryAddress.coordinates ||
+      !deliveryAddress.coordinates.lng ||
+      !deliveryAddress.coordinates.lat
+    ) {
+      // Return a default region if coordinates are missing (Cairo fallback)
+      return {
+        latitude: 31.2357,
+        longitude: 30.0444,
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0421,
+      };
+    }
+
     const driverCoord = [driverLocation.lng, driverLocation.lat];
     const deliveryCoord = [deliveryAddress.coordinates.lng, deliveryAddress.coordinates.lat];
 
@@ -21,8 +41,8 @@ const DriverLocationMap = ({ driverLocation, deliveryAddress, orderStatus }) => 
     if (!isValidCoordinate(driverCoord) || !isValidCoordinate(deliveryCoord)) {
       // Return a default region if coordinates are invalid (Cairo fallback)
       return {
-        latitude: 31.2357, // latitude
-        longitude: 30.0444, // longitude
+        latitude: 31.2357,
+        longitude: 30.0444,
         latitudeDelta: 0.0922,
         longitudeDelta: 0.0421,
       };
@@ -68,6 +88,20 @@ const DriverLocationMap = ({ driverLocation, deliveryAddress, orderStatus }) => 
 
   // Calculate estimated delivery time (in minutes)
   const calculateEstimatedDeliveryTime = () => {
+    // Check if coordinates exist before calculating distance
+    if (
+      !driverLocation ||
+      !driverLocation.lat ||
+      !driverLocation.lng ||
+      !deliveryAddress ||
+      !deliveryAddress.coordinates ||
+      !deliveryAddress.coordinates.lat ||
+      !deliveryAddress.coordinates.lng
+    ) {
+      // Return a default time if coordinates are missing
+      return Math.floor(Math.random() * 10) + 5; // 5-15 minutes default
+    }
+
     const distance = calculateDistance(
       driverLocation.lat,
       driverLocation.lng,
@@ -85,56 +119,54 @@ const DriverLocationMap = ({ driverLocation, deliveryAddress, orderStatus }) => 
   };
 
   const estimatedDeliveryTime = calculateEstimatedDeliveryTime();
+
   return (
-    <View className="my-4 h-[300px] w-full items-center justify-center overflow-hidden rounded-xl bg-white p-5">
+    <View className="my-4 h-[300px] w-full overflow-hidden rounded-xl bg-white">
       <MapView
         style={{ flex: 1 }}
         initialRegion={mapRegion}
         showsUserLocation={true}
         showsMyLocationButton={true}>
         {/* Driver Marker */}
-        <MapView.Marker
-          coordinate={{
-            latitude: driverLocation.lat,
-            longitude: driverLocation.lng,
-          }}
-          title="موقع السائق"
-          pinColor="#FF6B35"
-        />
+        {driverLocation && driverLocation.lat && driverLocation.lng && (
+          <Marker
+            coordinate={{
+              latitude: driverLocation.lat,
+              longitude: driverLocation.lng,
+            }}
+            title="موقع السائق"
+            pinColor="orange"
+          />
+        )}
 
         {/* Delivery Marker */}
-        <MapView.Marker
-          coordinate={{
-            latitude: deliveryAddress.coordinates.lat,
-            longitude: deliveryAddress.coordinates.lng,
-          }}
-          title="عنوان التوصيل"
-          pinColor="#06D6A0"
-        />
-
-        {/* Route line between driver and delivery location */}
-        <MapView.Polyline
-          coordinates={[
-            { latitude: driverLocation.lat, longitude: driverLocation.lng },
-            {
-              latitude: deliveryAddress.coordinates.lat,
-              longitude: deliveryAddress.coordinates.lng,
-            },
-          ]}
-          strokeColor="#FF6B35"
-          strokeWidth={3}
-        />
+        {deliveryAddress &&
+          deliveryAddress.coordinates &&
+          deliveryAddress.coordinates.lat &&
+          deliveryAddress.coordinates.lng && (
+            <Marker
+              coordinate={{
+                latitude: deliveryAddress.coordinates.lat,
+                longitude: deliveryAddress.coordinates.lng,
+              }}
+              title="عنوان التوصيل"
+              pinColor="green"
+            />
+          )}
       </MapView>
+
       {/* Estimated delivery time info */}
-      <View className="items-center bg-orange-500 p-3">
-        <RTLText className="text-center text-base font-bold text-white">
-          الوقت المتوقع للوصول: {estimatedDeliveryTime} دقيقة
-        </RTLText>
-      </View>
+      {estimatedDeliveryTime && (
+        <View className="items-center bg-orange-500 p-3">
+          <RTLText className="text-center text-base font-bold text-white">
+            الوقت المتوقع للوصول: {estimatedDeliveryTime} دقيقة
+          </RTLText>
+        </View>
+      )}
 
       <View className="flex-row justify-around border-t border-gray-200 bg-white py-2">
         <View className="flex-row items-center">
-          <View className="mx-1 h-3 w-3 rounded bg-orange-50" />
+          <View className="mx-1 h-3 w-3 rounded bg-orange-500" />
           <RTLText className="text-xs text-gray-600">موقع السائق</RTLText>
         </View>
         <View className="flex-row items-center">

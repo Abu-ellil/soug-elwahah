@@ -51,7 +51,7 @@ const CategoryStoresScreen = ({ route }) => {
   };
 
   const handleStorePress = (store) => {
-    navigation.navigate('StoreDetails', { store });
+    navigation.navigate('StoreDetails', { storeId: store.id });
   };
 
   const renderHeader = () => (
