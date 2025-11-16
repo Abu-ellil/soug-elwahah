@@ -32,7 +32,6 @@ const HomeStackNavigator = () => (
   </HomeStack.Navigator>
 );
 
-
 // Order Stack Navigator
 const OrderStack = createNativeStackNavigator();
 const OrderStackNavigator = () => (
@@ -82,6 +81,7 @@ const MainTabNavigator = () => {
 
   return (
     <Tab.Navigator
+      initialRouteName="Home"
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {

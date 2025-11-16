@@ -37,6 +37,7 @@ const HomeScreen = ({ navigation }) => {
     gpsEnabled,
     getCurrentLocation,
     updateDeliveryRadius,
+    getVillageNameFromCoordinates,
   } = useLocation();
   const { addToCart } = useCart();
   const { getTopProducts } = useAnalytics();
@@ -48,11 +49,25 @@ const HomeScreen = ({ navigation }) => {
   const [randomProducts, setRandomProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
+  const [villageName, setVillageName] = useState('');
 
   useEffect(() => {
     // Use availableStores from context instead of local filtering
     setNearbyStores(availableStores);
   }, [availableStores]);
+
+  // Update village name when location changes
+  useEffect(() => {
+    if (userLocation) {
+      const fetchVillageName = async () => {
+        const village = await getVillageNameFromCoordinates(userLocation);
+        setVillageName(village || '');
+      };
+      fetchVillageName();
+    } else {
+      setVillageName('');
+    }
+  }, [userLocation, getVillageNameFromCoordinates]);
 
   // Fetch categories from API
   useEffect(() => {
@@ -155,6 +170,7 @@ const HomeScreen = ({ navigation }) => {
               navigation.navigate('StoreDetails', { storeId: randomProducts[i].storeId })
             }
             onAddToCart={addToCart}
+            navigation={navigation}
           />
           {randomProducts[i + 1] && (
             <ProductCard
@@ -163,6 +179,7 @@ const HomeScreen = ({ navigation }) => {
                 navigation.navigate('StoreDetails', { storeId: randomProducts[i + 1].storeId })
               }
               onAddToCart={addToCart}
+              navigation={navigation}
             />
           )}
         </View>
@@ -178,7 +195,13 @@ const HomeScreen = ({ navigation }) => {
         <View style={styles.locationContainer}>
           <MaterialIcons name="location-on" size={20} color={COLORS.primary} />
           <Text style={styles.locationText} numberOfLines={1}>
-            {userLocation ? 'موقعك الحالي' : gpsEnabled ? 'تحديد الموقع...' : 'GPS غير متاح'}
+            {userLocation
+              ? villageName
+                ? ` ${villageName}`
+                : `موقعك الحالي: ${userLocation.lat.toFixed(4)}, ${userLocation.lng.toFixed(4)}`
+              : gpsEnabled
+                ? 'تحديد الموقع...'
+                : 'GPS غير متاح'}
           </Text>
         </View>
 

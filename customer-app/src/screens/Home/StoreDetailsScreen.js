@@ -115,6 +115,11 @@ const StoreDetailsScreen = ({ navigation, route }) => {
         text2: `تم إضافة ${product.name} إلى السلة`,
       });
     } catch (error) {
+      // Check if the error is due to authentication
+      if (error.message === 'يجب تسجيل الدخول أولاً') {
+        // The error is already handled in the auth check in ProductCard
+        return;
+      }
       Toast.show({
         type: 'error',
         text1: 'خطأ',
@@ -255,6 +260,7 @@ const StoreDetailsScreen = ({ navigation, route }) => {
                   product={item}
                   onPress={() => console.log('Product pressed:', item.name)}
                   onAddToCart={(product) => handleAddToCart(product)}
+                  navigation={navigation}
                 />
               )}
               keyExtractor={(item) => item.id}

@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -6,13 +6,15 @@ import { formatPrice } from '../utils/helpers';
 import COLORS from '../constants/colors';
 import SIZES from '../constants/sizes';
 import ImageWithFallback from './ImageWithFallback';
+import LoginPromptModal from './LoginPromptModal';
 
-const ProductCard = ({ product, onPress, onAddToCart }) => {
+const ProductCard = ({ product, onPress, onAddToCart, navigation }) => {
   const animation = useRef(new Animated.Value(0)).current;
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   const handleAddToCart = (e) => {
     e.stopPropagation();
-    if (onAddToCart) {
+    try {
       onAddToCart(product);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       // Trigger animation
@@ -27,7 +29,18 @@ const ProductCard = ({ product, onPress, onAddToCart }) => {
           useNativeDriver: true,
         }).start();
       });
+    } catch (error) {
+      if (error.message === 'يجب تسجيل الدخول أولاً') {
+        setShowLoginModal(true);
+      } else {
+        // Handle other errors as needed
+        console.error('Error adding to cart:', error);
+      }
     }
+  };
+
+  const handleLogin = () => {
+    navigation.navigate('Auth', { screen: 'Login' });
   };
 
   const animatedStyle = {
@@ -46,47 +59,56 @@ const ProductCard = ({ product, onPress, onAddToCart }) => {
   };
 
   return (
-    <TouchableOpacity onPress={onPress} style={styles.container}>
-      <View style={styles.imageContainer}>
-        <ImageWithFallback
-          source={{ uri: product.image }}
-          style={styles.image}
-          resizeMode="cover"
-        />
-        {!product.isAvailable && (
-          <View style={styles.unavailableOverlay}>
-            <Text style={styles.unavailableText}>غير متوفر</Text>
-          </View>
-        )}
-      </View>
+    <>
+      <TouchableOpacity onPress={onPress} style={styles.container}>
+        <View style={styles.imageContainer}>
+          <ImageWithFallback
+            source={{ uri: product.image }}
+            style={styles.image}
+            resizeMode="cover"
+          />
+          {!product.isAvailable && (
+            <View style={styles.unavailableOverlay}>
+              <Text style={styles.unavailableText}>غير متوفر</Text>
+            </View>
+          )}
+        </View>
 
-      <View style={styles.content}>
-        <Text style={styles.name} numberOfLines={2}>
-          {product.name}
-        </Text>
+        <View style={styles.content}>
+          <Text style={styles.name} numberOfLines={2}>
+            {product.name}
+          </Text>
 
-        <Text style={styles.description} numberOfLines={1}>
-          {product.description}
-        </Text>
+          <Text style={styles.description} numberOfLines={1}>
+            {product.description}
+          </Text>
 
-        <Text style={styles.price} numberOfLines={1}>
-          {formatPrice(product.price)}
-        </Text>
+          <Text style={styles.price} numberOfLines={1}>
+            {formatPrice(product.price)}
+          </Text>
 
-        {product.isAvailable ? (
-          <Animated.View style={animatedStyle}>
-            <TouchableOpacity onPress={handleAddToCart} style={styles.addButton}>
-              <MaterialIcons name="add-shopping-cart" size={16} color={COLORS.card} />
-              <Text style={styles.addButtonText}>أضف للسلة</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        ) : (
-          <View style={styles.unavailableButton}>
-            <Text style={styles.unavailableButtonText}>غير متوفر</Text>
-          </View>
-        )}
-      </View>
-    </TouchableOpacity>
+          {product.isAvailable ? (
+            <Animated.View style={animatedStyle}>
+              <TouchableOpacity onPress={handleAddToCart} style={styles.addButton}>
+                <MaterialIcons name="add-shopping-cart" size={16} color={COLORS.card} />
+                <Text style={styles.addButtonText}>أضف للسلة</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          ) : (
+            <View style={styles.unavailableButton}>
+              <Text style={styles.unavailableButtonText}>غير متوفر</Text>
+            </View>
+          )}
+        </View>
+      </TouchableOpacity>
+
+      <LoginPromptModal
+        visible={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onLogin={handleLogin}
+        message="يجب تسجيل الدخول أولاً لإضافة المنتج إلى السلة"
+      />
+    </>
   );
 };
 

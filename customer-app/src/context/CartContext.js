@@ -4,6 +4,7 @@ import { saveCart, getCart, clearCart as clearCartStorage, getToken } from '../u
 import { offlineDataManager } from '../utils/offlineDataManager';
 import { API } from '../services/api';
 import { useAnalytics } from './AnalyticsContext';
+import { useAuth } from './AuthContext';
 
 // إنشاء سياق سلة التسوق - Create Cart Context
 const CartContext = createContext();
@@ -17,12 +18,13 @@ export const useCart = () => {
   return context;
 };
 
-// مزود سياق سلة التسوق - Cart Context Provider Component
+// مزود سياق سلة الت-shopping - Cart Context Provider Component
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]); // حالة عناصر السلة - Cart items state
   const [orders, setOrders] = useState([]); // حالة الطلبات - Orders state (will be loaded from API)
   const [isLoading, setIsLoading] = useState(true); // حالة التحميل - Loading state
   const { logProductPurchase } = useAnalytics();
+  const { isAuthenticated } = useAuth();
 
   // تحميل بيانات السلة عند تحميل المكون - Load cart data on component mount
   useEffect(() => {
@@ -52,6 +54,10 @@ export const CartProvider = ({ children }) => {
 
   // دالة إضافة منتج إلى السلة - Function to add product to cart
   const addToCart = (product, quantity = 1) => {
+    if (!isAuthenticated) {
+      throw new Error('يجب تسجيل الدخول أولاً');
+    }
+
     setCartItems((prevItems) => {
       const existingItem = prevItems.find((item) => item.productId === product.id);
 

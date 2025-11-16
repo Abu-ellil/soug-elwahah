@@ -225,6 +225,30 @@ export const LocationProvider = ({ children }) => {
     return 'لم يتم تحديد الموقع'; // Location not determined
   };
 
+  // دالة للحصول على اسم القرية من الإحداثيات - Function to get village name from coordinates
+  const getVillageNameFromCoordinates = async (location) => {
+    if (!location) {
+      return null;
+    }
+
+    try {
+      const geocodeResult = await Location.reverseGeocodeAsync({
+        latitude: location.lat,
+        longitude: location.lng,
+      });
+
+      if (geocodeResult && geocodeResult.length > 0) {
+        const address = geocodeResult[0];
+        // Try different possible fields that might contain village/town name
+        return address.city || address.subregion || address.district || address.region || null;
+      }
+      return null;
+    } catch (error) {
+      console.log('Reverse geocoding failed:', error);
+      return null;
+    }
+  };
+
   // دالة التحقق مما إذا كان الموقع متاحًا - Function to check if location is available
   const isLocationAvailable = () => {
     return userLocation !== null;
@@ -247,6 +271,7 @@ export const LocationProvider = ({ children }) => {
 
     // الأدوات المساعدة - Utilities
     getLocationString,
+    getVillageNameFromCoordinates,
     isLocationAvailable,
   };
 

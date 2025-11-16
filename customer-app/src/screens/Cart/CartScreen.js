@@ -3,12 +3,14 @@ import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react
 import { MaterialIcons } from '@expo/vector-icons';
 import { useCart } from '../../context/CartContext';
 import { useLocation } from '../../context/LocationProvider';
+import { useAuth } from '../../context/AuthContext';
 import { API } from '../../services/api';
 import CartItem from '../../components/CartItem';
 import Header from '../../components/Header';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
 import VillagePicker from '../../components/VillagePicker';
+import LoginPromptModal from '../../components/LoginPromptModal';
 import COLORS from '../../constants/colors';
 import SIZES from '../../constants/sizes';
 import { formatPrice } from '../../utils/helpers';
@@ -26,8 +28,10 @@ const CartScreen = ({ navigation }) => {
   } = useCart();
 
   const { selectedVillage, selectVillage } = useLocation();
+  const { isAuthenticated } = useAuth();
   const [stores, setStores] = useState([]);
   const [villagePickerVisible, setVillagePickerVisible] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   useEffect(() => {
     loadStores();
@@ -62,6 +66,11 @@ const CartScreen = ({ navigation }) => {
   };
 
   const handleCheckout = () => {
+    if (!isAuthenticated) {
+      setShowLoginModal(true);
+      return;
+    }
+
     if (cartItems.length === 0) {
       Alert.alert('تنبيه', 'السلة فارغة');
       return;
@@ -225,6 +234,14 @@ const CartScreen = ({ navigation }) => {
         }}
         currentLocation={null}
         title="اختر منطقة التوصيل"
+      />
+
+      {/* Login Prompt Modal */}
+      <LoginPromptModal
+        visible={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onLogin={() => navigation.navigate('Auth', { screen: 'Login' })}
+        message="يجب تسجيل الدخول أولاً لتنفيذ هذه العملية"
       />
     </View>
   );
