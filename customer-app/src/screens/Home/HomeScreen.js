@@ -23,6 +23,7 @@ import SearchBar from '../../components/SearchBar';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
 import VillagePicker from '../../components/VillagePicker';
+import RangeSelector from '../../components/RangeSelector';
 import COLORS from '../../constants/colors';
 import SIZES from '../../constants/sizes';
 import HomeScreenSkeleton from '../../components/HomeScreenSkeleton';
@@ -32,12 +33,17 @@ import { getStoresByVillage } from '../../utils/locationHelpers';
 const HomeScreen = ({ navigation }) => {
   const {
     userLocation,
+    currentVillage,
     selectedVillage,
     availableVillages,
+    deliveryRadius,
+    availableStores,
     loading,
     error,
+    gpsEnabled,
     getCurrentLocation,
     selectVillage,
+    updateDeliveryRadius,
   } = useLocation();
   const { addToCart } = useCart();
   const { getTopProducts } = useAnalytics();
@@ -50,8 +56,9 @@ const HomeScreen = ({ navigation }) => {
   const [randomProducts, setRandomProducts] = useState([]);
 
   useEffect(() => {
-    loadStores();
-  }, [loadStores]);
+    // Use availableStores from context instead of local filtering
+    setNearbyStores(availableStores);
+  }, [availableStores]);
 
   useEffect(() => {
     if (selectedCategory) {
@@ -72,39 +79,6 @@ const HomeScreen = ({ navigation }) => {
     }
   }, [selectedCategory, getTopProducts]);
 
-  const loadStores = useCallback(() => {
-    let stores = STORES;
-
-    // Filter by selected village
-    if (selectedVillage) {
-      stores = getStoresByVillage(stores, selectedVillage.id);
-    }
-
-    // Calculate distances if user location is available
-    if (userLocation) {
-      stores = stores
-        .map((store) => ({
-          ...store,
-          distance:
-            userLocation &&
-            store.coordinates &&
-            userLocation.lat !== undefined &&
-            userLocation.lng !== undefined &&
-            store.coordinates.lat !== undefined &&
-            store.coordinates.lng !== undefined
-              ? calculateDistance(
-                  userLocation.lat,
-                  userLocation.lng,
-                  store.coordinates.lat,
-                  store.coordinates.lng
-                )
-              : 0,
-        }))
-        .sort((a, b) => a.distance - b.distance);
-    }
-
-    setNearbyStores(stores);
-  }, [selectedVillage, userLocation]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -176,7 +150,7 @@ const HomeScreen = ({ navigation }) => {
         <TouchableOpacity onPress={handleLocationPress} style={styles.locationContainer}>
           <MaterialIcons name="location-on" size={20} color={COLORS.primary} />
           <Text style={styles.locationText} numberOfLines={1}>
-            {selectedVillage?.name || 'اختر المنطقة'}
+            {currentVillage?.name || (gpsEnabled ? 'تحديد الموقع...' : 'GPS غير متاح')}
           </Text>
           <MaterialIcons name="keyboard-arrow-down" size={20} color={COLORS.gray} />
         </TouchableOpacity>
@@ -199,6 +173,21 @@ const HomeScreen = ({ navigation }) => {
           placeholder="البحث في المحلات والمنتجات..."
         />
       </View>
+
+      {/* Delivery Radius Selector */}
+      {gpsEnabled && (
+        <View style={styles.radiusContainer}>
+          <RangeSelector
+            value={deliveryRadius}
+            onValueChange={updateDeliveryRadius}
+            min={10}
+            max={200}
+            step={5}
+            unit="كم"
+            title="نطاق التوصيل"
+          />
+        </View>
+      )}
 
       <FlatList
         style={styles.content}
@@ -230,8 +219,8 @@ const HomeScreen = ({ navigation }) => {
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>
                 {selectedCategory
-                  ? `${selectedCategory.name} في ${selectedVillage?.name || 'المنطقة المختارة'}`
-                  : 'المتاجر المتاحة'}
+                  ? `${selectedCategory.name} في ${currentVillage?.name || 'منطقتك'}`
+                  : `المتاجر المتاحة ${gpsEnabled ? `(داخل ${deliveryRadius} كم)` : ''}`}
               </Text>
               <Text style={styles.storesCountText}>{filteredStores.length} متجر</Text>
             </View>
@@ -262,7 +251,7 @@ const HomeScreen = ({ navigation }) => {
               />
             ) : searchQuery || selectedCategory ? (
               <EmptyState
-                icon="search-off"
+                icon="search"
                 title="لا توجد نتائج"
                 message={
                   searchQuery
@@ -279,9 +268,19 @@ const HomeScreen = ({ navigation }) => {
               <EmptyState
                 icon="storefront"
                 title="لا توجد متاجر"
-                message="لا توجد متاجر متاحة في هذه المنطقة حالياً"
-                actionText="تغيير المنطقة"
-                onActionPress={handleLocationPress}
+                message={
+                  gpsEnabled
+                    ? `لا توجد متاجر متاحة في نطاق ${deliveryRadius} كم من موقعك`
+                    : "GPS غير متاح. يرجى تفعيل GPS لعرض المتاجر المتاحة"
+                }
+                actionText={gpsEnabled ? "زيادة نطاق التوصيل" : "تفعيل GPS"}
+                onActionPress={() => {
+                  if (gpsEnabled) {
+                    updateDeliveryRadius(Math.min(deliveryRadius + 5, 20));
+                  } else {
+                    getCurrentLocation();
+                  }
+                }}
               />
             )}
 
@@ -376,6 +375,11 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     padding: SIZES.padding,
+    backgroundColor: COLORS.card,
+  },
+  radiusContainer: {
+    paddingHorizontal: SIZES.padding,
+    paddingVertical: SIZES.base,
     backgroundColor: COLORS.card,
   },
   content: {

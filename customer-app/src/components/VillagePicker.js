@@ -11,7 +11,8 @@ import {
   Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { VILLAGES, getAvailableVillages } from '../data/villages';
+import { VILLAGES } from '../data/villages';
+import { getAvailableVillages } from '../utils/locationHelpers';
 import COLORS from '../constants/colors';
 import SIZES from '../constants/sizes';
 

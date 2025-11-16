@@ -11,6 +11,7 @@ import {
 import ImageWithFallback from '../../components/ImageWithFallback';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRoute, useFocusEffect } from '@react-navigation/native';
+import { useLocation } from '../../context/LocationProvider';
 import { STORES } from '../../data/stores';
 import { PRODUCTS } from '../../data/products';
 import { CATEGORIES } from '../../data/categories';
@@ -20,7 +21,7 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
 import COLORS from '../../constants/colors';
 import SIZES from '../../constants/sizes';
-import { formatDistance } from '../../utils/distance';
+import { formatDistance, calculateDistance } from '../../utils/distance';
 import StoreDetailsScreenSkeleton from '../../components/StoreDetailsScreenSkeleton';
 import Toast from 'react-native-toast-message';
 import { useCart } from '../../context/CartContext';
@@ -28,12 +29,14 @@ import { useCart } from '../../context/CartContext';
 const StoreDetailsScreen = ({ navigation, route }) => {
   const { storeId } = route.params;
   const { getCartItemsCount, addToCart } = useCart();
+  const { userLocation, deliveryRadius, gpsEnabled } = useLocation();
 
   const [store, setStore] = useState(null);
   const [storeProducts, setStoreProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState([]);
+  const [storeDistance, setStoreDistance] = useState(null);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -53,6 +56,17 @@ const StoreDetailsScreen = ({ navigation, route }) => {
       }
 
       setStore(foundStore);
+
+      // Calculate distance from user location
+      if (userLocation && foundStore.coordinates) {
+        const distance = calculateDistance(
+          userLocation.lat,
+          userLocation.lng,
+          foundStore.coordinates.lat,
+          foundStore.coordinates.lng
+        );
+        setStoreDistance(distance);
+      }
 
       // Get products for this store
       const products = PRODUCTS.filter((p) => p.storeId === storeId);
@@ -137,6 +151,12 @@ const StoreDetailsScreen = ({ navigation, route }) => {
                 <MaterialIcons name="access-time" size={16} color={COLORS.card} />
                 <Text style={styles.detailText}>{store.deliveryTime}</Text>
               </View>
+              {storeDistance !== null && (
+                <View style={styles.detailItem}>
+                  <MaterialIcons name="place" size={16} color={COLORS.card} />
+                  <Text style={styles.detailText}>{storeDistance.toFixed(1)} كم</Text>
+                </View>
+              )}
               <View
                 style={[
                   styles.statusBadge,
@@ -256,6 +276,17 @@ const StoreDetailsScreen = ({ navigation, route }) => {
             متجر متخصص في {categories.map((c) => c.name).join('، ')}
           </Text>
           <Text style={styles.storeInfoText}>وقت التوصيل: {store.deliveryTime}</Text>
+          {storeDistance !== null && (
+            <Text style={styles.storeInfoText}>
+              المسافة: {storeDistance.toFixed(1)} كم
+              {storeDistance <= deliveryRadius ? ' (داخل نطاق التوصيل)' : ' (خارج نطاق التوصيل)'}
+            </Text>
+          )}
+          {gpsEnabled && (
+            <Text style={styles.storeInfoText}>
+              نطاق التوصيل الحالي: {deliveryRadius} كم
+            </Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
 

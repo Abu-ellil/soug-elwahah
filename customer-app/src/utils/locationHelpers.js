@@ -1,5 +1,7 @@
 import { calculateDistance } from './distance';
 import { VILLAGES } from '../data/villages';
+import { STORES } from '../data/stores';
+import { PRODUCTS } from '../data/products';
 
 // Validate coordinate array [longitude, latitude]
 export const isValidCoordinate = (coord) => {
@@ -76,4 +78,97 @@ export const getDeliveryFee = (distance, baseFee = 10) => {
   if (distance <= 10) return baseFee + 5;
   if (distance <= 15) return baseFee + 8;
   return baseFee + 12;
+};
+
+// Get stores within a given radius from user location
+export const getStoresWithinRadius = (userLocation, radius = 5) => {
+  if (!userLocation || !STORES) {
+    return [];
+  }
+
+  return STORES.filter((store) => {
+    if (!store.isOpen) return false;
+
+    const distance = calculateDistance(
+      userLocation.lat,
+      userLocation.lng,
+      store.coordinates.lat,
+      store.coordinates.lng
+    );
+
+    return distance <= radius;
+  })
+    .map((store) => ({
+      ...store,
+      distance: calculateDistance(
+        userLocation.lat,
+        userLocation.lng,
+        store.coordinates.lat,
+        store.coordinates.lng
+      ),
+    }))
+    .sort((a, b) => a.distance - b.distance);
+};
+
+// Get products from stores within radius
+export const getProductsWithinRadius = (userLocation, radius = 5) => {
+  const nearbyStores = getStoresWithinRadius(userLocation, radius);
+  const storeIds = nearbyStores.map(store => store.id);
+
+  return PRODUCTS.filter((product) => {
+    return product.isAvailable && storeIds.includes(product.storeId);
+  });
+};
+
+// Get stores by category within radius
+export const getStoresByCategoryWithinRadius = (userLocation, categoryId, radius = 5) => {
+  return getStoresWithinRadius(userLocation, radius).filter(store =>
+    store.categoryId === categoryId
+  );
+};
+
+// Get nearest village to user location
+export const getNearestVillage = (userLocation) => {
+  if (!userLocation || !VILLAGES) {
+    return null;
+  }
+
+  let nearestVillage = null;
+  let minDistance = Infinity;
+
+  VILLAGES.filter(v => v.isActive).forEach((village) => {
+    const distance = calculateDistance(
+      userLocation.lat,
+      userLocation.lng,
+      village.coordinates.lat,
+      village.coordinates.lng
+    );
+
+    if (distance < minDistance) {
+      minDistance = distance;
+      nearestVillage = { ...village, distance };
+    }
+  });
+
+  return nearestVillage;
+};
+
+// Check if user location is within any village's delivery radius
+export const isWithinAnyVillageRadius = (userLocation) => {
+  if (!userLocation || !VILLAGES) {
+    return false;
+  }
+
+  return VILLAGES.some((village) => {
+    if (!village.isActive) return false;
+
+    const distance = calculateDistance(
+      userLocation.lat,
+      userLocation.lng,
+      village.coordinates.lat,
+      village.coordinates.lng
+    );
+
+    return distance <= village.deliveryRadius;
+  });
 };

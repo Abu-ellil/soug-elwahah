@@ -8,11 +8,13 @@ import { CATEGORIES } from '../../data/categories';
 import StoreCard from '../../components/StoreCard';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
+import RangeSelector from '../../components/RangeSelector';
 import COLORS from '../../constants/colors';
+import { calculateDistance } from '../../utils/distance';
 
 const CategoryStoresScreen = ({ route }) => {
   const navigation = useNavigation();
-  const { currentVillage } = useLocation();
+  const { userLocation, deliveryRadius, availableStores, gpsEnabled, updateDeliveryRadius } = useLocation();
   const { categoryId } = route.params;
 
   const [refreshing, setRefreshing] = useState(false);
@@ -22,25 +24,17 @@ const CategoryStoresScreen = ({ route }) => {
     return CATEGORIES.find((cat) => cat.id === categoryId);
   }, [categoryId]);
 
-  // Filter stores by category
+  // Filter stores by category and location
   const categoryStores = useMemo(() => {
     if (!category) return [];
-    return STORES.filter((store) => store.categoryId === categoryId);
-  }, [category, categoryId]);
 
-  // Calculate store distances from current location
-  const storesWithDistance = useMemo(() => {
-    return categoryStores.map((store) => {
-      let distance = null;
-      if (currentVillage && store.coordinates && currentVillage.coordinates) {
-        // Simple distance calculation (in a real app, you'd use proper distance calculation)
-        const latDiff = Math.abs(store.coordinates.lat - currentVillage.coordinates.lat);
-        const lngDiff = Math.abs(store.coordinates.lng - currentVillage.coordinates.lng);
-        distance = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff) * 111; // Rough conversion to km
-      }
-      return { ...store, distance };
-    });
-  }, [categoryStores, currentVillage]);
+    // Get stores that are both in the category and within the delivery radius
+    const categoryStoreIds = STORES
+      .filter((store) => store.categoryId === categoryId)
+      .map(store => store.id);
+
+    return availableStores.filter((store) => categoryStoreIds.includes(store.id));
+  }, [category, categoryId, availableStores]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -74,6 +68,20 @@ const CategoryStoresScreen = ({ route }) => {
           </View>
         </View>
       )}
+
+      {gpsEnabled && (
+        <View style={styles.radiusContainer}>
+          <RangeSelector
+            value={deliveryRadius}
+            onValueChange={updateDeliveryRadius}
+            min={10}
+            max={200}
+            step={5}
+            unit="كم"
+            title="نطاق التوصيل"
+          />
+        </View>
+      )}
     </View>
   );
 
@@ -85,7 +93,11 @@ const CategoryStoresScreen = ({ route }) => {
     <EmptyState
       icon="storefront-outline"
       title="لا توجد متاجر"
-      description={`لا توجد متاجر متاحة في فئة ${category?.name || ''} حالياً`}
+      message={
+        gpsEnabled
+          ? `لا توجد متاجر متاحة في فئة ${category?.name || ''} ضمن نطاق ${deliveryRadius} كم`
+          : `لا توجد متاجر متاحة في فئة ${category?.name || ''}. GPS غير متاح`
+      }
     />
   );
 
@@ -100,14 +112,14 @@ const CategoryStoresScreen = ({ route }) => {
   return (
     <View style={styles.container}>
       <FlatList
-        data={storesWithDistance}
+        data={categoryStores}
         renderItem={renderStore}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmpty}
         contentContainerStyle={[
           styles.listContainer,
-          storesWithDistance.length === 0 && styles.emptyListContainer,
+          categoryStores.length === 0 && styles.emptyListContainer,
         ]}
         refreshControl={
           <RefreshControl
@@ -182,6 +194,11 @@ const styles = StyleSheet.create({
   },
   emptyListContainer: {
     flex: 1,
+  },
+  radiusContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: COLORS.card,
   },
   errorText: {
     fontSize: 18,

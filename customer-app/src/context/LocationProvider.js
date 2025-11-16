@@ -1,7 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import * as Location from 'expo-location';
 import { Alert } from 'react-native';
-import { getAvailableVillages } from '../utils/locationHelpers';
+import {
+  getAvailableVillages,
+  getStoresWithinRadius,
+  getNearestVillage,
+  isWithinAnyVillageRadius
+} from '../utils/locationHelpers';
 import { VILLAGES } from '../data/villages';
 
 // إنشاء سياق الموقع - Create Location Context
@@ -22,13 +27,23 @@ export const LocationProvider = ({ children }) => {
   const [currentVillage, setCurrentVillage] = useState(null); // القرية الأقرب للمستخدم - Nearest village to the user
   const [selectedVillage, setSelectedVillage] = useState(null); // القرية المختارة يدوياً - Manually selected village
   const [availableVillages, setAvailableVillages] = useState([]); // القرى المتاحة بناءً على الموقع - Available villages based on location
-  const [loading, setLoading] = useState(false); // حالة التحميل - Loading state
+  const [deliveryRadius, setDeliveryRadius] = useState(5); // نصف قطر التوصيل الافتراضي - Default delivery radius (5km)
+  const [availableStores, setAvailableStores] = useState([]); // المتاجر المتاحة ضمن النطاق - Available stores within radius
+  const [loading, setLoading] = useState(true); // حالة التحميل - Loading state (start as true for initial GPS)
   const [error, setError] = useState(null); // حالة الخطأ - Error state
+  const [gpsEnabled, setGpsEnabled] = useState(false); // حالة تفعيل GPS - GPS enabled state
 
   // طلب إذن الموقع عند تحميل المكون - Request location permission on component mount
   useEffect(() => {
-    requestLocationPermission();
+    initializeLocation();
   }, []);
+
+  // تحديث المتاجر عند تغيير الموقع أو النطاق - Update stores when location or radius changes
+  useEffect(() => {
+    if (userLocation) {
+      updateAvailableStores();
+    }
+  }, [userLocation, deliveryRadius]);
 
   // دالة طلب إذن الموقع - Function to request location permission
   const requestLocationPermission = async () => {
@@ -36,12 +51,51 @@ export const LocationProvider = ({ children }) => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         setError('تم رفض إذن الوصول للموقع');
+        setGpsEnabled(false);
         return false;
       }
+      setGpsEnabled(true);
       return true;
     } catch (error) {
       setError('خطأ في طلب إذن الموقع');
+      setGpsEnabled(false);
       return false;
+    }
+  };
+
+  // دالة تهيئة الموقع عند بدء التطبيق - Initialize location on app start
+  const initializeLocation = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const hasPermission = await requestLocationPermission();
+      if (hasPermission) {
+        await getCurrentLocation();
+      } else {
+        // GPS غير متاح، استخدم القيم الافتراضية - GPS not available, use defaults
+        setAvailableVillages(VILLAGES.filter(v => v.isActive));
+        updateAvailableStores();
+      }
+    } catch (error) {
+      console.log('خطأ في تهيئة الموقع:', error);
+      setError('فشل في تهيئة نظام الموقع');
+      // استخدم القيم الافتراضية في حالة الخطأ - Use defaults on error
+      setAvailableVillages(VILLAGES.filter(v => v.isActive));
+      updateAvailableStores();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // دالة تحديث المتاجر المتاحة - Update available stores
+  const updateAvailableStores = () => {
+    if (userLocation) {
+      const stores = getStoresWithinRadius(userLocation, deliveryRadius);
+      setAvailableStores(stores);
+    } else {
+      // إذا لم يكن هناك موقع، اعرض جميع المتاجر المفتوحة - If no location, show all open stores
+      setAvailableStores([]);
     }
   };
 
@@ -71,6 +125,11 @@ export const LocationProvider = ({ children }) => {
       };
 
       setUserLocation(newLocation);
+      setGpsEnabled(true);
+
+      // تحديد القرية الأقرب - Find nearest village
+      const nearestVillage = getNearestVillage(newLocation);
+      setCurrentVillage(nearestVillage);
 
       // تحميل القرى المتاحة لهذا الموقع - Load available villages for this location
       const villages = getAvailableVillages(newLocation, 50);
@@ -79,6 +138,7 @@ export const LocationProvider = ({ children }) => {
       return newLocation;
     } catch (error) {
       setError('خطأ في الحصول على الموقع');
+      setGpsEnabled(false);
       Alert.alert('خطأ', 'فشل في الحصول على موقعك الحالي');
       return null;
     } finally {
@@ -102,9 +162,17 @@ export const LocationProvider = ({ children }) => {
   // دالة مسح معلومات الموقع - Function to clear location information
   const clearLocation = () => {
     setUserLocation(null);
+    setCurrentVillage(null);
     setSelectedVillage(null);
     setAvailableVillages([]);
+    setAvailableStores([]);
+    setGpsEnabled(false);
     setError(null);
+  };
+
+  // دالة تحديث نصف قطر التوصيل - Function to update delivery radius
+  const updateDeliveryRadius = (newRadius) => {
+    setDeliveryRadius(newRadius);
   };
 
   // دالة الحصول على سلسلة نصية للموقع - Function to get location string
@@ -130,13 +198,17 @@ export const LocationProvider = ({ children }) => {
     currentVillage,
     selectedVillage,
     availableVillages,
+    deliveryRadius,
+    availableStores,
     loading,
     error,
+    gpsEnabled,
 
     // الإجراءات - Actions
     getCurrentLocation,
     selectVillage,
     updateDeliveryInfo,
+    updateDeliveryRadius,
     clearLocation,
 
     // الأدوات المساعدة - Utilities
