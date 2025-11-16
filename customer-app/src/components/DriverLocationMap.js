@@ -125,8 +125,8 @@ const DriverLocationMap = ({ driverLocation, deliveryAddress, orderStatus }) => 
       <MapView
         style={{ flex: 1 }}
         initialRegion={mapRegion}
-        showsUserLocation={true}
-        showsMyLocationButton={true}>
+        showsUserLocation={false}
+        showsMyLocationButton={false}>
         {/* Driver Marker */}
         {driverLocation && driverLocation.lat && driverLocation.lng && (
           <Marker

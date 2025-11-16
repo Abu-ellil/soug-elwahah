@@ -91,8 +91,8 @@ export const LocationProvider = ({ children }) => {
 
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.High,
-        timeInterval: 5000,
-        distanceInterval: 10,
+        timeout: 10000, // 10 seconds timeout
+        maximumAge: 300000, // 5 minutes maximum age
       });
 
       const { latitude, longitude } = location.coords;
@@ -106,7 +106,22 @@ export const LocationProvider = ({ children }) => {
 
       return newLocation;
     } catch (error) {
-      const errorMessage = error.message || 'فشل في الحصول على الموقع'; // Failed to get location
+      let errorMessage = 'فشل في الحصول على الموقع'; // Failed to get location
+
+      // Handle different types of location errors
+      if (error.code === 1) {
+        // PERMISSION_DENIED
+        errorMessage = 'تم رفض إذن الموقع. يرجى التحقق من إعدادات التطبيق.';
+      } else if (error.code === 2) {
+        // POSITION_UNAVAILABLE
+        errorMessage = 'الموقع غير متوفر حاليًا. تأكد من أن خدمات الموقع مفعلة.';
+      } else if (error.code === 3) {
+        // TIMEOUT
+        errorMessage = 'انتهت مهلة الحصول على الموقع. يرجى المحاولة مرة أخرى.';
+      } else {
+        errorMessage = error.message || 'فشل في الحصول على الموقع';
+      }
+
       setError(errorMessage);
       Alert.alert('خطأ في الموقع', errorMessage); // Location error
       return null;

@@ -2,13 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
-  Image,
   ScrollView,
   TouchableOpacity,
   FlatList,
   StyleSheet,
   Alert,
 } from 'react-native';
+import ImageWithFallback from '../../components/ImageWithFallback';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRoute, useFocusEffect } from '@react-navigation/native';
 import { STORES } from '../../data/stores';
@@ -124,7 +124,7 @@ const StoreDetailsScreen = ({ navigation, route }) => {
     <View style={styles.container}>
       {/* Store Header */}
       <View style={styles.storeHeader}>
-        <Image source={{ uri: store.image }} style={styles.storeImage} />
+        <ImageWithFallback source={{ uri: store.image }} style={styles.storeImage} />
         <View style={styles.overlay}>
           <View style={styles.storeInfo}>
             <Text style={styles.storeName}>{store.name}</Text>

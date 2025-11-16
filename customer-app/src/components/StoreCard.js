@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { formatDistance } from '../utils/distance';
 import COLORS from '../constants/colors';
+import ImageWithFallback from './ImageWithFallback';
 
 const StoreCard = ({ store, onPress }) => {
   const isOpen = store.isOpen;
@@ -12,7 +13,7 @@ const StoreCard = ({ store, onPress }) => {
   return (
     <TouchableOpacity onPress={onPress} style={styles.container}>
       <View style={styles.imageContainer}>
-        <Image source={{ uri: store.image }} style={styles.image} resizeMode="cover" />
+        <ImageWithFallback source={{ uri: store.image }} style={styles.image} resizeMode="cover" />
         <View style={styles.ratingBadge}>
           <Ionicons name="star" size={12} color={COLORS.warning} />
           <Text style={styles.ratingText} numberOfLines={1} ellipsizeMode="tail">

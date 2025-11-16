@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { formatPrice } from '../utils/helpers';
 import COLORS from '../constants/colors';
 import SIZES from '../constants/sizes';
+import ImageWithFallback from './ImageWithFallback';
 
 const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
   const handleIncrease = () => {
@@ -41,7 +42,7 @@ const CartItem = ({ item, onUpdateQuantity, onRemove }) => {
   return (
     <View style={styles.container}>
       <View style={styles.imageContainer}>
-        <Image source={{ uri: item.image }} style={styles.image} resizeMode="cover" />
+        <ImageWithFallback source={{ uri: item.image }} style={styles.image} resizeMode="cover" />
       </View>
 
       <View style={styles.content}>

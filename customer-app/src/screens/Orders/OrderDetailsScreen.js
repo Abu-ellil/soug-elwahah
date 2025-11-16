@@ -7,7 +7,7 @@ import { Feather } from '@expo/vector-icons';
 import Header from '../../components/Header';
 import RTLText from '../../components/RTLText';
 import CartItem from '../../components/CartItem'; // Re-using for order items
-import DriverLocationMap from '../../components/DriverLocationMap';
+import OrderTrackingMap from './OrderTrackingMap';
 import COLORS from '../../constants/colors';
 import SIZES from '../../constants/sizes';
 
@@ -130,11 +130,7 @@ const OrderDetailsScreen = () => {
               </View>
             )}
 
-            <DriverLocationMap
-              driverLocation={item.order.driverLocation}
-              deliveryAddress={item.order.deliveryAddress}
-              orderStatus={item.order.status}
-            />
+            <OrderTrackingMap order={item.order} />
           </View>
         );
 

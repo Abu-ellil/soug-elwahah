@@ -1,10 +1,11 @@
 import React, { useRef } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { formatPrice } from '../utils/helpers';
 import COLORS from '../constants/colors';
 import SIZES from '../constants/sizes';
+import ImageWithFallback from './ImageWithFallback';
 
 const ProductCard = ({ product, onPress, onAddToCart }) => {
   const animation = useRef(new Animated.Value(0)).current;
@@ -47,7 +48,11 @@ const ProductCard = ({ product, onPress, onAddToCart }) => {
   return (
     <TouchableOpacity onPress={onPress} style={styles.container}>
       <View style={styles.imageContainer}>
-        <Image source={{ uri: product.image }} style={styles.image} resizeMode="cover" />
+        <ImageWithFallback
+          source={{ uri: product.image }}
+          style={styles.image}
+          resizeMode="cover"
+        />
         {!product.isAvailable && (
           <View style={styles.unavailableOverlay}>
             <Text style={styles.unavailableText}>غير متوفر</Text>
