@@ -7,7 +7,6 @@ import { Feather } from '@expo/vector-icons';
 import Header from '../../components/Header';
 import RTLText from '../../components/RTLText';
 import CartItem from '../../components/CartItem'; // Re-using for order items
-import OrderTrackingMap from './OrderTrackingMap';
 import COLORS from '../../constants/colors';
 import SIZES from '../../constants/sizes';
 
@@ -20,10 +19,7 @@ const OrderDetailsScreen = () => {
   const getFlatListData = () => {
     const data = [];
 
-    // Add driver location map if applicable
-    if (order.status === 'delivering' && order.driverLocation && order.deliveryAddress) {
-      data.push({ type: 'driver-map', order });
-    }
+    // Driver location map has been removed
 
     // Add items list
     if (order.items && order.items.length > 0) {
@@ -49,23 +45,7 @@ const OrderDetailsScreen = () => {
     return data;
   };
 
-  useEffect(() => {
-    if (focusOnDriverLocation && scrollViewRef.current) {
-      // Scroll to the map section after components are rendered
-      setTimeout(() => {
-        // Find the index of the driver map in the data array
-        const data = getFlatListData();
-        const driverMapIndex = data.findIndex((item) => item.type === 'driver-map');
-
-        if (driverMapIndex !== -1) {
-          scrollViewRef.current?.scrollToIndex({
-            index: driverMapIndex + 1, // +1 because timeline is in ListHeaderComponent
-            animated: true,
-          });
-        }
-      }, 500);
-    }
-  }, [focusOnDriverLocation]);
+  // Removed focusOnDriverLocation effect since map functionality was removed
 
   const handleCallDriver = () => {
     if (order && order.driverInfo && order.driverInfo.phone) {
@@ -106,34 +86,6 @@ const OrderDetailsScreen = () => {
 
   const renderFlatListItem = ({ item }) => {
     switch (item.type) {
-      case 'driver-map':
-        return (
-          <View style={styles.section}>
-            <RTLText style={styles.sectionTitle}>موقع السائق</RTLText>
-
-            {/* Driver Information */}
-            {item.order.driverInfo && item.order.driverInfo.name && (
-              <View style={styles.driverInfoContainer}>
-                <View style={styles.driverInfoRow}>
-                  <Feather name="user" size={20} color={COLORS.primary} />
-                  <RTLText style={styles.driverInfoText}>
-                    {item.order.driverInfo.name} - سائق التوصيل
-                  </RTLText>
-                </View>
-                <View style={[styles.driverInfoRow, styles.driverInfoActions]}>
-                  <Feather name="phone" size={20} color={COLORS.primary} />
-                  <RTLText style={styles.driverInfoText}>{item.order.driverInfo.phone}</RTLText>
-                  <TouchableOpacity style={styles.callButton} onPress={handleCallDriver}>
-                    <Feather name="phone-call" size={16} color={COLORS.white} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-
-            <OrderTrackingMap order={item.order} />
-          </View>
-        );
-
       case 'items':
         return (
           <View style={styles.section}>

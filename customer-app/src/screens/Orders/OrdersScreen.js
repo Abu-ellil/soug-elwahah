@@ -175,15 +175,6 @@ const OrdersScreen = ({ navigation }) => {
     navigation.navigate('OrderDetails', { order });
   };
 
-  const handleShowDriverLocation = (order) => {
-    if (!order) {
-      console.error('Order is undefined or null');
-      return;
-    }
-    // Navigate directly to order details with focus on driver location
-    navigation.navigate('OrderDetails', { order, focusOnDriverLocation: true });
-  };
-
   const renderOrderItem = ({ item }) => {
     const statusInfo = getStatusInfo(item.status);
     const progress = getOrderProgress(item);
@@ -239,16 +230,6 @@ const OrdersScreen = ({ navigation }) => {
               {new Date(item.timeline[item.timeline.length - 1].time).toLocaleDateString('ar-EG')}
             </Text>
           </View>
-        )}
-
-        {/* Driver Location Button - Only show for delivering orders */}
-        {item.status === 'delivering' && item.driverLocation && (
-          <TouchableOpacity
-            style={styles.driverLocationButton}
-            onPress={() => handleShowDriverLocation(item)}>
-            <MaterialIcons name="location-on" size={16} color={COLORS.white} />
-            <Text style={styles.driverLocationButtonText}>عرض موقع السائق</Text>
-          </TouchableOpacity>
         )}
       </TouchableOpacity>
     );

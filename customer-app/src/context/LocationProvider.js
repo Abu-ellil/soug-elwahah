@@ -26,57 +26,15 @@ export const LocationProvider = ({ children }) => {
   const [error, setError] = useState(null); // حالة الخطأ - Error state
 
   // طلب إذن الموقع عند تحميل المكون - Request location permission on component mount
-  useEffect(() => {
-    requestLocationPermission();
-  }, []);
+  // Location functionality has been removed as per requirements
+  // useEffect(() => {
+  //   requestLocationPermission();
+  // }, []);
 
   // مراقبة تغييرات القرى المتاحة - Monitor changes in available villages
   useEffect(() => {
     console.log('availableVillages changed:', availableVillages);
   }, [availableVillages]);
-
-  // تحديث القرية الحالية عند تغيير موقع المستخدم - Update current village when user location changes
-  useEffect(() => {
-    if (userLocation) {
-      findNearestVillage(userLocation);
-    }
-  }, [userLocation]);
-
-  // دالة طلب إذن الوصول إلى الموقع - Function to request location permission
-  const requestLocationPermission = async () => {
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setError('تم رفض إذن الموقع'); // Location permission denied
-        return false;
-      }
-      return true;
-    } catch (error) {
-      setError('خطأ في طلب إذن الموقع'); // Error requesting location permission
-      return false;
-    }
-  };
-
-  // دالة البحث عن أقرب قرية - Function to find the nearest village
-  const findNearestVillage = (location) => {
-    let nearestVillage = null;
-    let minDistance = Infinity;
-
-    VILLAGES.forEach((village) => {
-      const distance =
-        Math.sqrt(
-          Math.pow(location.lat - village.coordinates.lat, 2) +
-            Math.pow(location.lng - village.coordinates.lng, 2)
-        ) * 111; // تحويل تقريبي إلى كيلومتر - Rough conversion to km
-
-      if (distance < minDistance) {
-        minDistance = distance;
-        nearestVillage = village;
-      }
-    });
-
-    setCurrentVillage(nearestVillage);
-  };
 
   // دالة الحصول على الموقع الحالي للمستخدم - Function to get current user's location
   const getCurrentLocation = async () => {
@@ -84,19 +42,15 @@ export const LocationProvider = ({ children }) => {
     setError(null);
 
     try {
-      const hasPermission = await requestLocationPermission();
-      if (!hasPermission) {
-        throw new Error('لا يوجد إذن للوصول للموقع'); // No permission to access location
-      }
+      // Skip permission check as location functionality has been removed
+      // const hasPermission = await requestLocationPermission();
+      // if (!hasPermission) {
+      //   throw new Error('لا يوجد إذن للوصول للموقع'); // No permission to access location
+      // }
 
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-        timeout: 10000, // 10 seconds timeout
-        maximumAge: 300000, // 5 minutes maximum age
-      });
-
-      const { latitude, longitude } = location.coords;
-      const newLocation = { lat: latitude, lng: longitude };
+      // Location functionality has been removed as per requirements
+      // Simulate a location for village selection purposes
+      const newLocation = { lat: 30.0444, lng: 31.2357 }; // Cairo coordinates as default
 
       setUserLocation(newLocation);
 
@@ -106,24 +60,9 @@ export const LocationProvider = ({ children }) => {
 
       return newLocation;
     } catch (error) {
-      let errorMessage = 'فشل في الحصول على الموقع'; // Failed to get location
-
-      // Handle different types of location errors
-      if (error.code === 1) {
-        // PERMISSION_DENIED
-        errorMessage = 'تم رفض إذن الموقع. يرجى التحقق من إعدادات التطبيق.';
-      } else if (error.code === 2) {
-        // POSITION_UNAVAILABLE
-        errorMessage = 'الموقع غير متوفر حاليًا. تأكد من أن خدمات الموقع مفعلة.';
-      } else if (error.code === 3) {
-        // TIMEOUT
-        errorMessage = 'انتهت مهلة الحصول على الموقع. يرجى المحاولة مرة أخرى.';
-      } else {
-        errorMessage = error.message || 'فشل في الحصول على الموقع';
-      }
-
-      setError(errorMessage);
-      Alert.alert('خطأ في الموقع', errorMessage); // Location error
+      // Location functionality has been removed as per requirements
+      setError('Location functionality has been removed');
+      Alert.alert('Location Disabled', 'Location services have been disabled in this version');
       return null;
     } finally {
       setLoading(false);
