@@ -22,7 +22,6 @@ import ProductCard from '../../components/ProductCard';
 import SearchBar from '../../components/SearchBar';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
-import VillagePicker from '../../components/VillagePicker';
 import RangeSelector from '../../components/RangeSelector';
 import COLORS from '../../constants/colors';
 import SIZES from '../../constants/sizes';
@@ -33,16 +32,12 @@ import { getStoresByVillage } from '../../utils/locationHelpers';
 const HomeScreen = ({ navigation }) => {
   const {
     userLocation,
-    currentVillage,
-    selectedVillage,
-    availableVillages,
     deliveryRadius,
     availableStores,
     loading,
     error,
     gpsEnabled,
     getCurrentLocation,
-    selectVillage,
     updateDeliveryRadius,
   } = useLocation();
   const { addToCart } = useCart();
@@ -51,7 +46,6 @@ const HomeScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
-  const [villagePickerVisible, setVillagePickerVisible] = useState(false);
   const [nearbyStores, setNearbyStores] = useState([]);
   const [randomProducts, setRandomProducts] = useState([]);
 
@@ -98,14 +92,6 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
-  const handleLocationPress = () => {
-    setVillagePickerVisible(true);
-  };
-
-  const handleVillageSelect = (village) => {
-    selectVillage(village);
-    setVillagePickerVisible(false);
-  };
 
   const filteredStores = nearbyStores.filter((store) => {
     const matchesSearch =
@@ -114,7 +100,7 @@ const HomeScreen = ({ navigation }) => {
     return matchesSearch && matchesCategory;
   });
 
-  if (loading && !userLocation && !selectedVillage) {
+  if (loading && !userLocation) {
     return <HomeScreenSkeleton />;
   }
 
@@ -147,23 +133,16 @@ const HomeScreen = ({ navigation }) => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={handleLocationPress} style={styles.locationContainer}>
+        <View style={styles.locationContainer}>
           <MaterialIcons name="location-on" size={20} color={COLORS.primary} />
           <Text style={styles.locationText} numberOfLines={1}>
-            {currentVillage?.name ||
-             (userLocation ? 'منطقة خارج نطاق الخدمة' :
-              (gpsEnabled ? 'تحديد الموقع...' : 'GPS غير متاح'))}
+            {(userLocation ? 'موقعك الحالي' :
+             (gpsEnabled ? 'تحديد الموقع...' : 'GPS غير متاح'))}
           </Text>
-          <MaterialIcons name="keyboard-arrow-down" size={20} color={COLORS.gray} />
-        </TouchableOpacity>
+        </View>
 
         <TouchableOpacity style={styles.notificationButton}>
           <MaterialIcons name="notifications-none" size={24} color={COLORS.text} />
-          {availableVillages && availableVillages.length > 0 && (
-            <View style={styles.notificationBadge}>
-              <Text style={styles.badgeText}>{availableVillages.length}</Text>
-            </View>
-          )}
         </TouchableOpacity>
       </View>
 
@@ -221,7 +200,7 @@ const HomeScreen = ({ navigation }) => {
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>
                 {selectedCategory
-                  ? `${selectedCategory.name} في ${currentVillage?.name || 'منطقتك'}`
+                  ? `${selectedCategory.name} في منطقتك`
                   : `المتاجر المتاحة ${gpsEnabled ? `(داخل ${deliveryRadius} كم)` : ''}`}
               </Text>
               <Text style={styles.storesCountText}>{filteredStores.length} متجر</Text>
@@ -317,13 +296,6 @@ const HomeScreen = ({ navigation }) => {
         keyExtractor={(item) => item.key}
       />
 
-      {/* Village Picker */}
-      <VillagePicker
-        visible={villagePickerVisible}
-        onClose={() => setVillagePickerVisible(false)}
-        onSelect={handleVillageSelect}
-        currentLocation={userLocation}
-      />
     </View>
   );
 };

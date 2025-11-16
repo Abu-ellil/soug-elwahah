@@ -2,12 +2,9 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import * as Location from 'expo-location';
 import { Alert } from 'react-native';
 import {
-  getAvailableVillages,
-  getStoresWithinRadius,
-  getNearestVillage,
-  isWithinAnyVillageRadius
+  getStoresWithinRadius
 } from '../utils/locationHelpers';
-import { VILLAGES } from '../data/villages';
+import { calculateDistance } from '../utils/distance';
 import { STORES } from '../data/stores';
 
 // إنشاء سياق الموقع - Create Location Context
@@ -25,22 +22,68 @@ export const useLocation = () => {
 // مزود سياق الموقع - Location Context Provider Component
 export const LocationProvider = ({ children }) => {
   const [userLocation, setUserLocation] = useState(null); // موقع المستخدم الحالي - Current user's location
-  const [currentVillage, setCurrentVillage] = useState(null); // القرية الأقرب للمستخدم - Nearest village to the user
-  const [selectedVillage, setSelectedVillage] = useState(null); // القرية المختارة يدوياً - Manually selected village
-  const [availableVillages, setAvailableVillages] = useState([]); // القرى المتاحة بناءً على الموقع - Available villages based on location
-  const [deliveryRadius, setDeliveryRadius] = useState(5); // نصف قطر التوصيل الافتراضي - Default delivery radius (5km)
+ const [deliveryRadius, setDeliveryRadius] = useState(5); // نصف قطر التوصيل الافتراضي - Default delivery radius (5km)
   const [availableStores, setAvailableStores] = useState([]); // المتاجر المتاحة ضمن النطاق - Available stores within radius
-  const [loading, setLoading] = useState(true); // حالة التحميل - Loading state (start as true for initial GPS)
-  const [error, setError] = useState(null); // حالة الخطأ - Error state
+ const [loading, setLoading] = useState(true); // حالة التحميل - Loading state (start as true for initial GPS)
+ const [error, setError] = useState(null); // حالة الخطأ - Error state
   const [gpsEnabled, setGpsEnabled] = useState(false); // حالة تفعيل GPS - GPS enabled state
 
   // طلب إذن الموقع عند تحميل المكون - Request location permission on component mount
   useEffect(() => {
     initializeLocation();
+    
+    // Set up location watching for continuous updates
+    let locationTask = null;
+    
+    const startLocationWatching = async () => {
+      const hasPermission = await requestLocationPermission();
+      if (hasPermission && userLocation) {
+        try {
+          // Set up background location updates
+          locationTask = await Location.watchPositionAsync({
+            accuracy: Location.Accuracy.High,
+            timeInterval: 10000, // Update every 10 seconds
+            distanceInterval: 10, // Update every 10 meters
+          }, (location) => {
+            const newLocation = {
+              lat: location.coords.latitude,
+              lng: location.coords.longitude,
+            };
+            
+            // Only update if location has changed significantly (more than 10 meters)
+            if (userLocation) {
+              // Update available stores for new location
+              updateAvailableStores();
+            } else {
+              setUserLocation(newLocation);
+            }
+          });
+        } catch (error) {
+          console.log('Failed to start location watching:', error);
+          // Fallback to manual location updates
+          const interval = setInterval(async () => {
+            await getCurrentLocation();
+          }, 30000); // Update every 30 seconds
+          
+          return () => {
+            clearInterval(interval);
+          };
+        }
+      }
+    };
+    
+    startLocationWatching();
+    
+    // Cleanup function
+    return () => {
+      if (locationTask) {
+        locationTask.then(task => task && task.cancel && task.cancel()).catch(() => {});
+      }
+    };
   }, []);
 
   // تحديث المتاجر عند تغيير الموقع أو النطاق - Update stores when location or radius changes
-  useEffect(() => {
+ useEffect(() => {
     if (userLocation) {
       updateAvailableStores();
     }
@@ -65,25 +108,35 @@ export const LocationProvider = ({ children }) => {
   };
 
   // دالة تهيئة الموقع عند بدء التطبيق - Initialize location on app start
-  const initializeLocation = async () => {
+ const initializeLocation = async () => {
     setLoading(true);
     setError(null);
 
     try {
       const hasPermission = await requestLocationPermission();
       if (hasPermission) {
-        await getCurrentLocation();
+        // Add a timeout to ensure location is fetched even if it takes longer
+        const location = await Promise.race([
+          getCurrentLocation(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Timeout getting location')), 100)
+          )
+        ]);
+        
+        if (location) {
+          // Location was successfully set, update available stores
+          updateAvailableStores();
+        } else {
+          console.log('Failed to get current location, using fallback');
+          updateAvailableStores();
+        }
       } else {
         console.log('GPS permission denied, using fallback');
-        // GPS غير متاح، استخدم القيم الافتراضية - GPS not available, use defaults
-        setAvailableVillages(VILLAGES.filter(v => v.isActive));
         updateAvailableStores();
       }
     } catch (error) {
       console.log('خطأ في تهيئة الموقع:', error);
       setError('فشل في تهيئة نظام الموقع');
-      // استخدم القيم الافتراضية في حالة الخطأ - Use defaults on error
-      setAvailableVillages(VILLAGES.filter(v => v.isActive));
       updateAvailableStores();
     } finally {
       setLoading(false);
@@ -91,21 +144,16 @@ export const LocationProvider = ({ children }) => {
   };
 
   // دالة تحديث المتاجر المتاحة - Update available stores
-  const updateAvailableStores = () => {
+ const updateAvailableStores = () => {
     if (userLocation) {
       const stores = getStoresWithinRadius(userLocation, deliveryRadius);
       setAvailableStores(stores);
     } else {
-      // إذا لم يكن هناك موقع، اعرض جميع المتاجر المفتوحة من جميع القرى - If no location, show all open stores from all villages
+      // إذا لم يكن هناك موقع، اعرض جميع المتاجر المفتوحة - If no location, show all open stores
       const allStores = STORES.filter(store => store.isOpen);
       setAvailableStores(allStores);
     }
   };
-
-  // مراقبة تغييرات القرى المتاحة - Monitor changes in available villages
-  useEffect(() => {
-    console.log('availableVillages changed:', availableVillages);
-  }, [availableVillages]);
 
   // دالة الحصول على الموقع الحالي للمستخدم - Function to get current user's location
   const getCurrentLocation = async () => {
@@ -130,20 +178,6 @@ export const LocationProvider = ({ children }) => {
       setUserLocation(newLocation);
       setGpsEnabled(true);
 
-      // تحديد القرية الأقرب - Find nearest village
-      const nearestVillage = getNearestVillage(newLocation);
-
-      // إذا كانت القرية بعيدة جداً (أكثر من 50 كم)، لا نعتبرها قرية حالية - If village is too far (more than 50km), don't set it as current village
-      if (nearestVillage && nearestVillage.distance <= 50) {
-        setCurrentVillage(nearestVillage);
-      } else {
-        setCurrentVillage(null);
-      }
-
-      // تحميل القرى المتاحة لهذا الموقع - Load available villages for this location
-      const villages = getAvailableVillages(newLocation, 50);
-      setAvailableVillages(villages);
-
       return newLocation;
     } catch (error) {
       setError('خطأ في الحصول على الموقع');
@@ -155,25 +189,9 @@ export const LocationProvider = ({ children }) => {
     }
   };
 
-  // دالة اختيار قرية - Function to select a village
-  const selectVillage = (village) => {
-    setSelectedVillage(village);
-  };
-
-  // دالة تحديث معلومات التوصيل - Function to update delivery information
-  const updateDeliveryInfo = (villageId) => {
-    const village = availableVillages.find((v) => v.id === villageId);
-    if (village) {
-      setSelectedVillage(village);
-    }
-  };
-
   // دالة مسح معلومات الموقع - Function to clear location information
   const clearLocation = () => {
     setUserLocation(null);
-    setCurrentVillage(null);
-    setSelectedVillage(null);
-    setAvailableVillages([]);
     setAvailableStores([]);
     setGpsEnabled(false);
     setError(null);
@@ -186,9 +204,6 @@ export const LocationProvider = ({ children }) => {
 
   // دالة الحصول على سلسلة نصية للموقع - Function to get location string
   const getLocationString = () => {
-    if (selectedVillage) {
-      return selectedVillage.name;
-    }
     if (userLocation) {
       return `${userLocation.lat.toFixed(4)}, ${userLocation.lng.toFixed(4)}`;
     }
@@ -197,16 +212,13 @@ export const LocationProvider = ({ children }) => {
 
   // دالة التحقق مما إذا كان الموقع متاحًا - Function to check if location is available
   const isLocationAvailable = () => {
-    return userLocation !== null && availableVillages.length > 0;
-  };
+    return userLocation !== null;
+ };
 
   // القيم التي يوفرها السياق - Values provided by the context
   const value = {
     // الحالة - State
     userLocation,
-    currentVillage,
-    selectedVillage,
-    availableVillages,
     deliveryRadius,
     availableStores,
     loading,
@@ -215,8 +227,6 @@ export const LocationProvider = ({ children }) => {
 
     // الإجراءات - Actions
     getCurrentLocation,
-    selectVillage,
-    updateDeliveryInfo,
     updateDeliveryRadius,
     clearLocation,
 

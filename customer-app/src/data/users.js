@@ -48,3 +48,19 @@ export const MOCK_USERS = [
     ],
   },
 ];
+
+// مصفوفة طلبات تسجيل التجار - Merchant applications array
+export const MERCHANT_APPLICATIONS = [
+  {
+    id: 'merchant1',
+    name: 'متجر تجريبي',
+    phone: '01000000',
+    password: '123456',
+    storeName: 'متجر تجريبي',
+    storeDescription: 'هذا متجر تجريبي لعرض المنتجات',
+    storeImage: 'https://via.placeholder.com/400x300?text=Store',
+    status: 'pending', // pending, approved, rejected
+    createdAt: '2025-01-01T00:00:00.000Z',
+    role: 'merchant',
+  },
+];

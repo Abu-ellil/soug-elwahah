@@ -8,7 +8,6 @@ export const STORES = [
     deliveryTime: '20-30 دقيقة',
     isOpen: true,
     coordinates: { lat: 31.112, lng: 30.94 },
-    villageId: 'v1',
   },
   {
     id: 's2',
