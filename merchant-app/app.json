@@ -8,6 +8,7 @@
     "scheme": "merchantapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "reactNativeReanimatedCompat": true,
     "ios": {
       "supportsTablet": true
     },
