@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   View,
@@ -12,18 +13,24 @@ import { MaterialIcons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { useCart } from '../../context/CartContext';
 import { useLocation } from '../../context/LocationProvider';
-import { DELIVERY_SLOTS } from '../../data/villages';
 import { STORES } from '../../data/stores';
 import Header from '../../components/Header';
-import VillagePicker from '../../components/VillagePicker';
 import COLORS from '../../constants/colors';
 import SIZES from '../../constants/sizes';
 import { formatPrice } from '../../utils/helpers';
 
+// Delivery time slots - moved from villages.js
+export const DELIVERY_SLOTS = [
+  { id: 'morning', name: 'الصباح (9:00 - 12:00)', timeRange: '09:00-12:00', isAvailable: true },
+  { id: 'noon', name: 'الظهيرة (12:00 - 15:00)', timeRange: '12:00-15:00', isAvailable: true },
+  { id: 'evening', name: 'المساء (15:00 - 18:00)', timeRange: '15:00-18:00', isAvailable: true },
+  { id: 'night', name: 'الليل (18:00 - 21:00)', timeRange: '18:00-21:00', isAvailable: true },
+];
+
 const CheckoutScreen = ({ navigation }) => {
   const { cartItems, getCartSubtotal, getTotalWithDelivery, clearCart, addOrder } = useCart();
 
-  const { selectedVillage, selectVillage } = useLocation();
+  const { userLocation, deliveryRadius, getCurrentLocation } = useLocation();
 
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
@@ -37,7 +44,6 @@ const CheckoutScreen = ({ navigation }) => {
     addressType: 'home', // home, work, other
   });
 
-  const [villagePickerVisible, setVillagePickerVisible] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('cash'); // cash, fawry, vodafone_cash
 
   const paymentMethods = [
@@ -48,7 +54,7 @@ const CheckoutScreen = ({ navigation }) => {
   ];
 
   const subtotal = getCartSubtotal();
-  const deliveryFee = selectedVillage ? selectedVillage.deliveryFee : 10;
+  const deliveryFee = userLocation ? 10 : 0; // Default delivery fee
   const total = getTotalWithDelivery();
 
   const validateForm = () => {
@@ -62,8 +68,8 @@ const CheckoutScreen = ({ navigation }) => {
       return false;
     }
 
-    if (!selectedVillage) {
-      Alert.alert('خطأ', 'يرجى اختيار منطقة التوصيل');
+    if (!userLocation) {
+      Alert.alert('خطأ', 'يرجى تفعيل GPS لتحديد موقعك');
       return false;
     }
 
@@ -91,7 +97,7 @@ const CheckoutScreen = ({ navigation }) => {
 
     const firstItem = cartItems[0];
     if (!firstItem) {
-      Alert.alert('خطأ', 'لا يمكن إنشاء الطلب - السة فارغة');
+      Alert.alert('خطأ', 'لا يمكن إنشاء الطلب - السلة فارغة');
       return;
     }
 
@@ -132,7 +138,7 @@ const CheckoutScreen = ({ navigation }) => {
         status: 'pending',
         deliveryAddress: {
           street: customerInfo.address,
-          village: selectedVillage.name,
+          coordinates: userLocation,
         },
         deliverySlot: deliveryInfo.selectedSlot,
         paymentMethod: paymentMethod,
@@ -262,25 +268,13 @@ const CheckoutScreen = ({ navigation }) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>معلومات التوصيل</Text>
 
-          {/* Village Selection */}
-          <TouchableOpacity
-            style={styles.villageSelector}
-            onPress={() => setVillagePickerVisible(true)}>
+          {/* Location Status */}
+          <View style={styles.locationStatus}>
             <MaterialIcons name="location-on" size={20} color={COLORS.primary} />
-            <Text style={styles.villageText}>
-              {selectedVillage ? selectedVillage.name : 'اختر المنطقة *'}
+            <Text style={styles.locationText}>
+              {userLocation ? 'تم تحديد موقعك' : 'GPS غير متاح'}
             </Text>
-            <MaterialIcons name="keyboard-arrow-down" size={20} color={COLORS.gray} />
-          </TouchableOpacity>
-
-          {selectedVillage && (
-            <View style={styles.deliveryInfo}>
-              <Text style={styles.deliveryFee}>
-                رسوم التوصيل: {formatPrice(selectedVillage.deliveryFee)}
-              </Text>
-              <Text style={styles.deliveryTime}>وقت التوصيل: {selectedVillage.deliveryTime}</Text>
-            </View>
-          )}
+          </View>
 
           {renderInput(
             'عنوان التوصيل *',
@@ -293,7 +287,6 @@ const CheckoutScreen = ({ navigation }) => {
             'ملاحظات إضافية',
             customerInfo.notes,
             (text) => setCustomerInfo((prev) => ({ ...prev, notes: text })),
-            'أي ملاحظات خاصة',
             'default',
             true
           )}
@@ -325,16 +318,16 @@ const CheckoutScreen = ({ navigation }) => {
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>رسوم التوصيل</Text>
             <Text style={styles.summaryValue}>
-              {selectedVillage ? formatPrice(selectedVillage.deliveryFee) : 'غير محدد'}
+              {userLocation ? formatPrice(deliveryFee) : 'غير محدد'}
             </Text>
           </View>
 
-          {selectedVillage && (
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>منطقة التوصيل</Text>
-              <Text style={styles.summaryValue}>{selectedVillage.name}</Text>
-            </View>
-          )}
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>نطاق التوصيل</Text>
+            <Text style={styles.summaryValue}>
+              {userLocation ? `${deliveryRadius} كم` : 'غير محدد'}
+            </Text>
+          </View>
 
           <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={styles.totalLabel}>المجموع الكلي</Text>
@@ -351,17 +344,6 @@ const CheckoutScreen = ({ navigation }) => {
           <Text style={styles.placeOrderTotal}>{formatPrice(total)}</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Village Picker */}
-      <VillagePicker
-        visible={villagePickerVisible}
-        onClose={() => setVillagePickerVisible(false)}
-        onSelect={(village) => {
-          selectVillage(village);
-          setVillagePickerVisible(false);
-        }}
-        currentLocation={null}
-      />
     </View>
   );
 };
@@ -411,39 +393,18 @@ const styles = StyleSheet.create({
     minHeight: 80,
     textAlignVertical: 'top',
   },
-  villageSelector: {
+  locationStatus: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: SIZES.base,
-    borderWidth: 1,
-    borderColor: COLORS.lightGray,
-    borderRadius: SIZES.borderRadius,
-    marginBottom: SIZES.base,
-    backgroundColor: COLORS.white,
-  },
-  villageText: {
-    flex: 1,
-    fontSize: SIZES.body2,
-    color: COLORS.text,
-    marginHorizontal: SIZES.base,
-    textAlign: 'right',
-  },
-  deliveryInfo: {
     backgroundColor: COLORS.primaryLight,
-    padding: SIZES.base,
     borderRadius: SIZES.borderRadius,
     marginBottom: SIZES.base,
   },
-  deliveryFee: {
+  locationText: {
     fontSize: SIZES.body3,
     color: COLORS.primary,
-    fontWeight: '600',
-    marginBottom: 4,
-    textAlign: 'right',
-  },
-  deliveryTime: {
-    fontSize: SIZES.body3,
-    color: COLORS.textSecondary,
+    marginRight: SIZES.base,
     textAlign: 'right',
   },
   slotsContainer: {

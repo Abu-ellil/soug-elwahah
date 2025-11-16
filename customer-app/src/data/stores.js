@@ -18,7 +18,6 @@ export const STORES = [
     deliveryTime: '15-25 دقيقة',
     isOpen: true,
     coordinates: { lat: 31.135, lng: 30.645 },
-    villageId: 'v2',
   },
   {
     id: 's3',
@@ -29,7 +28,6 @@ export const STORES = [
     deliveryTime: '30-45 دقيقة',
     isOpen: true,
     coordinates: { lat: 30.552, lng: 30.985 },
-    villageId: 'v3',
   },
   {
     id: 's4',
@@ -40,7 +38,6 @@ export const STORES = [
     deliveryTime: '10-20 دقيقة',
     isOpen: true,
     coordinates: { lat: 30.618, lng: 30.968 },
-    villageId: 'v4',
   },
   {
     id: 's5',
@@ -51,7 +48,6 @@ export const STORES = [
     deliveryTime: '25-35 دقيقة',
     isOpen: false,
     coordinates: { lat: 30.418, lng: 31.018 },
-    villageId: 'v5',
   },
   {
     id: 's6',
@@ -62,7 +58,6 @@ export const STORES = [
     deliveryTime: '20-30 دقيقة',
     isOpen: true,
     coordinates: { lat: 31.285, lng: 30.785 },
-    villageId: 'v6',
   },
   {
     id: 's7',
@@ -73,7 +68,6 @@ export const STORES = [
     deliveryTime: '30-40 دقيقة',
     isOpen: true,
     coordinates: { lat: 30.835, lng: 31.085 },
-    villageId: 'v7',
   },
   {
     id: 's8',
@@ -84,7 +78,6 @@ export const STORES = [
     deliveryTime: '15-25 دقيقة',
     isOpen: true,
     coordinates: { lat: 30.785, lng: 31.018 },
-    villageId: 'v8',
   },
   {
     id: 's9',
@@ -95,7 +88,6 @@ export const STORES = [
     deliveryTime: '20-30 دقيقة',
     isOpen: true,
     coordinates: { lat: 30.868, lng: 31.085 },
-    villageId: 'v9',
   },
   {
     id: 's10',
@@ -106,7 +98,6 @@ export const STORES = [
     deliveryTime: '25-35 دقيقة',
     isOpen: true,
     coordinates: { lat: 31.418, lng: 30.418 },
-    villageId: 'v10',
   },
   {
     id: 's11',
@@ -117,7 +108,6 @@ export const STORES = [
     deliveryTime: '15-25 دقيقة',
     isOpen: true,
     coordinates: { lat: 31.115, lng: 30.942 },
-    villageId: 'v1',
   },
   {
     id: 's12',
@@ -128,7 +118,6 @@ export const STORES = [
     deliveryTime: '10-20 دقيقة',
     isOpen: true,
     coordinates: { lat: 31.13, lng: 30.64 },
-    villageId: 'v2',
   },
   {
     id: 's13',
@@ -139,7 +128,6 @@ export const STORES = [
     deliveryTime: '35-50 دقيقة',
     isOpen: true,
     coordinates: { lat: 30.548, lng: 30.98 },
-    villageId: 'v3',
   },
   {
     id: 's14',
@@ -150,7 +138,6 @@ export const STORES = [
     deliveryTime: '15-25 دقيقة',
     isOpen: true,
     coordinates: { lat: 30.62, lng: 30.97 },
-    villageId: 'v4',
   },
   {
     id: 's15',
@@ -161,6 +148,5 @@ export const STORES = [
     deliveryTime: '20-30 دقيقة',
     isOpen: true,
     coordinates: { lat: 30.42, lng: 31.02 },
-    villageId: 'v5',
   },
 ];
