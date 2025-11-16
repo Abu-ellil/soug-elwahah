@@ -7,6 +7,7 @@ import { useCart } from '../context/CartContext';
 import HomeScreen2 from '../screens/Home/HomeScreen';
 import StoreDetailsScreen2 from '../screens/Home/StoreDetailsScreen';
 import CategoryStoresScreen from '../screens/Categories/CategoryStoresScreen';
+import CategoriesScreen from '../screens/Categories/CategoriesScreen';
 import CartScreen from '../screens/Cart/CartScreen';
 import OrdersScreen from '../screens/Orders/OrdersScreen';
 import OrderDetailsScreen from '../screens/Orders/OrderDetailsScreen';
@@ -17,11 +18,6 @@ import AddressesScreen from '../screens/Profile/AddressesScreen';
 import CheckoutScreen from '../screens/Checkout/CheckoutScreen';
 
 // Placeholder screens - will be replaced with actual screens
-const CategoriesScreen = () => (
-  <View className="flex-1 items-center justify-center bg-white">
-    <Text>Categories Screen</Text>
-  </View>
-); 
 
 // Home Stack Navigator
 const HomeStack = createNativeStackNavigator();
