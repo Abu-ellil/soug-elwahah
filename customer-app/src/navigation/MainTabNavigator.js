@@ -15,6 +15,7 @@ import COLORS from '../constants/colors';
 import SIZES from '../constants/sizes';
 import SettingsScreen from '../screens/Settings/SettingsScreen';
 import AddressesScreen from '../screens/Profile/AddressesScreen';
+import AddAddressScreen from '../screens/Profile/AddAddressScreen';
 import CheckoutScreen from '../screens/Checkout/CheckoutScreen';
 
 // Placeholder screens - will be replaced with actual screens
@@ -49,6 +50,7 @@ const ProfileStackNavigator = () => (
     screenOptions={{ headerShown: false, statusBarStyle: 'dark', animation: 'slide_from_right' }}>
     <ProfileStack.Screen name="Settings" component={SettingsScreen} />
     <ProfileStack.Screen name="Addresses" component={AddressesScreen} />
+    <ProfileStack.Screen name="AddAddress" component={AddAddressScreen} />
   </ProfileStack.Navigator>
 );
 

@@ -26,10 +26,24 @@ export const LocationProvider = ({ children }) => {
   const [error, setError] = useState(null); // حالة الخطأ - Error state
 
   // طلب إذن الموقع عند تحميل المكون - Request location permission on component mount
-  // Location functionality has been removed as per requirements
-  // useEffect(() => {
-  //   requestLocationPermission();
-  // }, []);
+  useEffect(() => {
+    requestLocationPermission();
+  }, []);
+
+  // دالة طلب إذن الموقع - Function to request location permission
+  const requestLocationPermission = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setError('تم رفض إذن الوصول للموقع');
+        return false;
+      }
+      return true;
+    } catch (error) {
+      setError('خطأ في طلب إذن الموقع');
+      return false;
+    }
+  };
 
   // مراقبة تغييرات القرى المتاحة - Monitor changes in available villages
   useEffect(() => {
@@ -42,15 +56,19 @@ export const LocationProvider = ({ children }) => {
     setError(null);
 
     try {
-      // Skip permission check as location functionality has been removed
-      // const hasPermission = await requestLocationPermission();
-      // if (!hasPermission) {
-      //   throw new Error('لا يوجد إذن للوصول للموقع'); // No permission to access location
-      // }
+      const hasPermission = await requestLocationPermission();
+      if (!hasPermission) {
+        throw new Error('لا يوجد إذن للوصول للموقع'); // No permission to access location
+      }
 
-      // Location functionality has been removed as per requirements
-      // Simulate a location for village selection purposes
-      const newLocation = { lat: 30.0444, lng: 31.2357 }; // Cairo coordinates as default
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+
+      const newLocation = {
+        lat: location.coords.latitude,
+        lng: location.coords.longitude,
+      };
 
       setUserLocation(newLocation);
 
@@ -60,9 +78,8 @@ export const LocationProvider = ({ children }) => {
 
       return newLocation;
     } catch (error) {
-      // Location functionality has been removed as per requirements
-      setError('Location functionality has been removed');
-      Alert.alert('Location Disabled', 'Location services have been disabled in this version');
+      setError('خطأ في الحصول على الموقع');
+      Alert.alert('خطأ', 'فشل في الحصول على موقعك الحالي');
       return null;
     } finally {
       setLoading(false);

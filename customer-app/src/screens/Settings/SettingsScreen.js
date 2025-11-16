@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, Switch, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as LocalAuthentication from 'expo-local-authentication';
 import { translationManager, t, SUPPORTED_LANGUAGES } from '../../utils/localization';
 import { customerManager } from '../../utils/customerManager';
 
@@ -34,8 +35,8 @@ export const DEFAULT_SETTINGS = {
   },
 
   security: {
-    biometricLogin: false,
-    twoFactorAuth: false,
+    biometricLogin: true,
+    twoFactorAuth: true,
     autoLock: true,
     autoLockTimeout: 5, // minutes
     passwordComplexity: 'medium',
@@ -48,7 +49,7 @@ export const DEFAULT_SETTINGS = {
   notifications: {
     pushNotifications: true,
     emailNotifications: true,
-    smsNotifications: false,
+    smsNotifications: true,
     inAppNotifications: true,
     sound: true,
     vibration: true,
@@ -60,35 +61,35 @@ export const DEFAULT_SETTINGS = {
       reminders: true,
     },
     quietHours: {
-      enabled: false,
+      enabled: true,
       startTime: '22:00',
       endTime: '08:00',
     },
   },
 
   privacy: {
-    dataCollection: false,
-    analytics: false,
+    dataCollection: true,
+    analytics: true,
     crashReporting: true,
-    locationTracking: false,
-    contactSync: false,
+    locationTracking: true,
+    contactSync: true,
     automaticBackups: true,
-    dataSharing: false,
+    dataSharing: true,
   },
 
   backup: {
     autoBackup: true,
     backupFrequency: 'daily', // daily, weekly, monthly
     backupLocation: 'local',
-    cloudBackup: false,
+    cloudBackup: true,
     backupRetention: 30, // days
     encryptedBackup: true,
     backupNotification: true,
   },
 
   advanced: {
-    debugMode: false,
-    performanceMode: false,
+    debugMode: true,
+    performanceMode: true,
     cacheSize: '100MB',
     offlineMode: true,
     syncFrequency: 5, // minutes
@@ -170,10 +171,13 @@ export class SettingsManager {
         this.settings[category] = {};
       }
 
-      this.settings[category][key] = value;
-
       // تطبيق الإعداد فوراً - Apply setting immediately
-      await this.applySetting(category, key, value);
+      const canApply = await this.applySetting(category, key, value);
+      if (canApply === false) {
+        return false; // Don't save if application failed
+      }
+
+      this.settings[category][key] = value;
 
       // حفظ في التخزين - Save to storage
       await this.saveSettings();
@@ -194,8 +198,11 @@ export class SettingsManager {
         }
 
         for (const [key, value] of Object.entries(categoryUpdates)) {
+          const canApply = await this.applySetting(category, key, value);
+          if (canApply === false) {
+            return false; // Don't save if any application failed
+          }
           this.settings[category][key] = value;
-          await this.applySetting(category, key, value);
         }
       }
 
@@ -258,9 +265,24 @@ export class SettingsManager {
     switch (key) {
       case 'biometricLogin':
         // تفعيل/إلغاء المصادقة البيومترية - Enable/disable biometric auth
+        if (value) {
+          const hasHardware = await LocalAuthentication.hasHardwareAsync();
+          const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+          if (!hasHardware || !isEnrolled) {
+            Alert.alert('خطأ', 'الجهاز لا يدعم المصادقة البيومترية أو لم يتم تسجيل بصمة الإصبع');
+            return false;
+          }
+        }
         break;
       case 'twoFactorAuth':
         // تفعيل/إلغاء المصادقة الثنائية - Enable/disable 2FA
+        if (value) {
+          Alert.alert(
+            'تفعيل المصادقة الثنائية',
+            'سيتم إرسال رمز التحقق إلى رقم هاتفك المسجل',
+            [{ text: 'موافق' }]
+          );
+        }
         break;
       case 'autoLock':
         // تفعيل/إلغاء القفل التلقائي - Enable/disable auto lock
@@ -269,6 +291,7 @@ export class SettingsManager {
         // تحديث مهلة انتهاء الجلسة - Update session timeout
         break;
     }
+    return true;
   }
 
   // تطبيق إعدادات الإشعارات - Apply Notification Settings
@@ -421,6 +444,20 @@ export class SettingsManager {
     return current;
   }
 
+  // المصادقة البيومترية - Biometric Authentication
+  async authenticateBiometric() {
+    try {
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'المصادقة البيومترية',
+        fallbackLabel: 'استخدم كلمة المرور',
+      });
+      return result.success;
+    } catch (error) {
+      console.error('خطأ في المصادقة البيومترية:', error);
+      return false;
+    }
+  }
+
   // التحقق من صحة الإعدادات - Validate Settings
   validateSettings(settings) {
     const errors = [];
@@ -487,8 +524,10 @@ const SettingsScreen = ({ navigation }) => {
 
   const updateSetting = async (category, key, value) => {
     try {
-      await settingsManager.updateSetting(category, key, value);
-      setSettings({ ...settingsManager.settings });
+      const success = await settingsManager.updateSetting(category, key, value);
+      if (success) {
+        setSettings({ ...settingsManager.settings });
+      }
     } catch (error) {
       Alert.alert('خطأ', 'فشل في تحديث الإعداد');
     }

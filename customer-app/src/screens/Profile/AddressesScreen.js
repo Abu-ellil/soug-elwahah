@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -9,8 +9,17 @@ import COLORS from '../../constants/colors';
 import SIZES from '../../constants/sizes';
 import { MOCK_ADDRESSES } from '../../data/addresses'; // Assuming you create this file
 
-const AddressesScreen = ({ navigation }) => {
+const AddressesScreen = ({ navigation, route }) => {
   const [addresses, setAddresses] = useState(MOCK_ADDRESSES);
+
+  // Check if a new address was added
+  React.useEffect(() => {
+    if (route.params?.newAddress) {
+      setAddresses(prev => [...prev, route.params.newAddress]);
+      // Clear the param
+      navigation.setParams({ newAddress: undefined });
+    }
+  }, [route.params?.newAddress, navigation]);
 
   const handleSetDefault = (id) => {
     const updatedAddresses = addresses.map((addr) => ({
@@ -40,6 +49,7 @@ const AddressesScreen = ({ navigation }) => {
       <View style={styles.addressInfo}>
         <Feather name="map-pin" size={24} color={COLORS.primary} />
         <View style={styles.addressTextContainer}>
+          <RTLText style={styles.addressLabel}>{item.label}</RTLText>
           <RTLText style={styles.addressStreet}>{item.street}</RTLText>
           <RTLText style={styles.addressVillage}>{item.village}</RTLText>
         </View>
@@ -74,7 +84,7 @@ const AddressesScreen = ({ navigation }) => {
         ListFooterComponent={
           <TouchableOpacity
             style={styles.addButton}
-            onPress={() => Alert.alert('إضافة عنوان', 'سيتم إضافة شاشة لإضافة عنوان جديد هنا.')}>
+            onPress={() => navigation.navigate('AddAddress')}>
             <Feather name="plus" size={20} color={COLORS.white} />
             <RTLText style={styles.addButtonText}>إضافة عنوان جديد</RTLText>
           </TouchableOpacity>
@@ -110,6 +120,12 @@ const styles = StyleSheet.create({
   addressTextContainer: {
     marginRight: SIZES?.padding || 16,
     alignItems: 'flex-end',
+  },
+  addressLabel: {
+    fontSize: SIZES?.body2 || 14,
+    fontWeight: 'bold',
+    color: COLORS?.primary || '#FF6B35',
+    marginBottom: 2,
   },
   addressStreet: {
     fontSize: SIZES?.body3 || 12,

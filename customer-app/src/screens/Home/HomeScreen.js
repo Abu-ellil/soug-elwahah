@@ -144,6 +144,31 @@ const HomeScreen = ({ navigation }) => {
     return <HomeScreenSkeleton />;
   }
 
+  const renderProductsGrid = () => {
+    if (randomProducts.length === 0) return null;
+
+    const rows = [];
+    for (let i = 0; i < randomProducts.length; i += 2) {
+      rows.push(
+        <View key={i} style={styles.productsRow}>
+          <ProductCard
+            product={randomProducts[i]}
+            onPress={() => navigation.navigate('StoreDetails', { storeId: randomProducts[i].storeId })}
+            onAddToCart={addToCart}
+          />
+          {randomProducts[i + 1] && (
+            <ProductCard
+              product={randomProducts[i + 1]}
+              onPress={() => navigation.navigate('StoreDetails', { storeId: randomProducts[i + 1].storeId })}
+              onAddToCart={addToCart}
+            />
+          )}
+        </View>
+      );
+    }
+    return rows;
+  };
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -175,126 +200,121 @@ const HomeScreen = ({ navigation }) => {
         />
       </View>
 
-      <ScrollView
+      <FlatList
         style={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        showsVerticalScrollIndicator={false}>
-        {/* Categories */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>الفئات</Text>
-          <FlatList
-            data={CATEGORIES}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <CategoryCard
-                category={item}
-                isSelected={selectedCategory?.id === item.id}
-                onPress={() => handleCategoryPress(item)}
+        showsVerticalScrollIndicator={false}
+        data={[{ key: 'content' }]}
+        renderItem={() => (
+          <View>
+            {/* Categories */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>الفئات</Text>
+              <FlatList
+                data={CATEGORIES}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                keyExtractor={(item) => item.id}
+                renderItem={({ item }) => (
+                  <CategoryCard
+                    category={item}
+                    isSelected={selectedCategory?.id === item.id}
+                    onPress={() => handleCategoryPress(item)}
+                  />
+                )}
+                contentContainerStyle={styles.categoriesList}
+              />
+            </View>
+
+            {/* Stores Section Header */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>
+                {selectedCategory
+                  ? `${selectedCategory.name} في ${selectedVillage?.name || 'المنطقة المختارة'}`
+                  : 'المتاجر المتاحة'}
+              </Text>
+              <Text style={styles.storesCountText}>{filteredStores.length} متجر</Text>
+            </View>
+
+            {/* Stores List */}
+            {error ? (
+              <EmptyState
+                icon="error-outline"
+                title="خطأ في تحميل البيانات"
+                message={error}
+                actionText="إعادة المحاولة"
+                onActionPress={getCurrentLocation}
+              />
+            ) : filteredStores.length > 0 ? (
+              <FlatList
+                data={filteredStores}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                renderItem={({ item }) => (
+                  <StoreCard
+                    store={item}
+                    onPress={() => handleStorePress(item)}
+                    userLocation={userLocation}
+                  />
+                )}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={styles.storesList}
+              />
+            ) : searchQuery || selectedCategory ? (
+              <EmptyState
+                icon="search-off"
+                title="لا توجد نتائج"
+                message={
+                  searchQuery
+                    ? `لا توجد متاجر تحتوي على "${searchQuery}"`
+                    : 'لا توجد متاجر في هذه الفئة'
+                }
+                actionText="مسح البحث"
+                onActionPress={() => {
+                  setSearchQuery('');
+                  setSelectedCategory(null);
+                }}
+              />
+            ) : (
+              <EmptyState
+                icon="storefront"
+                title="لا توجد متاجر"
+                message="لا توجد متاجر متاحة في هذه المنطقة حالياً"
+                actionText="تغيير المنطقة"
+                onActionPress={handleLocationPress}
               />
             )}
-            contentContainerStyle={styles.categoriesList}
-          />
-        </View>
 
-        {/* Stores Section Header */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
-            {selectedCategory
-              ? `${selectedCategory.name} في ${selectedVillage?.name || 'المنطقة المختارة'}`
-              : 'المتاجر المتاحة'}
-          </Text>
-          <Text style={styles.storesCountText}>{filteredStores.length} متجر</Text>
-        </View>
-
-        {/* Stores List */}
-        {error ? (
-          <EmptyState
-            icon="error-outline"
-            title="خطأ في تحميل البيانات"
-            message={error}
-            actionText="إعادة المحاولة"
-            onActionPress={getCurrentLocation}
-          />
-        ) : filteredStores.length > 0 ? (
-          <FlatList
-            data={filteredStores}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            renderItem={({ item }) => (
-              <StoreCard
-                store={item}
-                onPress={() => handleStorePress(item)}
-                userLocation={userLocation}
-              />
+            {/* Products Section */}
+            {randomProducts.length > 0 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>
+                  {selectedCategory ? `منتجات من ${selectedCategory.name}` : 'المنتجات الأكثر شراءً'}
+                </Text>
+                <View style={styles.productsGrid}>
+                  {renderProductsGrid()}
+                </View>
+              </View>
             )}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.storesList}
-          />
-        ) : searchQuery || selectedCategory ? (
-          <EmptyState
-            icon="search-off"
-            title="لا توجد نتائج"
-            message={
-              searchQuery
-                ? `لا توجد متاجر تحتوي على "${searchQuery}"`
-                : 'لا توجد متاجر في هذه الفئة'
-            }
-            actionText="مسح البحث"
-            onActionPress={() => {
-              setSearchQuery('');
-              setSelectedCategory(null);
-            }}
-          />
-        ) : (
-          <EmptyState
-            icon="storefront"
-            title="لا توجد متاجر"
-            message="لا توجد متاجر متاحة في هذه المنطقة حالياً"
-            actionText="تغيير المنطقة"
-            onActionPress={handleLocationPress}
-          />
-        )}
 
-        {/* Products Section */}
-        {randomProducts.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              {selectedCategory ? `منتجات من ${selectedCategory.name}` : 'المنتجات الأكثر شراءً'}
-            </Text>
-            <FlatList
-              data={randomProducts}
-              numColumns={2}
-              showsVerticalScrollIndicator={false}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <ProductCard
-                  product={item}
-                  onPress={() => navigation.navigate('StoreDetails', { storeId: item.storeId })}
-                  onAddToCart={addToCart}
-                />
-              )}
-              contentContainerStyle={styles.productsList}
-            />
+            {/* Quick Actions */}
+            <View style={styles.quickActions}>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => navigation.navigate('Orders')}>
+                <MaterialIcons name="history" size={20} color={COLORS.primary} />
+                <Text style={styles.actionText}>طلباتي</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Cart')}>
+                <MaterialIcons name="shopping-cart" size={24} color={COLORS.primary} />
+                <Text style={styles.actionText}>السلة</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
-
-        {/* Quick Actions */}
-        <View style={styles.quickActions}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => navigation.navigate('Orders')}>
-            <MaterialIcons name="history" size={20} color={COLORS.primary} />
-            <Text style={styles.actionText}>طلباتي</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Cart')}>
-            <MaterialIcons name="shopping-cart" size={24} color={COLORS.primary} />
-            <Text style={styles.actionText}>السلة</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+        keyExtractor={(item) => item.key}
+      />
 
       {/* Village Picker */}
       <VillagePicker
@@ -391,6 +411,14 @@ const styles = StyleSheet.create({
   },
   productsList: {
     paddingHorizontal: SIZES.padding,
+  },
+  productsGrid: {
+    paddingHorizontal: SIZES.padding,
+  },
+  productsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: SIZES.base,
   },
   quickActions: {
     flexDirection: 'row',
