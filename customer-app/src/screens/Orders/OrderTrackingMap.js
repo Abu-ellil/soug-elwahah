@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Dimensions, Alert } from 'react-native';
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import COLORS from '../../constants/colors';
@@ -173,58 +172,7 @@ export default function OrderTrackingMap({ order, height = 300 }) {
 
   return (
     <View style={[styles.container, { height }]}>
-      <MapView
-        ref={mapRef}
-        style={styles.map}
-        provider={PROVIDER_GOOGLE}
-        initialRegion={{
-          latitude: order.driverLocation.latitude,
-          longitude: order.driverLocation.longitude,
-          latitudeDelta: LATITUDE_DELTA,
-          longitudeDelta: LONGITUDE_DELTA,
-        }}
-        showsUserLocation={false}
-        showsMyLocationButton={false}
-        showsCompass={true}
-        showsScale={true}>
-        {/* Driver Marker */}
-        <Marker
-          coordinate={{
-            latitude: order.driverLocation.latitude,
-            longitude: order.driverLocation.longitude,
-          }}
-          title="السائق"
-          description={order.driverName || 'سائق التوصيل'}
-          anchor={{ x: 0.5, y: 0.5 }}>
-          <View style={styles.driverMarker}>
-            <Ionicons name="car" size={20} color="white" />
-          </View>
-        </Marker>
-
-        {/* Delivery Location Marker */}
-        <Marker
-          coordinate={{
-            latitude: userLocation.coords.latitude,
-            longitude: userLocation.coords.longitude,
-          }}
-          title="موقع التوصيل"
-          description={getDeliveryAddress()}
-          anchor={{ x: 0.5, y: 1 }}>
-          <View style={styles.destinationMarker}>
-            <Ionicons name="location" size={24} color="white" />
-          </View>
-        </Marker>
-
-        {/* Route Polyline */}
-        {routeCoordinates.length > 0 && (
-          <Polyline
-            coordinates={routeCoordinates}
-            strokeColor={COLORS.primary}
-            strokeWidth={4}
-            lineDashPattern={[5, 5]}
-          />
-        )}
-      </MapView>
+      
 
       {/* Info Overlay */}
       <View style={styles.infoOverlay}>

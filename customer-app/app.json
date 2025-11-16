@@ -16,12 +16,7 @@
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "This app needs access to location to show nearby stores."
-        }
-      ],
-      [
-        "expo-maps",
-        {
+          "locationAlwaysAndWhenInUsePermission": "This app needs access to location to show nearby stores.",
           "locationWhenInUsePermission": "This app needs access to location to show maps."
         }
       ]
