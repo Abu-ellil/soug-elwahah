@@ -4,9 +4,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text, Animated } from 'react-native';
 import { useCart } from '../context/CartContext';
-import HomeScreen from '../screens/Home/HomeScreen';
-import StoreDetailsScreen from '../screens/Home/StoreDetailsScreen';
-import HomeScreen2 from '../screens/Home2/HomeScreen2';
+import HomeScreen2 from '../screens/Home/HomeScreen';
+import StoreDetailsScreen2 from '../screens/Home/StoreDetailsScreen';
 import CategoryStoresScreen from '../screens/Categories/CategoryStoresScreen';
 import CartScreen from '../screens/Cart/CartScreen';
 import OrdersScreen from '../screens/Orders/OrdersScreen';
@@ -29,24 +28,13 @@ const HomeStack = createNativeStackNavigator();
 const HomeStackNavigator = () => (
   <HomeStack.Navigator
     screenOptions={{ headerShown: false, statusBarStyle: 'dark', animation: 'slide_from_right' }}>
-    <HomeStack.Screen name="HomeMain" component={HomeScreen} />
-    <HomeStack.Screen name="StoreDetails" component={StoreDetailsScreen} />
+    <HomeStack.Screen name="HomeMain" component={HomeScreen2} />
+    <HomeStack.Screen name="StoreDetails" component={StoreDetailsScreen2} />
     <HomeStack.Screen name="CategoryStores" component={CategoryStoresScreen} />
     <HomeStack.Screen name="Checkout" component={CheckoutScreen} />
   </HomeStack.Navigator>
 );
 
-// Home2 Stack Navigator
-const Home2Stack = createNativeStackNavigator();
-const Home2StackNavigator = () => (
-  <Home2Stack.Navigator
-    screenOptions={{ headerShown: false, statusBarStyle: 'dark', animation: 'slide_from_right' }}>
-    <Home2Stack.Screen name="Home2Main" component={HomeScreen2} />
-    <Home2Stack.Screen name="StoreDetails" component={StoreDetailsScreen} />
-    <Home2Stack.Screen name="CategoryStores" component={CategoryStoresScreen} />
-    <Home2Stack.Screen name="Checkout" component={CheckoutScreen} />
-  </Home2Stack.Navigator>
-);
 
 // Order Stack Navigator
 const OrderStack = createNativeStackNavigator();
@@ -117,8 +105,6 @@ const MainTabNavigator = () => {
 
           if (route.name === 'Home') {
             iconName = focused ? 'home' : 'home-outline';
-          } else if (route.name === 'Home2') {
-            iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'Categories') {
             iconName = focused ? 'grid' : 'grid-outline';
           } else if (route.name === 'Cart') {
@@ -137,16 +123,6 @@ const MainTabNavigator = () => {
         component={HomeStackNavigator}
         options={{
           tabBarLabel: 'الرئيسية',
-        }}
-      />
-      <Tab.Screen
-        name="Home2"
-        component={Home2StackNavigator}
-        options={{
-          tabBarLabel: 'الرئيسية 2',
-          tabBarIcon: ({ focused, color, size }) => {
-            return <Ionicons name={focused ? 'home' : 'home-outline'} size={size} color={color} />;
-          },
         }}
       />
       <Tab.Screen

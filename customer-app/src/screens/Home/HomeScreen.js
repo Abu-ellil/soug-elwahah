@@ -11,10 +11,14 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocation } from '../../context/LocationProvider';
+import { useCart } from '../../context/CartContext';
+import { useAnalytics } from '../../context/AnalyticsContext';
 import { STORES } from '../../data/stores';
 import { CATEGORIES } from '../../data/categories';
+import { PRODUCTS } from '../../data/products';
 import StoreCard from '../../components/StoreCard';
 import CategoryCard from '../../components/CategoryCard';
+import ProductCard from '../../components/ProductCard';
 import SearchBar from '../../components/SearchBar';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
@@ -35,16 +39,38 @@ const HomeScreen = ({ navigation }) => {
     getCurrentLocation,
     selectVillage,
   } = useLocation();
+  const { addToCart } = useCart();
+  const { getTopProducts } = useAnalytics();
 
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [villagePickerVisible, setVillagePickerVisible] = useState(false);
   const [nearbyStores, setNearbyStores] = useState([]);
+  const [randomProducts, setRandomProducts] = useState([]);
 
   useEffect(() => {
     loadStores();
   }, [loadStores]);
+
+  useEffect(() => {
+    if (selectedCategory) {
+      const categoryProducts = PRODUCTS.filter(p => p.categoryId === selectedCategory.id);
+      const shuffled = categoryProducts.sort(() => 0.5 - Math.random());
+      setRandomProducts(shuffled.slice(0, 5));
+    } else {
+      const topProductData = getTopProducts(5);
+      if (topProductData.length > 0) {
+        const topProductIds = topProductData.map(p => p.productId);
+        const topProducts = PRODUCTS.filter(p => topProductIds.includes(p.id));
+        setRandomProducts(topProducts);
+      } else {
+        // Fallback to random products if no analytics data
+        const shuffled = PRODUCTS.sort(() => 0.5 - Math.random());
+        setRandomProducts(shuffled.slice(0, 5));
+      }
+    }
+  }, [selectedCategory, getTopProducts]);
 
   const loadStores = useCallback(() => {
     let stores = STORES;
@@ -95,7 +121,6 @@ const HomeScreen = ({ navigation }) => {
       setSelectedCategory(null);
     } else {
       setSelectedCategory(category);
-      navigation.navigate('CategoryStores', { categoryId: category.id });
     }
   };
 
@@ -195,6 +220,8 @@ const HomeScreen = ({ navigation }) => {
         ) : filteredStores.length > 0 ? (
           <FlatList
             data={filteredStores}
+            horizontal
+            showsHorizontalScrollIndicator={false}
             renderItem={({ item }) => (
               <StoreCard
                 store={item}
@@ -203,7 +230,6 @@ const HomeScreen = ({ navigation }) => {
               />
             )}
             keyExtractor={(item) => item.id}
-            showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.storesList}
           />
         ) : searchQuery || selectedCategory ? (
@@ -229,6 +255,29 @@ const HomeScreen = ({ navigation }) => {
             actionText="تغيير المنطقة"
             onActionPress={handleLocationPress}
           />
+        )}
+
+        {/* Products Section */}
+        {randomProducts.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>
+              {selectedCategory ? `منتجات من ${selectedCategory.name}` : 'المنتجات الأكثر شراءً'}
+            </Text>
+            <FlatList
+              data={randomProducts}
+              numColumns={2}
+              showsVerticalScrollIndicator={false}
+              keyExtractor={(item) => item.id}
+              renderItem={({ item }) => (
+                <ProductCard
+                  product={item}
+                  onPress={() => navigation.navigate('StoreDetails', { storeId: item.storeId })}
+                  onAddToCart={addToCart}
+                />
+              )}
+              contentContainerStyle={styles.productsList}
+            />
+          </View>
         )}
 
         {/* Quick Actions */}
@@ -338,6 +387,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: SIZES.padding,
   },
   storesList: {
+    paddingHorizontal: SIZES.padding,
+  },
+  productsList: {
     paddingHorizontal: SIZES.padding,
   },
   quickActions: {

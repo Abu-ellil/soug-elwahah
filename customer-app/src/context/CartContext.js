@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { saveCart, getCart, clearCart as clearCartStorage } from '../utils/storage';
 import { offlineDataManager } from '../utils/offlineDataManager';
 import { MOCK_ORDERS } from '../data/orders';
+import { useAnalytics } from './AnalyticsContext';
 
 // إنشاء سياق سلة التسوق - Create Cart Context
 const CartContext = createContext();
@@ -21,6 +22,7 @@ export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]); // حالة عناصر السلة - Cart items state
   const [orders, setOrders] = useState(MOCK_ORDERS); // حالة الطلبات - Orders state
   const [isLoading, setIsLoading] = useState(true); // حالة التحميل - Loading state
+  const { logProductPurchase } = useAnalytics();
 
   // تحميل بيانات السلة عند تحميل المكون - Load cart data on component mount
   useEffect(() => {
@@ -167,6 +169,11 @@ export const CartProvider = ({ children }) => {
         } catch (storageError) {
           console.error('❌ Error saving orders to storage:', storageError);
         }
+
+        // Log product purchases for analytics
+        cleanOrder.items.forEach((item) => {
+          logProductPurchase(item.productId, cleanOrder.storeId, item.quantity);
+        });
 
         return updatedOrders;
       });
