@@ -9,7 +9,7 @@ import "react-native-reanimated";
 import "../global.css";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth, AuthProvider } from "../contexts/AuthContext";
 import { useEffect } from "react";
 import { router } from "expo-router";
 
@@ -48,5 +48,9 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  return <RootLayoutNav />;
+  return (
+    <AuthProvider>
+      <RootLayoutNav />
+    </AuthProvider>
+  );
 }
