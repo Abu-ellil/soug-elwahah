@@ -177,17 +177,42 @@ FIREBASE_CERT_URL=https://www.googleapis.com/robot/v1/metadata/x509/firebase-adm
 API_BASE_URL=http://localhost:5000/api
 ```
 
-4. Run the database seed to populate initial data:
+4. Run the database seed to populate initial data (optional but recommended for testing):
 
 ```bash
 npm run seed
 ```
+
+> **Note**: This will clear all existing data and create sample users, store owners, stores, categories, and products for testing purposes. The seed data includes:
+>
+> - 3 sample categories (Grocery, Bakery, Fruits & Vegetables)
+> - 3 sample users (customers)
+> - 3 sample store owners
+> - 3 sample stores
+> - Various sample products across different stores
 
 5. Start the development server:
 
 ```bash
 npm run dev
 ```
+
+### Database Seeding
+
+The application includes several scripts to help with database seeding and management:
+
+```bash
+# Seed the database with sample data (this will clear existing data first)
+npm run seed
+
+# Alternative: Run the enhanced seed script with confirmation prompts
+npm run seed:full
+
+# Clear all data from the database without adding sample data
+npm run seed:clear
+```
+
+The enhanced seed script (`npm run seed:full`) provides additional features like confirmation prompts and more detailed output about the seeding process. The sample data includes customers, store owners, stores, categories, and products for testing purposes.
 
 The API will be available at `http://localhost:5000/api`
 

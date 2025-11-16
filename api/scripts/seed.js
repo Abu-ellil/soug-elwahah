@@ -1,22 +1,65 @@
+#!/usr/bin/env node
+
 require("dotenv").config();
-const connectDB = require("./../config/database");
-const User = require("./../models/User");
-const StoreOwner = require("./../models/StoreOwner");
-const Store = require("./../models/Store");
-const Category = require("./../models/Category");
-const Product = require("./../models/Product");
+const connectDB = require("../src/config/database");
+const User = require("../src/models/User");
+const StoreOwner = require("../src/models/StoreOwner");
+const Store = require("../src/models/Store");
+const Category = require("../src/models/Category");
+const Product = require("../src/models/Product");
 const bcrypt = require("bcryptjs");
 
-const seedData = async () => {
+const seedData = async (options = {}) => {
   try {
     await connectDB();
 
+    const { clearOnly = false, skipConfirmation = false } = options;
+
+    if (!skipConfirmation) {
+      console.log(
+        "⚠️  WARNING: This will delete all existing data in the database!"
+      );
+      console.log("Database:", process.env.MONGODB_URI.split("/").pop());
+
+      if (!clearOnly) {
+        console.log("This will create sample data for testing.");
+      }
+
+      const readline = require("readline");
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+
+      const answer = await new Promise((resolve) => {
+        rl.question(
+          "Are you sure you want to continue? (yes/no): ",
+          (input) => {
+            rl.close();
+            resolve(input.toLowerCase());
+          }
+        );
+      });
+
+      if (answer !== "yes" && answer !== "y") {
+        console.log("Seed operation cancelled.");
+        process.exit(0);
+      }
+    }
+
     // Clear existing data
+    console.log("Clearing existing data...");
     await User.deleteMany({});
     await StoreOwner.deleteMany({});
     await Store.deleteMany({});
     await Category.deleteMany({});
     await Product.deleteMany({});
+    console.log("Data cleared successfully!");
+
+    if (clearOnly) {
+      console.log("Database cleared successfully!");
+      process.exit(0);
+    }
 
     // Create categories
     const categories = [
@@ -65,7 +108,7 @@ const seedData = async () => {
     ];
 
     const createdCategories = await Category.insertMany(categories);
-    console.log("Categories created");
+    console.log(`${createdCategories.length} categories created`);
 
     // Create sample users
     const users = [
@@ -78,7 +121,7 @@ const seedData = async () => {
       },
       {
         name: "فاطمة علي",
-        phone: "01022222222",
+        phone: "010222222",
         password: await bcrypt.hash("123456", 12),
         avatar:
           "https://ui-avatars.com/api/?name=Fatma+Ali&background=0D8ABC&color=fff",
@@ -93,7 +136,7 @@ const seedData = async () => {
     ];
 
     const createdUsers = await User.insertMany(users);
-    console.log("Users created");
+    console.log(`${createdUsers.length} users created`);
 
     // Create sample store owners
     const storeOwners = [
@@ -104,7 +147,7 @@ const seedData = async () => {
       },
       {
         name: "بقالية فاطمة",
-        phone: "0105555",
+        phone: "010555555",
         password: await bcrypt.hash("123456", 12),
       },
       {
@@ -115,7 +158,7 @@ const seedData = async () => {
     ];
 
     const createdStoreOwners = await StoreOwner.insertMany(storeOwners);
-    console.log("Store owners created");
+    console.log(`${createdStoreOwners.length} store owners created`);
 
     // Create sample stores
     const stores = [
@@ -125,7 +168,7 @@ const seedData = async () => {
         ownerId: createdStoreOwners[0]._id,
         image:
           "https://images.unsplash.com/photo-1563013544-824ae1b704d3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
-        phone: "01044444444",
+        phone: "01044444",
         address: "شارع المدرسة، قرية النور",
         description: "بقالية متكاملة تقدم جميع احتياجات المنزل",
         coordinates: {
@@ -146,7 +189,7 @@ const seedData = async () => {
         ownerId: createdStoreOwners[1]._id,
         image:
           "https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
-        phone: "0105555555",
+        phone: "01055555555",
         address: "شارع السوق، قرية النور",
         description: "فواكه و خضروات طازجة يومياً",
         coordinates: {
@@ -166,8 +209,8 @@ const seedData = async () => {
         categoryId: createdCategories[1]._id,
         ownerId: createdStoreOwners[2]._id,
         image:
-          "https://images.unsplash.com/photo-1509440159596-024908772ff?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
-        phone: "010666666",
+          "https://images.unsplash.com/photo-150940159596-024908772ff?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+        phone: "01066666666",
         address: "شارع المصنع، قرية النور",
         description: "مخبز طازج وحلويات متنوعة",
         coordinates: {
@@ -192,7 +235,7 @@ const seedData = async () => {
       await createdStoreOwners[i].save();
     }
 
-    console.log("Stores created");
+    console.log(`${createdStores.length} stores created`);
 
     // Create sample products
     const products = [
@@ -273,15 +316,36 @@ const seedData = async () => {
       },
     ];
 
-    await Product.insertMany(products);
-    console.log("Products created");
+    const createdProducts = await Product.insertMany(products);
+    console.log(`${createdProducts.length} products created`);
 
-    console.log("Database seeding completed successfully!");
+    console.log("🎉 Database seeding completed successfully!");
+    console.log("\nSample login credentials:");
+    console.log("Customer: Phone: 01011111111, Password: 123456");
+    console.log("Customer: Phone: 01022222222, Password: 123456");
+    console.log("Customer: Phone: 01033333333, Password: 123456");
+    console.log("Store Owner: Phone: 01044444444, Password: 123456");
+    console.log("Store Owner: Phone: 01055555555, Password: 123456");
+    console.log("Store Owner: Phone: 01066666666, Password: 123456");
+
     process.exit(0);
   } catch (error) {
-    console.error("Error seeding database:", error);
+    console.error("❌ Error seeding database:", error);
     process.exit(1);
   }
 };
 
-seedData();
+// Parse command line arguments
+const args = process.argv.slice(2);
+const options = {};
+
+if (args.includes("--clear-only") || args.includes("-c")) {
+  options.clearOnly = true;
+}
+
+if (args.includes("--skip-confirmation") || args.includes("-f")) {
+  options.skipConfirmation = true;
+}
+
+// Run the seed function
+seedData(options);

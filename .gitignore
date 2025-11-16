@@ -1,0 +1,152 @@
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Build outputs
+dist/
+build/
+.out/
+.next/
+.nuxt/
+output/
+
+# Temporary folders
+tmp/
+temp/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Bower
+bower_components/
+
+# JSHint
+.jshintrc
+
+# CoffeeScript
+coffeelint.json
+
+# Vim
+[._]*.s[a-w][a-z]
+[._]s[a-w][a-z]
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# Vim swap files
+.sw[a-p]
+[sS]ession.vim
+.netrwhist
+
+# Intellij
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# Eclipse
+.metadata
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.settings/
+.loadpath
+.recommenders
+
+# Visual Studio Code
+.vscode/
+
+# Android
+*.apk
+*.ap_
+
+# iOS
+*.ipa
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+
+# Ruby
+*.gem
+*.rbc
+.bundle/
+.config/
+.yardoc/
+_yardoc/
+doc/
+.rdoc
+.rbx/
+/*.gemspec
+Gemfile.lock
+
+# Go
+*.o
+*.a
+*.so
+*.8
+*.6
+*.5
+*.k
+*.exe
+*.test
+*.prof
+.DS_Store
