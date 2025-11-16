@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { saveCart, getCart, clearCart as clearCartStorage } from '../utils/storage';
+import { saveCart, getCart, clearCart as clearCartStorage, getToken } from '../utils/storage';
 import { offlineDataManager } from '../utils/offlineDataManager';
-import { MOCK_ORDERS } from '../data/orders';
+import { API } from '../services/api';
 import { useAnalytics } from './AnalyticsContext';
 
 // إنشاء سياق سلة التسوق - Create Cart Context
@@ -20,7 +20,7 @@ export const useCart = () => {
 // مزود سياق سلة التسوق - Cart Context Provider Component
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]); // حالة عناصر السلة - Cart items state
-  const [orders, setOrders] = useState(MOCK_ORDERS); // حالة الطلبات - Orders state
+  const [orders, setOrders] = useState([]); // حالة الطلبات - Orders state (will be loaded from API)
   const [isLoading, setIsLoading] = useState(true); // حالة التحميل - Loading state
   const { logProductPurchase } = useAnalytics();
 
@@ -34,16 +34,6 @@ export const CartProvider = ({ children }) => {
     try {
       const cart = await getCart();
       setCartItems(cart);
-
-      // Load orders from storage
-      try {
-        const storedOrders = await AsyncStorage.getItem('orders');
-        if (storedOrders) {
-          setOrders(JSON.parse(storedOrders));
-        }
-      } catch (orderError) {
-        console.error('خطأ في تحميل الطلبات:', orderError); // Error loading orders
-      }
     } catch (error) {
       console.error('خطأ في تحميل السلة:', error); // Error loading cart
     } finally {
@@ -145,52 +135,60 @@ export const CartProvider = ({ children }) => {
     return getCartSubtotal() + getDeliveryFee();
   };
 
-  // دالة إضافة طلب جديد - Function to add a new order
-  const addOrder = async (order) => {
+  // دالة تحميل الطلبات من API - Function to load orders from API
+  const loadOrders = async () => {
     try {
-      console.log('📝 Starting addOrder process...');
-      console.log('📋 Original order data:', JSON.stringify(order, null, 2));
+      const token = await getToken();
 
-      // Clean the order data to ensure no React elements are included
-      const cleanOrder = JSON.parse(JSON.stringify(order));
-
-      console.log('✅ Order cleaned successfully');
-      console.log('🧹 Cleaned order data:', JSON.stringify(cleanOrder, null, 2));
-
-      // Add to state first
-      setOrders((prevOrders) => {
-        const updatedOrders = [cleanOrder, ...prevOrders];
-
-        // Save to AsyncStorage for persistence
-        try {
-          console.log('💾 Saving orders to AsyncStorage...');
-          AsyncStorage.setItem('orders', JSON.stringify(updatedOrders));
-          console.log('✅ Orders saved to AsyncStorage successfully');
-        } catch (storageError) {
-          console.error('❌ Error saving orders to storage:', storageError);
-        }
-
-        // Log product purchases for analytics
-        cleanOrder.items.forEach((item) => {
-          logProductPurchase(item.productId, cleanOrder.storeId, item.quantity);
-        });
-
-        return updatedOrders;
-      });
-
-      // Also save to offline data manager for offline handling
-      if (offlineDataManager) {
-        console.log('🔄 Saving order to offline data manager...');
-        await offlineDataManager.saveOfflineOrder(cleanOrder);
-        console.log('✅ Order saved to offline data manager successfully');
-      } else {
-        console.log('⚠️  Offline data manager not available');
+      if (!token) {
+        throw new Error('غير مصادق عليه'); // Not authenticated
       }
 
-      console.log('🎉 addOrder process completed successfully!');
+      const response = await API.ordersAPI.getMyOrders(token);
+
+      if (response.success) {
+        setOrders(response.data.orders);
+        return { success: true, orders: response.data.orders };
+      } else {
+        throw new Error(response.message || 'حدث خطأ أثناء تحميل الطلبات');
+      }
+    } catch (error) {
+      console.error('❌ Error loading orders:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  // دالة إضافة طلب جديد - Function to add a new order
+  const addOrder = async (orderData) => {
+    try {
+      // Get the token from storage
+      const token = await getToken();
+
+      if (!token) {
+        throw new Error('غير مصادق عليه'); // Not authenticated
+      }
+
+      // Create order via API
+      const response = await API.ordersAPI.createOrder(orderData, token);
+
+      if (response.success) {
+        const newOrder = response.data.order;
+
+        // Add to state
+        setOrders((prevOrders) => [newOrder, ...prevOrders]);
+
+        // Log product purchases for analytics
+        newOrder.items.forEach((item) => {
+          logProductPurchase(item.productId, newOrder.storeId, item.quantity);
+        });
+
+        return { success: true, order: newOrder };
+      } else {
+        throw new Error(response.message || 'حدث خطأ أثناء إنشاء الطلب');
+      }
     } catch (error) {
       console.error('❌ Error adding order:', error);
-      throw error;
+      return { success: false, error: error.message };
     }
   };
 
@@ -204,6 +202,7 @@ export const CartProvider = ({ children }) => {
     updateQuantity,
     clearCart,
     addOrder,
+    loadOrders,
     getCartTotal: getCartTotal,
     getCartItemsCount,
     getCartSubtotal,

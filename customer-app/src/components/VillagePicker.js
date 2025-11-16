@@ -11,7 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { VILLAGES } from '../data/villages';
+import { API } from '../services/api';
 import { getAvailableVillages } from '../utils/locationHelpers';
 import COLORS from '../constants/colors';
 import SIZES from '../constants/sizes';
@@ -38,10 +38,23 @@ const VillagePicker = ({
   const loadVillages = useCallback(async () => {
     setLoading(true);
     try {
-      let availableVillages = VILLAGES.filter((v) => v.isActive);
+      // For now, we'll need to implement a way to get villages from the API
+      // Since there doesn't seem to be a specific API endpoint for villages,
+      // we'll temporarily use an empty array and implement later
+      let availableVillages = [];
 
-      if (currentLocation) {
-        availableVillages = getAvailableVillages(currentLocation, 50);
+      // TODO: Implement API call to get villages
+      // const response = await API.villagesAPI.getVillages();
+      // if (response.success) {
+      //   availableVillages = response.data.villages;
+      // }
+
+      // If current location is provided, filter villages by distance
+      if (currentLocation && availableVillages.length > 0) {
+        availableVillages = getAvailableVillages(availableVillages, currentLocation, 50);
+      } else if (availableVillages.length === 0) {
+        // For now, just set an empty array since we don't have an API endpoint for villages
+        availableVillages = [];
       }
 
       setVillages(availableVillages);
@@ -53,7 +66,9 @@ const VillagePicker = ({
   }, [currentLocation]);
 
   const filteredVillages = villages.filter(
-    (village) => village.name.includes(searchQuery) || village.region.includes(searchQuery)
+    (village) =>
+      (village.name && village.name.includes(searchQuery)) ||
+      (village.region && village.region.includes(searchQuery))
   );
 
   const handleSelectVillage = (village) => {

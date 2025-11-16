@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { CATEGORIES } from '../../data/categories';
+import { API } from '../../services/api';
 import CategoryCard from '../../components/CategoryCard';
 import SearchBar from '../../components/SearchBar';
 import COLORS from '../../constants/colors';
@@ -11,28 +11,42 @@ import SIZES from '../../constants/sizes';
 const CategoriesScreen = () => {
   const navigation = useNavigation();
   const [searchQuery, setSearchQuery] = useState('');
+  const [categories, setCategories] = useState([]);
+
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await API.categoriesAPI.getCategories();
+        if (response.success) {
+          setCategories(response.data.categories);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const filteredCategories = useMemo(() => {
     if (!searchQuery.trim()) {
-      return CATEGORIES;
+      return categories;
     }
-    return CATEGORIES.filter(category =>
+    return categories.filter((category) =>
       category.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [searchQuery]);
+  }, [searchQuery, categories]);
 
   const handleCategoryPress = (category) => {
     navigation.navigate('Home', {
       screen: 'CategoryStores',
-      params: { categoryId: category.id }
+      params: { categoryId: category.id },
     });
   };
 
   const renderCategory = ({ item: category }) => (
-    <CategoryCard
-      category={category}
-      onPress={() => handleCategoryPress(category)}
-    />
+    <CategoryCard category={category} onPress={() => handleCategoryPress(category)} />
   );
 
   return (

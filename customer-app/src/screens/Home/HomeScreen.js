@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,9 +13,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useLocation } from '../../context/LocationProvider';
 import { useCart } from '../../context/CartContext';
 import { useAnalytics } from '../../context/AnalyticsContext';
-import { STORES } from '../../data/stores';
-import { CATEGORIES } from '../../data/categories';
-import { PRODUCTS } from '../../data/products';
+import { API } from '../../services/api';
 import StoreCard from '../../components/StoreCard';
 import CategoryCard from '../../components/CategoryCard';
 import ProductCard from '../../components/ProductCard';
@@ -48,31 +46,72 @@ const HomeScreen = ({ navigation }) => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [nearbyStores, setNearbyStores] = useState([]);
   const [randomProducts, setRandomProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
 
   useEffect(() => {
     // Use availableStores from context instead of local filtering
     setNearbyStores(availableStores);
   }, [availableStores]);
 
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await API.categoriesAPI.getCategories();
+        if (response.success) {
+          setCategories(response.data.categories);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  // Fetch products and update random products
+  useEffect(() => {
+    const fetchProducts = async () => {
+      // For now, we'll use a simplified approach since we don't have an API to fetch all products
+      // We'll generate random products from available stores
+      try {
+        // Generate random products based on available stores
+        const randomStoreProducts = [];
+        availableStores.forEach((store) => {
+          // In a real implementation, we would fetch products for each store
+          // For now, we'll create placeholder products
+        });
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      }
+    };
+
+    fetchProducts();
+  }, [availableStores]);
+
   useEffect(() => {
     if (selectedCategory) {
-      const categoryProducts = PRODUCTS.filter(p => p.categoryId === selectedCategory.id);
-      const shuffled = categoryProducts.sort(() => 0.5 - Math.random());
+      // In a real implementation, we would filter products by category
+      // For now, we'll generate some random products
+      const shuffled = allProducts
+        .filter((p) => p.categoryId === selectedCategory.id)
+        .sort(() => 0.5 - Math.random());
       setRandomProducts(shuffled.slice(0, 5));
     } else {
       const topProductData = getTopProducts(5);
       if (topProductData.length > 0) {
-        const topProductIds = topProductData.map(p => p.productId);
-        const topProducts = PRODUCTS.filter(p => topProductIds.includes(p.id));
+        const topProductIds = topProductData.map((p) => p.productId);
+        // In a real implementation, we would get these products from the API
+        const topProducts = allProducts.filter((p) => topProductIds.includes(p.id));
         setRandomProducts(topProducts);
       } else {
         // Fallback to random products if no analytics data
-        const shuffled = PRODUCTS.sort(() => 0.5 - Math.random());
+        const shuffled = allProducts.sort(() => 0.5 - Math.random());
         setRandomProducts(shuffled.slice(0, 5));
       }
     }
-  }, [selectedCategory, getTopProducts]);
-
+  }, [selectedCategory, getTopProducts, allProducts]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -91,7 +130,6 @@ const HomeScreen = ({ navigation }) => {
       setSelectedCategory(category);
     }
   };
-
 
   const filteredStores = nearbyStores.filter((store) => {
     const matchesSearch =
@@ -113,13 +151,17 @@ const HomeScreen = ({ navigation }) => {
         <View key={i} style={styles.productsRow}>
           <ProductCard
             product={randomProducts[i]}
-            onPress={() => navigation.navigate('StoreDetails', { storeId: randomProducts[i].storeId })}
+            onPress={() =>
+              navigation.navigate('StoreDetails', { storeId: randomProducts[i].storeId })
+            }
             onAddToCart={addToCart}
           />
           {randomProducts[i + 1] && (
             <ProductCard
               product={randomProducts[i + 1]}
-              onPress={() => navigation.navigate('StoreDetails', { storeId: randomProducts[i + 1].storeId })}
+              onPress={() =>
+                navigation.navigate('StoreDetails', { storeId: randomProducts[i + 1].storeId })
+              }
               onAddToCart={addToCart}
             />
           )}
@@ -136,8 +178,7 @@ const HomeScreen = ({ navigation }) => {
         <View style={styles.locationContainer}>
           <MaterialIcons name="location-on" size={20} color={COLORS.primary} />
           <Text style={styles.locationText} numberOfLines={1}>
-            {(userLocation ? 'موقعك الحالي' :
-             (gpsEnabled ? 'تحديد الموقع...' : 'GPS غير متاح'))}
+            {userLocation ? 'موقعك الحالي' : gpsEnabled ? 'تحديد الموقع...' : 'GPS غير متاح'}
           </Text>
         </View>
 
@@ -181,7 +222,7 @@ const HomeScreen = ({ navigation }) => {
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>الفئات</Text>
               <FlatList
-                data={CATEGORIES}
+                data={categories}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 keyExtractor={(item) => item.id}
@@ -252,9 +293,9 @@ const HomeScreen = ({ navigation }) => {
                 message={
                   gpsEnabled
                     ? `لا توجد متاجر متاحة في نطاق ${deliveryRadius} كم من موقعك`
-                    : "GPS غير متاح. يرجى تفعيل GPS لعرض المتاجر المتاحة"
+                    : 'GPS غير متاح. يرجى تفعيل GPS لعرض المتاجر المتاحة'
                 }
-                actionText={gpsEnabled ? "زيادة نطاق التوصيل" : "تفعيل GPS"}
+                actionText={gpsEnabled ? 'زيادة نطاق التوصيل' : 'تفعيل GPS'}
                 onActionPress={() => {
                   if (gpsEnabled) {
                     updateDeliveryRadius(Math.min(deliveryRadius + 5, 20));
@@ -269,11 +310,11 @@ const HomeScreen = ({ navigation }) => {
             {randomProducts.length > 0 && (
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>
-                  {selectedCategory ? `منتجات من ${selectedCategory.name}` : 'المنتجات الأكثر شراءً'}
+                  {selectedCategory
+                    ? `منتجات من ${selectedCategory.name}`
+                    : 'المنتجات الأكثر شراءً'}
                 </Text>
-                <View style={styles.productsGrid}>
-                  {renderProductsGrid()}
-                </View>
+                <View style={styles.productsGrid}>{renderProductsGrid()}</View>
               </View>
             )}
 
@@ -286,7 +327,9 @@ const HomeScreen = ({ navigation }) => {
                 <Text style={styles.actionText}>طلباتي</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Cart')}>
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => navigation.navigate('Cart')}>
                 <MaterialIcons name="shopping-cart" size={24} color={COLORS.primary} />
                 <Text style={styles.actionText}>السلة</Text>
               </TouchableOpacity>
@@ -295,7 +338,6 @@ const HomeScreen = ({ navigation }) => {
         )}
         keyExtractor={(item) => item.key}
       />
-
     </View>
   );
 };

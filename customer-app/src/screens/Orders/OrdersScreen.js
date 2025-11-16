@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { STORES } from '../../data/stores';
-import { PRODUCTS } from '../../data/products';
+import { API } from '../../services/api';
 import { formatPrice } from '../../utils/helpers';
 import Header from '../../components/Header';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -66,50 +65,21 @@ const OrdersScreen = ({ navigation }) => {
 
   const loadOrders = useCallback(async () => {
     try {
-      // Use orders from CartContext instead of mock data
-      setTimeout(() => {
-        if (!cartOrders || !Array.isArray(cartOrders)) {
-          setOrders([]);
-          setLoading(false);
-          return;
-        }
-
-        const enrichedOrders = cartOrders
-          .map((order, index) => {
-            if (!order || typeof order !== 'object') {
-              return null;
-            }
-
-            const store = STORES.find((s) => s.id === order.storeId);
-            const enrichedItems =
-              order.items?.map((item) => {
-                const product = PRODUCTS.find((p) => p.id === item.productId);
-                return {
-                  ...item,
-                  name: product?.name || 'منتج غير معروف',
-                  image: product?.image || '',
-                };
-              }) || [];
-
-            return {
-              ...order,
-              storeName: store?.name || 'متجر غير معروف',
-              storeImage: store?.image || '',
-              items: enrichedItems,
-            };
-          })
-          .filter(Boolean); // Remove null entries
-
-        setOrders(enrichedOrders);
-        setLoading(false);
-
-        // Debug: Check if filterOrders will be triggered after setting orders
-      }, 1000);
+      // Fetch orders from API instead of using mock data
+      const response = await API.ordersAPI.getOrders();
+      if (response.success) {
+        const apiOrders = response.data.orders;
+        setOrders(apiOrders);
+      } else {
+        setOrders([]);
+      }
     } catch (error) {
       console.error('❌ Error loading orders:', error);
+      setOrders([]);
+    } finally {
       setLoading(false);
     }
-  }, [cartOrders]);
+  }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);

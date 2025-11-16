@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Keys
 const CART_KEY = 'cart';
 const USER_KEY = 'user';
+const TOKEN_KEY = 'token';
 
 // Helper function to safely parse JSON and handle type conversion
 const safeJsonParse = (data, defaultValue = null) => {
@@ -113,5 +114,32 @@ export const removeUser = async () => {
     await AsyncStorage.removeItem(USER_KEY);
   } catch (error) {
     console.error('Error removing user:', error);
+  }
+};
+
+// Token Storage
+export const saveToken = async (token) => {
+  try {
+    await AsyncStorage.setItem(TOKEN_KEY, token);
+  } catch (error) {
+    console.error('Error saving token:', error);
+  }
+};
+
+export const getToken = async () => {
+  try {
+    const token = await AsyncStorage.getItem(TOKEN_KEY);
+    return token;
+  } catch (error) {
+    console.error('Error getting token:', error);
+    return null;
+  }
+};
+
+export const removeToken = async () => {
+  try {
+    await AsyncStorage.removeItem(TOKEN_KEY);
+  } catch (error) {
+    console.error('Error removing token:', error);
   }
 };

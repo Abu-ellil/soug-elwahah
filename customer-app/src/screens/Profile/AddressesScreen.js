@@ -7,10 +7,16 @@ import Header from '../../components/Header';
 import RTLText from '../../components/RTLText';
 import COLORS from '../../constants/colors';
 import SIZES from '../../constants/sizes';
-import { MOCK_ADDRESSES } from '../../data/addresses'; // Assuming you create this file
+import { API } from '../../services/api';
 
 const AddressesScreen = ({ navigation, route }) => {
-  const [addresses, setAddresses] = useState(MOCK_ADDRESSES);
+  const [addresses, setAddresses] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Load addresses from API
+  useEffect(() => {
+    loadAddresses();
+  }, []);
 
   // Check if a new address was added
   React.useEffect(() => {
@@ -20,6 +26,22 @@ const AddressesScreen = ({ navigation, route }) => {
       navigation.setParams({ newAddress: undefined });
     }
   }, [route.params?.newAddress, navigation]);
+
+  const loadAddresses = async () => {
+    try {
+      const response = await API.addressesAPI.getAddresses();
+      if (response.success) {
+        setAddresses(response.data.addresses);
+      } else {
+        setAddresses([]);
+      }
+    } catch (error) {
+      console.error('Error loading addresses:', error);
+      setAddresses([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSetDefault = (id) => {
     const updatedAddresses = addresses.map((addr) => ({

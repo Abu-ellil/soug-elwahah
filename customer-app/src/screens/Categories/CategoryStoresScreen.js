@@ -3,45 +3,65 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } fr
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useLocation } from '../../context/LocationProvider';
-import { STORES } from '../../data/stores';
-import { CATEGORIES } from '../../data/categories';
 import StoreCard from '../../components/StoreCard';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
 import RangeSelector from '../../components/RangeSelector';
 import COLORS from '../../constants/colors';
 import { calculateDistance } from '../../utils/distance';
+import { API } from '../../services/api';
 
 const CategoryStoresScreen = ({ route }) => {
   const navigation = useNavigation();
-  const { userLocation, deliveryRadius, availableStores, gpsEnabled, updateDeliveryRadius } = useLocation();
+  const { userLocation, deliveryRadius, availableStores, gpsEnabled, updateDeliveryRadius } =
+    useLocation();
   const { categoryId } = route.params;
 
   const [refreshing, setRefreshing] = useState(false);
+  const [category, setCategory] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Get category info
-  const category = useMemo(() => {
-    return CATEGORIES.find((cat) => cat.id === categoryId);
+  // Fetch category info from API
+  useEffect(() => {
+    const fetchCategory = async () => {
+      try {
+        setLoading(true);
+        const response = await API.categoriesAPI.getCategories();
+        if (response.success) {
+          const foundCategory = response.data.categories.find((cat) => cat.id === categoryId);
+          setCategory(foundCategory);
+        }
+      } catch (error) {
+        console.error('Error fetching category:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategory();
   }, [categoryId]);
 
   // Filter stores by category and location
   const categoryStores = useMemo(() => {
     if (!category) return [];
 
-    // Get stores that are both in the category and within the delivery radius
-    const categoryStoreIds = STORES
-      .filter((store) => store.categoryId === categoryId)
-      .map(store => store.id);
-
-    return availableStores.filter((store) => categoryStoreIds.includes(store.id));
+    return availableStores.filter((store) => store.categoryId === categoryId);
   }, [category, categoryId, availableStores]);
 
-  const onRefresh = () => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    // Simulate refresh
-    setTimeout(() => {
+    try {
+      // Refresh categories
+      const response = await API.categoriesAPI.getCategories();
+      if (response.success) {
+        const foundCategory = response.data.categories.find((cat) => cat.id === categoryId);
+        setCategory(foundCategory);
+      }
+    } catch (error) {
+      console.error('Error refreshing categories:', error);
+    } finally {
       setRefreshing(false);
-    }, 1000);
+    }
   };
 
   const handleStorePress = (store) => {
@@ -100,6 +120,10 @@ const CategoryStoresScreen = ({ route }) => {
       }
     />
   );
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
   if (!category) {
     return (

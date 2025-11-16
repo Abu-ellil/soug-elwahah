@@ -12,9 +12,7 @@ import ImageWithFallback from '../../components/ImageWithFallback';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRoute, useFocusEffect } from '@react-navigation/native';
 import { useLocation } from '../../context/LocationProvider';
-import { STORES } from '../../data/stores';
-import { PRODUCTS } from '../../data/products';
-import { CATEGORIES } from '../../data/categories';
+import { API } from '../../services/api';
 import ProductCard from '../../components/ProductCard';
 import Header from '../../components/Header';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -47,14 +45,15 @@ const StoreDetailsScreen = ({ navigation, route }) => {
   const loadStoreData = useCallback(async () => {
     setLoading(true);
     try {
-      // Find store
-      const foundStore = STORES.find((s) => s.id === storeId);
-      if (!foundStore) {
+      // Get store details from API
+      const storeResponse = await API.storesAPI.getStoreDetails(storeId);
+      if (!storeResponse.success) {
         Alert.alert('خطأ', 'المتجر غير موجود');
         navigation.goBack();
         return;
       }
 
+      const foundStore = storeResponse.data.store;
       setStore(foundStore);
 
       // Calculate distance from user location
@@ -68,16 +67,27 @@ const StoreDetailsScreen = ({ navigation, route }) => {
         setStoreDistance(distance);
       }
 
-      // Get products for this store
-      const products = PRODUCTS.filter((p) => p.storeId === storeId);
-      setStoreProducts(products);
+      // Get products for this store from API
+      const productsResponse = await API.storesAPI.getStoreProducts(storeId);
+      if (productsResponse.success) {
+        setStoreProducts(productsResponse.data.products);
 
-      // Get store categories
-      const storeCategories = CATEGORIES.filter((cat) =>
-        products.some((p) => p.categoryId === cat.id)
-      );
-      setCategories(storeCategories);
+        // Get unique category IDs from products
+        const uniqueCategoryIds = [
+          ...new Set(productsResponse.data.products.map((p) => p.categoryId)),
+        ];
+
+        // Get categories from API
+        const categoriesResponse = await API.categoriesAPI.getCategories();
+        if (categoriesResponse.success) {
+          const storeCategories = categoriesResponse.data.categories.filter((cat) =>
+            uniqueCategoryIds.includes(cat.id)
+          );
+          setCategories(storeCategories);
+        }
+      }
     } catch (error) {
+      console.error('Error loading store data:', error);
       Toast.show({
         type: 'error',
         text1: 'خطأ',
@@ -86,7 +96,7 @@ const StoreDetailsScreen = ({ navigation, route }) => {
     } finally {
       setLoading(false);
     }
-  }, [storeId, navigation]);
+  }, [storeId, navigation, userLocation]);
 
   const filteredProducts = selectedCategory
     ? storeProducts.filter((product) => product.categoryId === selectedCategory.id)
@@ -283,9 +293,7 @@ const StoreDetailsScreen = ({ navigation, route }) => {
             </Text>
           )}
           {gpsEnabled && (
-            <Text style={styles.storeInfoText}>
-              نطاق التوصيل الحالي: {deliveryRadius} كم
-            </Text>
+            <Text style={styles.storeInfoText}>نطاق التوصيل الحالي: {deliveryRadius} كم</Text>
           )}
         </TouchableOpacity>
       </ScrollView>

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { MOCK_USERS } from '../data/users';
-import { saveUser, getUser, removeUser } from '../utils/storage';
+import { API } from '../services/api';
+import { saveUser, getUser, removeUser, saveToken, getToken, removeToken } from '../utils/storage';
 
 // إنشاء سياق المصادقة - Create Auth Context
 const AuthContext = createContext();
@@ -18,6 +18,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null); // حالة المستخدم الحالي - Current user state
   const [isLoading, setIsLoading] = useState(true); // حالة التحميل - Loading state
+  const [token, setToken] = useState(null); // حالة التوكن - Token state
 
   // تحميل بيانات المستخدم عند تحميل المكون - Load user data on component mount
   useEffect(() => {
@@ -28,8 +29,11 @@ export const AuthProvider = ({ children }) => {
   const loadUser = async () => {
     try {
       const user = await getUser();
-      if (user) {
+      const token = await getToken();
+
+      if (user && token) {
         setCurrentUser(user);
+        setToken(token);
       }
     } catch (error) {
       console.error('خطأ في تحميل المستخدم:', error); // Error loading user
@@ -41,55 +45,65 @@ export const AuthProvider = ({ children }) => {
   // دالة تسجيل الدخول - Login function
   const login = async (phone, password) => {
     try {
-      // البحث عن المستخدم في البيانات المحاكاة - Search for user in mock data
-      const user = MOCK_USERS.find((u) => u.phone === phone && u.password === password);
+      const response = await API.authAPI.login({ phone, password });
 
-      if (user) {
+      if (response.success) {
+        const {
+          data: { user },
+          token,
+        } = response;
+
+        // Save token and user data
+        setToken(token);
+        await saveToken(token);
+
+        // Remove password from user data before saving
         const userData = { ...user };
-        delete userData.password; // لا نحفظ كلمة المرور - Do not save password
+        delete userData.password;
         setCurrentUser(userData);
         await saveUser(userData); // حفظ المستخدم في التخزين المحلي - Save user to local storage
-        return { success: true };
+
+        return { success: true, user: userData };
       } else {
-        return { success: false, error: 'رقم الموبايل أو كلمة المرور غير صحيحة' }; // Incorrect phone number or password
+        return {
+          success: false,
+          error: response.message || 'رقم الموبايل أو كلمة المرور غير صحيحة',
+        }; // Incorrect phone number or password
       }
     } catch (error) {
       console.error('خطأ في تسجيل الدخول:', error); // Login error
-      return { success: false, error: 'حدث خطأ أثناء تسجيل الدخول' }; // An error occurred during login
+      return { success: false, error: error.message || 'حدث خطأ أثناء تسجيل الدخول' }; // An error occurred during login
     }
   };
 
   // دالة التسجيل - Register function
   const register = async (userData) => {
     try {
-      // التحقق من وجود المستخدم - Check if user already exists
-      const existingUser = MOCK_USERS.find((u) => u.phone === userData.phone);
+      const response = await API.authAPI.registerCustomer(userData);
 
-      if (existingUser) {
-        return { success: false, error: 'رقم الموبايل مسجل بالفعل' }; // Phone number already registered
+      if (response.success) {
+        const {
+          data: { user },
+          token,
+        } = response;
+
+        // Save token and user data
+        setToken(token);
+        await saveToken(token);
+
+        // Remove password from user data before saving
+        const userDataToSave = { ...user };
+        delete userDataToSave.password;
+        setCurrentUser(userDataToSave);
+        await saveUser(userDataToSave); // حفظ المستخدم في التخزين المحلي - Save user to local storage
+
+        return { success: true, user: userDataToSave };
+      } else {
+        return { success: false, error: response.message || 'حدث خطأ أثناء التسجيل' }; // An error occurred during registration
       }
-
-      // إنشاء مستخدم جديد - Create new user
-      const newUser = {
-        id: `user${Date.now()}`,
-        name: userData.name,
-        phone: userData.phone,
-        password: userData.password,
-        addresses: [],
-      };
-
-      // حفظ المستخدم الجديد (في التطبيق الحقيقي سيتم إرساله للسيرفر) - Save new user (in a real app, it would be sent to the server)
-      MOCK_USERS.push(newUser);
-
-      const userDataToSave = { ...newUser };
-      delete userDataToSave.password;
-      setCurrentUser(userDataToSave);
-      await saveUser(userDataToSave); // حفظ المستخدم في التخزين المحلي - Save user to local storage
-
-      return { success: true };
     } catch (error) {
       console.error('خطأ في التسجيل:', error); // Register error
-      return { success: false, error: 'حدث خطأ أثناء التسجيل' }; // An error occurred during registration
+      return { success: false, error: error.message || 'حدث خطأ أثناء التسجيل' }; // An error occurred during registration
     }
   };
 
@@ -97,14 +111,40 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       setCurrentUser(null);
+      setToken(null);
       await removeUser(); // إزالة المستخدم من التخزين المحلي - Remove user from local storage
+      await removeToken(); // Remove token from storage
     } catch (error) {
       console.error('خطأ في تسجيل الخروج:', error); // Logout error
     }
   };
 
+  // دالة تحديث الملف الشخصي - Update profile function
+  const updateProfile = async (profileData) => {
+    if (!token) {
+      return { success: false, error: 'غير مصادق عليه' }; // Not authenticated
+    }
+
+    try {
+      const response = await API.profileAPI.updateProfile(profileData, token);
+
+      if (response.success) {
+        const updatedUser = { ...response.data.user };
+        delete updatedUser.password;
+        setCurrentUser(updatedUser);
+        await saveUser(updatedUser);
+        return { success: true, user: updatedUser };
+      } else {
+        return { success: false, error: response.message };
+      }
+    } catch (error) {
+      console.error('خطأ في تحديث الملف الشخصي:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
   // التحقق مما إذا كان المستخدم مصادقًا - Check if user is authenticated
-  const isAuthenticated = !!currentUser;
+  const isAuthenticated = !!currentUser && !!token;
 
   // القيم التي يوفرها السياق - Values provided by the context
   const value = {
@@ -114,6 +154,8 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
+    updateProfile,
+    token,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

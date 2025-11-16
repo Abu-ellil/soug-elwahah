@@ -13,7 +13,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { useCart } from '../../context/CartContext';
 import { useLocation } from '../../context/LocationProvider';
-import { STORES } from '../../data/stores';
+import { API } from '../../services/api';
 import Header from '../../components/Header';
 import COLORS from '../../constants/colors';
 import SIZES from '../../constants/sizes';
@@ -119,14 +119,15 @@ const CheckoutScreen = ({ navigation }) => {
       const randomNum = Math.floor(Math.random() * 1000);
       const orderId = `ord${timestamp}${randomNum}`;
 
+      // Get store details from API
+      const storeResponse = await API.storesAPI.getStoreDetails(firstItem.storeId);
+      const storeName = storeResponse.success ? storeResponse.data.store.name : `متجر ${firstItem.storeId}`;
+
       const newOrder = {
         id: orderId,
         userId: 'user1', // Assuming a logged-in user
         storeId: firstItem.storeId,
-        storeName:
-          STORES.find((store) => store.id === firstItem.storeId)?.name ||
-          `متجر ${firstItem.storeId}` ||
-          'متجر غير معروف',
+        storeName: storeName,
         customerInfo: {
           name: customerInfo.name,
           phone: customerInfo.phone,

@@ -14,7 +14,6 @@ import Header from '../../components/Header';
 import RTLText from '../../components/RTLText';
 import COLORS from '../../constants/colors';
 import SIZES from '../../constants/sizes';
-import { VILLAGES } from '../../data/villages';
 import { useLocation } from '../../context/LocationProvider';
 
 const AddAddressScreen = ({ navigation }) => {
@@ -45,8 +44,10 @@ const AddAddressScreen = ({ navigation }) => {
               address.street,
               address.streetNumber,
               address.district,
-              address.subregion
-            ].filter(Boolean).join(', ');
+              address.subregion,
+            ]
+              .filter(Boolean)
+              .join(', ');
 
             if (streetAddress && !street.trim()) {
               setStreet(streetAddress);
@@ -78,7 +79,7 @@ const AddAddressScreen = ({ navigation }) => {
 
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Here you would save to backend/storage
       const newAddress = {
@@ -172,9 +173,7 @@ const AddAddressScreen = ({ navigation }) => {
               <View style={[styles.checkbox, isDefault && styles.checkboxChecked]}>
                 {isDefault && <Text style={styles.checkmark}>✓</Text>}
               </View>
-              <RTLText style={styles.checkboxLabel}>
-                نعم، اجعل هذا العنوان الافتراضي
-              </RTLText>
+              <RTLText style={styles.checkboxLabel}>نعم، اجعل هذا العنوان الافتراضي</RTLText>
             </TouchableOpacity>
           </View>
 

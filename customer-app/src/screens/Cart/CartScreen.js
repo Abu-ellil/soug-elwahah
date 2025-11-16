@@ -3,7 +3,7 @@ import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react
 import { MaterialIcons } from '@expo/vector-icons';
 import { useCart } from '../../context/CartContext';
 import { useLocation } from '../../context/LocationProvider';
-import { STORES } from '../../data/stores';
+import { API } from '../../services/api';
 import CartItem from '../../components/CartItem';
 import Header from '../../components/Header';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -33,12 +33,25 @@ const CartScreen = ({ navigation }) => {
     loadStores();
   }, [loadStores]);
 
-  const loadStores = useCallback(() => {
+  const loadStores = useCallback(async () => {
     const cartStoreIds = [...new Set(cartItems.map((item) => item.storeId))];
-    const cartStores = cartStoreIds
-      .map((storeId) => STORES.find((store) => store.id === storeId))
-      .filter(Boolean);
-    setStores(cartStores);
+
+    // Fetch store details from API
+    const storePromises = cartStoreIds.map((storeId) => API.storesAPI.getStoreDetails(storeId));
+
+    try {
+      const storeResponses = await Promise.all(storePromises);
+      const cartStores = storeResponses
+        .filter((response) => response.success)
+        .map((response) => response.data.store)
+        .filter(Boolean);
+
+      setStores(cartStores);
+    } catch (error) {
+      console.error('Error loading stores:', error);
+      // Fallback to empty array if API fails
+      setStores([]);
+    }
   }, [cartItems]);
 
   const handleClearCart = () => {
