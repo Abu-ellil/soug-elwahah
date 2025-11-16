@@ -150,7 +150,9 @@ const HomeScreen = ({ navigation }) => {
         <TouchableOpacity onPress={handleLocationPress} style={styles.locationContainer}>
           <MaterialIcons name="location-on" size={20} color={COLORS.primary} />
           <Text style={styles.locationText} numberOfLines={1}>
-            {currentVillage?.name || (gpsEnabled ? 'تحديد الموقع...' : 'GPS غير متاح')}
+            {currentVillage?.name ||
+             (userLocation ? 'منطقة خارج نطاق الخدمة' :
+              (gpsEnabled ? 'تحديد الموقع...' : 'GPS غير متاح'))}
           </Text>
           <MaterialIcons name="keyboard-arrow-down" size={20} color={COLORS.gray} />
         </TouchableOpacity>
@@ -180,9 +182,9 @@ const HomeScreen = ({ navigation }) => {
           <RangeSelector
             value={deliveryRadius}
             onValueChange={updateDeliveryRadius}
-            min={10}
-            max={200}
-            step={5}
+            min={1}
+            max={50}
+            step={1}
             unit="كم"
             title="نطاق التوصيل"
           />

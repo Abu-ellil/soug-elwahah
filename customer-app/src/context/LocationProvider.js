@@ -8,6 +8,7 @@ import {
   isWithinAnyVillageRadius
 } from '../utils/locationHelpers';
 import { VILLAGES } from '../data/villages';
+import { STORES } from '../data/stores';
 
 // إنشاء سياق الموقع - Create Location Context
 const LocationContext = createContext();
@@ -73,6 +74,7 @@ export const LocationProvider = ({ children }) => {
       if (hasPermission) {
         await getCurrentLocation();
       } else {
+        console.log('GPS permission denied, using fallback');
         // GPS غير متاح، استخدم القيم الافتراضية - GPS not available, use defaults
         setAvailableVillages(VILLAGES.filter(v => v.isActive));
         updateAvailableStores();
@@ -94,8 +96,9 @@ export const LocationProvider = ({ children }) => {
       const stores = getStoresWithinRadius(userLocation, deliveryRadius);
       setAvailableStores(stores);
     } else {
-      // إذا لم يكن هناك موقع، اعرض جميع المتاجر المفتوحة - If no location, show all open stores
-      setAvailableStores([]);
+      // إذا لم يكن هناك موقع، اعرض جميع المتاجر المفتوحة من جميع القرى - If no location, show all open stores from all villages
+      const allStores = STORES.filter(store => store.isOpen);
+      setAvailableStores(allStores);
     }
   };
 
@@ -129,7 +132,13 @@ export const LocationProvider = ({ children }) => {
 
       // تحديد القرية الأقرب - Find nearest village
       const nearestVillage = getNearestVillage(newLocation);
-      setCurrentVillage(nearestVillage);
+
+      // إذا كانت القرية بعيدة جداً (أكثر من 50 كم)، لا نعتبرها قرية حالية - If village is too far (more than 50km), don't set it as current village
+      if (nearestVillage && nearestVillage.distance <= 50) {
+        setCurrentVillage(nearestVillage);
+      } else {
+        setCurrentVillage(null);
+      }
 
       // تحميل القرى المتاحة لهذا الموقع - Load available villages for this location
       const villages = getAvailableVillages(newLocation, 50);
