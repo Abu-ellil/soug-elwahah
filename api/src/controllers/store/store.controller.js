@@ -1,6 +1,14 @@
 const Store = require("../../models/Store");
 const StoreOwner = require("../../models/StoreOwner");
 const cloudinary = require("cloudinary").v2;
+const admin = require("../../config/firebase");
+
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 // Configure Cloudinary
 cloudinary.config({
@@ -83,15 +91,53 @@ const updateStoreImage = async (req, res) => {
         .json({ success: false, message: "المحل غير موجود" });
     }
 
-    // Upload image to Cloudinary
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: "stores",
-    });
+    let imageUrl = "";
+
+    if (req.file.path) {
+      // File was uploaded to disk (local environment), use Cloudinary
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "stores",
+      });
+      imageUrl = result.secure_url;
+    } else if (req.file.buffer) {
+      // File is in memory (serverless environment), upload to Firebase Storage
+      if (admin && admin.storage) {
+        const bucket = admin.storage().bucket(); // Get the default bucket
+        const fileName = `store-images/storeImage-${Date.now()}-${Math.round(
+          Math.random() * 1e9
+        )}-${req.file.originalname}`;
+        const file = bucket.file(fileName);
+
+        const stream = file.createWriteStream({
+          metadata: {
+            contentType: req.file.mimetype,
+          },
+        });
+
+        await new Promise((resolve, reject) => {
+          stream.on("error", reject);
+          stream.on("finish", resolve);
+          stream.end(req.file.buffer);
+        });
+
+        // Make the file publicly readable
+        await file.makePublic();
+
+        // Get the public URL
+        imageUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+      } else {
+        // Firebase not configured, return error
+        return res.status(400).json({
+          success: false,
+          message: "لا يمكن رفع الصورة في الوقت الحالي",
+        });
+      }
+    }
 
     // Update store image
     const updatedStore = await Store.findOneAndUpdate(
       { ownerId: req.userId },
-      { image: result.secure_url, updatedAt: Date.now() },
+      { image: imageUrl, updatedAt: Date.now() },
       { new: true }
     ).populate("categoryId", "name nameEn icon color");
 
@@ -134,45 +180,52 @@ const toggleStoreStatus = async (req, res) => {
 // Get all public stores (no authentication required)
 const getAllStores = async (req, res) => {
   try {
-    const { categoryId, search, minRating, maxDeliveryTime, page = 1, limit = 10 } = req.query;
-    
+    const {
+      categoryId,
+      search,
+      minRating,
+      maxDeliveryTime,
+      page = 1,
+      limit = 10,
+    } = req.query;
+
     // Build query for public stores only
     let query = { isActive: true, isOpen: true };
-    
+
     // Add filters if provided
     if (categoryId) {
       query.categoryId = categoryId;
     }
-    
+
     if (search) {
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
+        { name: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
       ];
     }
-    
+
     if (minRating) {
       query.rating = { $gte: parseFloat(minRating) };
     }
-    
+
     if (maxDeliveryTime) {
       query.maxDeliveryTime = { $lte: parseInt(maxDeliveryTime) };
     }
-    
+
     // Calculate pagination
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    
+
     // Get stores with populated category info
     const stores = await Store.find(query)
-      .populate('categoryId', 'name nameEn icon color')
-      .populate('ownerId', 'name phone') // Only basic owner info
+      .populate("categoryId", "name nameEn icon color")
+      .populate("ownerId", "name phone") // Only basic owner info
       .skip(skip)
       .limit(parseInt(limit))
       .sort({ createdAt: -1 });
-    
+
     // Get total count for pagination
     const total = await Store.countDocuments(query);
-    
+
     res.status(200).json({
       success: true,
       data: {
@@ -181,14 +234,14 @@ const getAllStores = async (req, res) => {
           page: parseInt(page),
           limit: parseInt(limit),
           total,
-          pages: Math.ceil(total / parseInt(limit))
-        }
+          pages: Math.ceil(total / parseInt(limit)),
+        },
       },
-      message: 'تم جلب المتاجر بنجاح'
+      message: "تم جلب المتاجر بنجاح",
     });
   } catch (error) {
-    console.error('Get all stores error:', error);
-    res.status(500).json({ success: false, message: 'خطأ في الخادم' });
+    console.error("Get all stores error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
   }
 };
 
@@ -217,7 +270,7 @@ const updateStoreCoordinates = async (req, res) => {
       {
         pendingCoordinates: {
           lat: parseFloat(coordinates.lat),
-          lng: parseFloat(coordinates.lng)
+          lng: parseFloat(coordinates.lng),
         },
         updatedAt: Date.now(),
       },

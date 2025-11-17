@@ -18,72 +18,9 @@ import { Product as ProductType } from '@/types/order';
 import { productsAPI } from '@/lib/api/products';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 
-// Mock data - will be replaced with actual API calls
-const mockProducts: ProductType[] = [
- {
-    id: '1',
-    storeId: '1',
-    name: 'أرز أبيض',
-    description: 'أرز أبيض عالي الجودة',
-    image: '/placeholder-product.jpg',
-    price: 15,
-    category: 'أرز',
-    availability: 'available',
-    totalSold: 124,
-    createdAt: '2023-01-15T10:30:00Z',
-  },
-  {
-    id: '2',
-    storeId: '1',
-    name: 'زيت طعام',
-    description: 'زيت دوار الشمس 1 لتر',
-    image: '/placeholder-product.jpg',
-    price: 20,
-    category: 'زيوت',
-    availability: 'available',
-    totalSold: 89,
-    createdAt: '2023-02-20T14:45:00Z',
-  },
-  {
-    id: '3',
-    storeId: '2',
-    name: 'سكر أبيض',
-    description: 'سكر أبيض ناعم 1 كجم',
-    image: '/placeholder-product.jpg',
-    price: 12,
-    category: 'سكريات',
-    availability: 'out_of_stock',
-    totalSold: 56,
-    createdAt: '2023-03-10T09:15:00Z',
- },
-  {
-    id: '4',
-    storeId: '3',
-    name: 'شاي أخضر',
-    description: 'شاي أخضر 50 كيس',
-    image: '/placeholder-product.jpg',
-    price: 8,
-    category: 'شاي',
-    availability: 'available',
-    totalSold: 201,
-    createdAt: '2023-04-05T16:20:00Z',
-  },
-  {
-    id: '5',
-    storeId: '4',
-    name: 'حليب بودرة',
-    description: 'حليب بودرة كامل الدسم 400 جم',
-    image: '/placeholder-product.jpg',
-    price: 35,
-    category: 'ألبان',
-    availability: 'available',
-    totalSold: 76,
-    createdAt: '2023-05-12T11:30:00Z',
-  },
-];
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<ProductType[]>(mockProducts);
+  const [products, setProducts] = useState<ProductType[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -91,13 +28,28 @@ export default function ProductsPage() {
   const [totalProducts, setTotalProducts] = useState(0);
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setProducts(mockProducts);
-      setTotalProducts(mockProducts.length);
-      setLoading(false);
-    }, 10);
-  }, []);
+    const fetchProducts = async () => {
+      try {
+        const response = await productsAPI.getAll({
+                  page: 1,
+                  limit: 50,
+                  search: searchTerm,
+                  categoryId: categoryFilter !== 'all' ? categoryFilter : undefined,
+                  availability: availabilityFilter !== 'all' ? availabilityFilter : undefined
+                });
+        setProducts(response.data.products || []);
+        setTotalProducts(response.data.total || 0);
+      } catch (error) {
+        console.error('Error fetching products:', error);
+        setProducts([]);
+        setTotalProducts(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [searchTerm, categoryFilter, availabilityFilter]);
 
   // Define columns for the data table
   const columns = [

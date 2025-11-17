@@ -10,16 +10,16 @@ const app = express();
 
 // CORS configuration - Allow specific origins when using credentials
 const allowedOrigins = [
-  'http://localhost:3000', // Admin app
-  'http://localhost:3001', // Alternative port for admin app
-  'http://localhost:19006', // Expo development server (for merchant app)
-  'http://localhost:19000', // Alternative Expo port
-  'http://localhost:3002', // Alternative port for admin app
-  'http://localhost:19001', // Alternative Expo port
-  process.env.ADMIN_URL || '', // Production admin URL from environment
-  process.env.MERCHANT_URL || '', // Production merchant URL from environment
-  'https://soug-elwahah.vercel.app' // Production deployment
-].filter(url => url); // Remove empty strings
+  "http://localhost:3000", // Admin app
+  "http://localhost:3001", // Alternative port for admin app
+  "http://localhost:19006", // Expo development server (for merchant app)
+  "http://localhost:19000", // Alternative Expo port
+  "http://localhost:3002", // Alternative port for admin app
+  "http://localhost:19001", // Alternative Expo port
+  process.env.ADMIN_URL || "", // Production admin URL from environment
+  process.env.MERCHANT_URL || "", // Production merchant URL from environment
+  "https://soug-elwahah.vercel.app", // Production deployment
+].filter((url) => url); // Remove empty strings
 
 app.use(
   cors({
@@ -33,7 +33,7 @@ app.use(helmet());
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes 
+  windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
 });
 app.use(limiter);
@@ -46,11 +46,14 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 require("./config/database");
 
 // Serve static files from public directory
-app.use(express.static('public'));
+app.use(express.static("public"));
+
+// Serve static files from uploads directory
+app.use("/uploads", express.static("uploads"));
 
 // Root route - serve API documentation
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
+  res.sendFile(path.join(__dirname, "../public/index.html"));
 });
 
 // Public routes

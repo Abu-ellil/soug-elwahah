@@ -1,6 +1,7 @@
 const Product = require("../../models/Product");
 const Store = require("../../models/Store");
 const cloudinary = require("cloudinary").v2;
+const admin = require("../../config/firebase");
 
 // Configure Cloudinary
 cloudinary.config({
@@ -75,17 +76,55 @@ const addProduct = async (req, res) => {
         .json({ success: false, message: "المحل غير موجود" });
     }
 
-    // Upload image to Cloudinary
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: "products",
-    });
+    let imageUrl = "";
+
+    if (req.file.path) {
+      // File was uploaded to disk (local environment), use Cloudinary
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "products",
+      });
+      imageUrl = result.secure_url;
+    } else if (req.file.buffer) {
+      // File is in memory (serverless environment), upload to Firebase Storage
+      if (admin && admin.storage) {
+        const bucket = admin.storage().bucket(); // Get the default bucket
+        const fileName = `product-images/productImage-${Date.now()}-${Math.round(
+          Math.random() * 1e9
+        )}-${req.file.originalname}`;
+        const file = bucket.file(fileName);
+
+        const stream = file.createWriteStream({
+          metadata: {
+            contentType: req.file.mimetype,
+          },
+        });
+
+        await new Promise((resolve, reject) => {
+          stream.on("error", reject);
+          stream.on("finish", resolve);
+          stream.end(req.file.buffer);
+        });
+
+        // Make the file publicly readable
+        await file.makePublic();
+
+        // Get the public URL
+        imageUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+      } else {
+        // Firebase not configured, return error
+        return res.status(400).json({
+          success: false,
+          message: "لا يمكن رفع الصورة في الوقت الحالي",
+        });
+      }
+    }
 
     // Create product
     const product = new Product({
       storeId: store._id,
       name,
       price: parseFloat(price),
-      image: result.secure_url,
+      image: imageUrl,
       categoryId,
       description,
       isAvailable: isAvailable === "true" || isAvailable === true,
@@ -167,16 +206,54 @@ const updateProductImage = async (req, res) => {
         .json({ success: false, message: "المنتج غير موجود" });
     }
 
-    // Upload image to Cloudinary
-    const result = await cloudinary.uploader.upload(req.file.path, {
-      folder: "products",
-    });
+    let imageUrl = "";
+
+    if (req.file.path) {
+      // File was uploaded to disk (local environment), use Cloudinary
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "products",
+      });
+      imageUrl = result.secure_url;
+    } else if (req.file.buffer) {
+      // File is in memory (serverless environment), upload to Firebase Storage
+      if (admin && admin.storage) {
+        const bucket = admin.storage().bucket(); // Get the default bucket
+        const fileName = `product-images/productImage-${Date.now()}-${Math.round(
+          Math.random() * 1e9
+        )}-${req.file.originalname}`;
+        const file = bucket.file(fileName);
+
+        const stream = file.createWriteStream({
+          metadata: {
+            contentType: req.file.mimetype,
+          },
+        });
+
+        await new Promise((resolve, reject) => {
+          stream.on("error", reject);
+          stream.on("finish", resolve);
+          stream.end(req.file.buffer);
+        });
+
+        // Make the file publicly readable
+        await file.makePublic();
+
+        // Get the public URL
+        imageUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+      } else {
+        // Firebase not configured, return error
+        return res.status(400).json({
+          success: false,
+          message: "لا يمكن رفع الصورة في الوقت الحالي",
+        });
+      }
+    }
 
     // Update product image
     const updatedProduct = await Product.findByIdAndUpdate(
       productId,
       {
-        image: result.secure_url,
+        image: imageUrl,
         updatedAt: Date.now(),
       },
       { new: true }

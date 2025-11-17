@@ -131,9 +131,37 @@ const mockOrders: Order[] = [
   },
 ];
 
+// Define the type for stats based on the AnalyticsResponse data structure
+interface AnalyticsStats {
+  totalOrders: number;
+  totalRevenue: number;
+  totalUsers: number;
+  totalStores: number;
+  totalDrivers: number;
+  revenueByDate?: {
+    date: string;
+    revenue: number;
+  }[];
+  ordersByStatus?: {
+    status: string;
+    count: number;
+  }[];
+  topStores?: {
+    storeId: string;
+    storeName: string;
+    orders: number;
+  }[];
+}
+
 export default function AnalyticsPage() {
-  const [stats, setStats] = useState(mockStats);
-  const [orders, setOrders] = useState<Order[]>(mockOrders);
+  const [stats, setStats] = useState<AnalyticsStats>({
+    totalOrders: 0,
+    totalRevenue: 0,
+    totalUsers: 0,
+    totalStores: 0,
+    totalDrivers: 0
+  });
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState({
     from: '',
@@ -141,13 +169,30 @@ export default function AnalyticsPage() {
  });
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setStats(mockStats);
-      setOrders(mockOrders);
-      setLoading(false);
-    }, 10);
-  }, []);
+      const fetchAnalyticsData = async () => {
+        try {
+          const params = {
+            dateFrom: dateRange.from || undefined,
+            dateTo: dateRange.to || undefined
+          };
+          const response = await analyticsAPI.getDashboardStats(params);
+          if (response.success) {
+            setStats(response.data);
+            // For orders, we need to fetch separately
+            // TODO: Add API call to fetch recent orders for analytics page
+            setOrders([]);
+          } else {
+            console.error('Failed to fetch analytics data:', response.message);
+          }
+        } catch (error) {
+          console.error('Error fetching analytics data:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+  
+      fetchAnalyticsData();
+    }, [dateRange]);
 
   const handleDateRangeChange = () => {
     // Simulate API call with new date range

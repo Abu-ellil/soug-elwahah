@@ -18,75 +18,36 @@ import { User } from '@/types/user';
 import { usersAPI } from '@/lib/api/users';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 
-// Mock data - will be replaced with actual API calls
-const mockUsers: User[] = [
-  {
-    id: '1',
-    name: 'أحمد محمد',
-    email: 'ahmed@example.com',
-    phone: '0100000',
-    totalOrders: 24,
-    totalSpent: 1250,
-    status: 'active',
-    registeredAt: '2023-01-15T10:30:00Z',
- },
-  {
-    id: '2',
-    name: 'فاطمة خالد',
-    email: 'fatma@example.com',
-    phone: '0100001',
-    totalOrders: 18,
-    totalSpent: 980,
-    status: 'active',
-    registeredAt: '2023-02-20T14:45:00Z',
- },
-  {
-    id: '3',
-    name: 'محمود أحمد',
-    email: 'mahmoud@example.com',
-    phone: '01000002',
-    totalOrders: 5,
-    totalSpent: 320,
-    status: 'inactive',
-    registeredAt: '2023-03-10T09:15:00Z',
-  },
-  {
-    id: '4',
-    name: 'سارة إبراهيم',
-    email: 'sara@example.com',
-    phone: '01000003',
-    totalOrders: 32,
-    totalSpent: 2100,
-    status: 'active',
-    registeredAt: '2023-04-05T16:20:0Z',
-  },
-  {
-    id: '5',
-    name: 'نور الدين',
-    email: 'noor@example.com',
-    phone: '010000004',
-    totalOrders: 12,
-    totalSpent: 750,
-    status: 'active',
-    registeredAt: '2023-05-12T11:30:00Z',
- },
-];
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [totalUsers, setTotalUsers] = useState(0);
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setUsers(mockUsers);
-      setTotalUsers(mockUsers.length);
-      setLoading(false);
-    }, 10);
-  }, []);
+    const fetchUsers = async () => {
+      try {
+        const response = await usersAPI.getAll({
+          page: 1,
+          limit: 50,
+          search: searchTerm,
+          status: statusFilter !== 'all' ? statusFilter : undefined
+        });
+        setUsers(response.data.users || []);
+        setTotalUsers(response.data.total || 0);
+      } catch (error) {
+        console.error('Error fetching users:', error);
+        setUsers([]);
+        setTotalUsers(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, [searchTerm, statusFilter]);
 
   // Define columns for the data table
   const columns = [

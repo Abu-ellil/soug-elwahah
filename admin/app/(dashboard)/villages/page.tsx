@@ -18,64 +18,34 @@ import { Village } from '@/types/driver';
 import { villagesAPI } from '@/lib/api/villages';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 
-// Mock data - will be replaced with actual API calls
-const mockVillages: Village[] = [
-  {
-    id: '1',
-    name: 'قرية النصر',
-    coordinates: { lat: 30.0444, lng: 31.2357 },
-    totalStores: 24,
-    totalUsers: 1240,
-    totalDrivers: 15,
-  },
-  {
-    id: '2',
-    name: 'قرية السلام',
-    coordinates: { lat: 31.2001, lng: 29.9187 },
-    totalStores: 18,
-    totalUsers: 890,
-    totalDrivers: 12,
-  },
-  {
-    id: '3',
-    name: 'قرية الفتح',
-    coordinates: { lat: 30.0131, lng: 31.2089 },
-    totalStores: 15,
-    totalUsers: 750,
-    totalDrivers: 8,
-  },
-  {
-    id: '4',
-    name: 'قرية الامل',
-    coordinates: { lat: 30.0444, lng: 31.2357 },
-    totalStores: 32,
-    totalUsers: 1850,
-    totalDrivers: 2,
-  },
- {
-    id: '5',
-    name: 'قرية التقدم',
-    coordinates: { lat: 31.2001, lng: 29.9187 },
-    totalStores: 12,
-    totalUsers: 650,
-    totalDrivers: 7,
-  },
-];
 
 export default function VillagesPage() {
-  const [villages, setVillages] = useState<Village[]>(mockVillages);
+  const [villages, setVillages] = useState<Village[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [totalVillages, setTotalVillages] = useState(0);
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setVillages(mockVillages);
-      setTotalVillages(mockVillages.length);
-      setLoading(false);
-    }, 10);
-  }, []);
+    const fetchVillages = async () => {
+      try {
+        const response = await villagesAPI.getAll({
+          page: 1,
+          limit: 50,
+          search: searchTerm
+        });
+        setVillages(response.data.villages || []);
+        setTotalVillages(response.data.total || 0);
+      } catch (error) {
+        console.error('Error fetching villages:', error);
+        setVillages([]);
+        setTotalVillages(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchVillages();
+  }, [searchTerm]);
 
   // Define columns for the data table
   const columns = [

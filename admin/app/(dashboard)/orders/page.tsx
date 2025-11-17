@@ -18,134 +18,41 @@ import { Order as OrderType } from '@/types/order';
 import { ordersAPI } from '@/lib/api/orders';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 
-// Mock data - will be replaced with actual API calls
-const mockOrders: OrderType[] = [
- {
-    id: 'ORD-001',
-    userId: '1',
-    userName: 'أحمد محمد',
-    userPhone: '010000',
-    storeId: '1',
-    storeName: 'متجر العزيز',
-    driverId: '1',
-    driverName: 'محمد علي',
-    driverPhone: '0100',
-    items: [],
-    subtotal: 10,
-    deliveryFee: 20,
-    total: 120,
-    status: 'delivered',
-    paymentMethod: 'cash',
-    deliveryAddress: 'القاهرة، شارع النزهة',
-    deliveryCoordinates: { lat: 30.044, lng: 31.2357 },
-    createdAt: '2023-05-15T10:30:00Z',
-    updatedAt: '2023-05-15T12:30:00Z',
-    completedAt: '2023-05-15T12:30:00Z',
-  },
-  {
-    id: 'ORD-002',
-    userId: '2',
-    userName: 'فاطمة خالد',
-    userPhone: '01000001',
-    storeId: '2',
-    storeName: 'سوبر ماركت النصر',
-    driverId: '2',
-    driverName: 'أيمن سعيد',
-    driverPhone: '0101',
-    items: [],
-    subtotal: 200,
-    deliveryFee: 25,
-    total: 225,
-    status: 'in_transit',
-    paymentMethod: 'cash',
-    deliveryAddress: 'الإسكندرية، شارع الجمهورية',
-    deliveryCoordinates: { lat: 31.2001, lng: 29.9187 },
-    createdAt: '2023-05-15T09:15:00Z',
-    updatedAt: '2023-05-15T11:45:00Z',
-  },
-  {
-    id: 'ORD-003',
-    userId: '3',
-    userName: 'محمود أحمد',
-    userPhone: '0100002',
-    storeId: '3',
-    storeName: 'بقالة الفهد',
-    driverId: '3',
-    driverName: 'خالد حسن',
-    driverPhone: '010002',
-    items: [],
-    subtotal: 65,
-    deliveryFee: 20,
-    total: 85,
-    status: 'pending',
-    paymentMethod: 'cash',
-    deliveryAddress: 'الجيزة، شارع الهرم',
-    deliveryCoordinates: { lat: 30.0131, lng: 31.2089 },
-    createdAt: '2023-05-14T14:20:00Z',
-    updatedAt: '2023-05-14T14:20:00Z',
-  },
-  {
-    id: 'ORD-004',
-    userId: '4',
-    userName: 'سارة إبراهيم',
-    userPhone: '0100003',
-    storeId: '4',
-    storeName: 'محل السعادة',
-    driverId: '4',
-    driverName: 'محمود طاهر',
-    driverPhone: '0100003',
-    items: [],
-    subtotal: 150,
-    deliveryFee: 30,
-    total: 180,
-    status: 'delivered',
-    paymentMethod: 'cash',
-    deliveryAddress: 'القاهرة، شارع التحرير',
-    deliveryCoordinates: { lat: 30.0444, lng: 31.2357 },
-    createdAt: '2023-05-14T16:45:00Z',
-    updatedAt: '2023-05-14T18:30:00Z',
-    completedAt: '2023-05-14T18:30:00Z',
-  },
-  {
-    id: 'ORD-005',
-    userId: '5',
-    userName: 'نور الدين',
-    userPhone: '010000004',
-    storeId: '5',
-    storeName: 'محل الزهرة',
-    driverId: '5',
-    driverName: 'أحمد مصطفى',
-    driverPhone: '01000004',
-    items: [],
-    subtotal: 75,
-    deliveryFee: 20,
-    total: 95,
-    status: 'confirmed',
-    paymentMethod: 'cash',
-    deliveryAddress: 'الإسكندرية، شارع النيل',
-    deliveryCoordinates: { lat: 31.2001, lng: 29.9187 },
-    createdAt: '2023-05-14T11:30:00Z',
-    updatedAt: '2023-05-14T13:15:00Z',
-  },
-];
 
 export default function OrdersPage() {
-  const [orders, setOrders] = useState<OrderType[]>(mockOrders);
+  const [orders, setOrders] = useState<OrderType[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+ const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [totalOrders, setTotalOrders] = useState(0);
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setOrders(mockOrders);
-      setTotalOrders(mockOrders.length);
-      setLoading(false);
-    }, 10);
-  }, []);
+    const fetchOrders = async () => {
+          try {
+            // Use the ordersAPI to fetch real orders data
+            const response = await ordersAPI.getAll({
+              page: 1,
+              limit: 50,
+              search: searchTerm,
+              status: statusFilter !== 'all' ? statusFilter : undefined,
+              dateFrom: dateFrom || undefined,
+              dateTo: dateTo || undefined
+            });
+            setOrders(response.data.orders || []);
+            setTotalOrders(response.data.total || 0);
+          } catch (error) {
+            console.error('Error fetching orders:', error);
+            setOrders([]);
+            setTotalOrders(0);
+          } finally {
+            setLoading(false);
+          }
+        };
+
+    fetchOrders();
+  }, [searchTerm, statusFilter, dateFrom, dateTo]);
 
   // Define columns for the data table
   const columns = [
@@ -331,6 +238,7 @@ export default function OrdersPage() {
               </div>
             </div>
           </div>
+
 
           <DataTable
             data={orders}

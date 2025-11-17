@@ -9,67 +9,28 @@ import { Category } from '@/types/store';
 import { categoriesAPI } from '@/lib/api/categories';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 
-// Mock data - will be replaced with actual API calls
-const mockCategories: Category[] = [
-  {
-    id: '1',
-    name: { ar: 'أرز', en: 'Rice' },
-    icon: '🍚',
-    color: '#3B82F6',
-    order: 1,
-    status: 'active',
-    totalStores: 24,
-  },
-  {
-    id: '2',
-    name: { ar: 'زيوت', en: 'Oils' },
-    icon: '🧴',
-    color: '#8B5CF6',
-    order: 2,
-    status: 'active',
-    totalStores: 18,
-  },
-  {
-    id: '3',
-    name: { ar: 'سكريات', en: 'Sweets' },
-    icon: '🍬',
-    color: '#10B981',
-    order: 3,
-    status: 'active',
-    totalStores: 15,
-  },
-  {
-    id: '4',
-    name: { ar: 'شاي', en: 'Tea' },
-    icon: '☕',
-    color: '#F59E0B',
-    order: 4,
-    status: 'inactive',
-    totalStores: 8,
-  },
-  {
-    id: '5',
-    name: { ar: 'ألبان', en: 'Dairy' },
-    icon: '🥛',
-    color: '#EF4444',
-    order: 5,
-    status: 'active',
-    totalStores: 12,
-  },
-];
 
 export default function CategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>(mockCategories);
- const [loading, setLoading] = useState(true);
- const [totalCategories, setTotalCategories] = useState(0);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [totalCategories, setTotalCategories] = useState(0);
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setCategories(mockCategories);
-      setTotalCategories(mockCategories.length);
-      setLoading(false);
-    }, 10);
+    const fetchCategories = async () => {
+      try {
+        const response = await categoriesAPI.getAll();
+        setCategories(response.data.categories || []);
+        setTotalCategories(response.data.total || 0);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        setCategories([]);
+        setTotalCategories(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
   }, []);
 
   const handleAddCategory = () => {

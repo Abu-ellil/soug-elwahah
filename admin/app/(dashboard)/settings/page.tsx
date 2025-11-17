@@ -9,6 +9,35 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Settings as SettingsIcon, Save, Upload } from 'lucide-react';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import { settingsAPI } from '@/lib/api/settings';
+
+// Define the Settings type based on the API response structure
+interface Settings {
+  appName: string;
+  logo: string;
+  supportEmail: string;
+  supportPhone: string;
+  defaultDeliveryFee: number;
+  maxDeliveryRadius: number;
+  deliveryTimeEstimates: {
+    min: number;
+    max: number;
+  };
+  enableCash: boolean;
+  enableCard: boolean;
+  enableWallet: boolean;
+  commissionRate: number;
+  firebaseConfig: {
+    apiKey: string;
+    authDomain: string;
+    projectId: string;
+    storageBucket: string;
+    messagingSenderId: string;
+    appId: string;
+  };
+  maintenanceMode: boolean;
+  apiRateLimit: number;
+}
 
 // Mock settings data
 const initialSettings = {
@@ -39,19 +68,28 @@ const initialSettings = {
 };
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState(initialSettings);
+  const [settings, setSettings] = useState<Settings>({} as Settings);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    // Simulate API call to fetch settings
-    setTimeout(() => {
-      setSettings(initialSettings);
-      setLoading(false);
-    }, 10);
+    const fetchSettings = async () => {
+      try {
+        const response = await settingsAPI.getSettings();
+        setSettings(response.data.settings || {} as Settings);
+      } catch (error) {
+        console.error('Error fetching settings:', error);
+        // Set default settings in case of error
+        setSettings({} as Settings);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSettings();
   }, []);
 
-  const handleInputChange = (field: keyof typeof initialSettings, value: any) => {
+  const handleInputChange = (field: keyof Settings, value: any) => {
     setSettings(prev => ({
       ...prev,
       [field]: value
@@ -73,13 +111,16 @@ export default function SettingsPage() {
   };
 
   const handleSave = async () => {
-    setSaving(true);
-    // Simulate API call to save settings
-    setTimeout(() => {
-      console.log('Settings saved:', settings);
-      setSaving(false);
-    }, 1000);
-  };
+      setSaving(true);
+      try {
+        const response = await settingsAPI.updateSettings(settings);
+        console.log('Settings saved:', response);
+      } catch (error) {
+        console.error('Error saving settings:', error);
+      } finally {
+        setSaving(false);
+      }
+    };
 
   if (loading) {
     return (

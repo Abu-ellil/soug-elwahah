@@ -6,6 +6,7 @@ const Category = require("../models/Category");
 const { generateToken } = require("../utils/jwt");
 const bcrypt = require("bcryptjs");
 const { logLoginAttempt } = require("../services/loginLog.service");
+const admin = require("../config/firebase");
 
 const registerCustomer = async (req, res) => {
   try {
@@ -60,7 +61,16 @@ const registerCustomer = async (req, res) => {
 
 const registerStoreOwner = async (req, res) => {
   try {
-    const { name, email, phone, password, storeName, storeDescription, storeImage, coordinates } = req.body;
+    const {
+      name,
+      email,
+      phone,
+      password,
+      storeName,
+      storeDescription,
+      storeImage,
+      coordinates,
+    } = req.body;
 
     // Check if store owner already exists
     const existingOwner = await StoreOwner.findOne({ phone });
@@ -87,26 +97,74 @@ const registerStoreOwner = async (req, res) => {
     if (!defaultCategory) {
       // If no category exists, we might need to handle this case differently
       // For now, let's create a default category ID (this might need adjustment)
-      return res
-        .status(400)
-        .json({ success: false, message: "لا توجد فئات متاحة، يرجى الاتصال بالمسؤول" });
+      return res.status(400).json({
+        success: false,
+        message: "لا توجد فئات متاحة، يرجى الاتصال بالمسؤول",
+      });
     }
 
     // Handle store image - if file was uploaded, use its path; otherwise use the URL provided
     let storeImageUrl = "";
     if (req.file) {
-      // File was uploaded, use its path
-      storeImageUrl = req.file.path;
+      if (req.file.path) {
+        // File was uploaded to disk (local environment), use its path
+        storeImageUrl = req.file.path;
+      } else if (req.file.buffer) {
+        // File is in memory (serverless environment), upload to Firebase Storage
+        try {
+          // Check if Firebase is properly configured
+          if (admin && admin.storage) {
+            const bucket = admin.storage().bucket(); // Get the default bucket
+            const fileName = `store-images/storeImage-${Date.now()}-${Math.round(
+              Math.random() * 1e9
+            )}-${req.file.originalname}`;
+            const file = bucket.file(fileName);
+
+            const stream = file.createWriteStream({
+              metadata: {
+                contentType: req.file.mimetype,
+              },
+            });
+
+            await new Promise((resolve, reject) => {
+              stream.on("error", reject);
+              stream.on("finish", resolve);
+              stream.end(req.file.buffer);
+            });
+
+            // Make the file publicly readable
+            await file.makePublic();
+
+            // Get the public URL
+            storeImageUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+          } else {
+            // Firebase not configured, return error
+            return res.status(400).json({
+              success: false,
+              message:
+                "لا يمكن رفع الصورة في الوقت الحالي، يرجى استخدام رابط الصورة",
+            });
+          }
+        } catch (uploadError) {
+          console.error("Firebase Storage upload error:", uploadError);
+          return res.status(500).json({
+            success: false,
+            message: "حدث خطأ أثناء رفع الصورة",
+          });
+        }
+      }
     } else if (storeImage && storeImage.startsWith("http")) {
       // Image URL was provided directly
       storeImageUrl = storeImage;
     }
 
     // Use provided coordinates or default to 0,0 if not provided
-    const storeCoordinates = coordinates ? {
-      lat: parseFloat(coordinates.lat),
-      lng: parseFloat(coordinates.lng)
-    } : { lat: 0, lng: 0 };
+    const storeCoordinates = coordinates
+      ? {
+          lat: parseFloat(coordinates.lat),
+          lng: parseFloat(coordinates.lng),
+        }
+      : { lat: 0, lng: 0 };
 
     const store = new Store({
       name: storeName,
@@ -205,7 +263,14 @@ const login = async (req, res) => {
     const { phone, password, role } = req.body;
 
     if (!phone || !password || !role) {
-      await logLoginAttempt(phone, role, false, null, req, "Missing required fields");
+      await logLoginAttempt(
+        phone,
+        role,
+        false,
+        null,
+        req,
+        "Missing required fields"
+      );
       return res
         .status(400)
         .json({ success: false, message: "يرجى تعبئة جميع الحقول" });
@@ -235,14 +300,28 @@ const login = async (req, res) => {
     }
 
     if (!user) {
-      await logLoginAttempt(phone, userType || role, false, null, req, "User not found");
+      await logLoginAttempt(
+        phone,
+        userType || role,
+        false,
+        null,
+        req,
+        "User not found"
+      );
       return res
         .status(401)
         .json({ success: false, message: "بيانات الدخول غير صحيحة" });
     }
 
     if (!user.isActive) {
-      await logLoginAttempt(phone, userType, false, user._id, req, "Account not active");
+      await logLoginAttempt(
+        phone,
+        userType,
+        false,
+        user._id,
+        req,
+        "Account not active"
+      );
       return res
         .status(401)
         .json({ success: false, message: "الحساب غير نشط" });
@@ -250,7 +329,14 @@ const login = async (req, res) => {
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      await logLoginAttempt(phone, userType, false, user._id, req, "Invalid password");
+      await logLoginAttempt(
+        phone,
+        userType,
+        false,
+        user._id,
+        req,
+        "Invalid password"
+      );
       return res
         .status(401)
         .json({ success: false, message: "بيانات الدخول غير صحيحة" });

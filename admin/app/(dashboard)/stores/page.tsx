@@ -18,107 +18,9 @@ import { Store as StoreType } from '@/types/store';
 import { storesAPI } from '@/lib/api/stores';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 
-// Mock data - will be replaced with actual API calls
-const mockStores: StoreType[] = [
-  {
-    id: '1',
-    name: 'متجر العزيز',
-    ownerId: '1',
-    ownerName: 'أحمد محمد',
-    ownerPhone: '01000000',
-    category: 'بقالة',
-    image: '/placeholder-store.jpg',
-    rating: 4.5,
-    totalOrders: 124,
-    status: 'open',
-    verificationStatus: 'approved',
-    address: 'القاهرة، شارع النزهة',
-    coordinates: { lat: 30.0444, lng: 31.2357 },
-    workingHours: { open: '08:00', close: '22:00' },
-    totalProducts: 45,
-    totalRevenue: 12500,
-    createdAt: '2023-01-15T10:30:00Z',
-  },
-  {
-    id: '2',
-    name: 'سوبر ماركت النصر',
-    ownerId: '2',
-    ownerName: 'فاطمة خالد',
-    ownerPhone: '01000001',
-    category: 'سوبر ماركت',
-    image: '/placeholder-store.jpg',
-    rating: 4.2,
-    totalOrders: 89,
-    status: 'open',
-    verificationStatus: 'approved',
-    address: 'الإسكندرية، شارع الجمهورية',
-    coordinates: { lat: 31.2001, lng: 29.9187 },
-    workingHours: { open: '07:00', close: '23:00' },
-    totalProducts: 78,
-    totalRevenue: 980,
-    createdAt: '2023-02-20T14:45:00Z',
- },
-  {
-    id: '3',
-    name: 'بقالة الفهد',
-    ownerId: '3',
-    ownerName: 'محمود أحمد',
-    ownerPhone: '010000002',
-    category: 'بقالة',
-    image: '/placeholder-store.jpg',
-    rating: 3.8,
-    totalOrders: 56,
-    status: 'closed',
-    verificationStatus: 'pending',
-    address: 'الجيزة، شارع الهرم',
-    coordinates: { lat: 30.0131, lng: 31.2089 },
-    workingHours: { open: '09:00', close: '21:00' },
-    totalProducts: 32,
-    totalRevenue: 4200,
-    createdAt: '2023-03-10T09:15:00Z',
-  },
-  {
-    id: '4',
-    name: 'محل السعادة',
-    ownerId: '4',
-    ownerName: 'سارة إبراهيم',
-    ownerPhone: '0100003',
-    category: 'محل عام',
-    image: '/placeholder-store.jpg',
-    rating: 4.7,
-    totalOrders: 201,
-    status: 'open',
-    verificationStatus: 'approved',
-    address: 'القاهرة، شارع التحرير',
-    coordinates: { lat: 30.0444, lng: 31.2357 },
-    workingHours: { open: '08:30', close: '22:30' },
-    totalProducts: 67,
-    totalRevenue: 18500,
-    createdAt: '2023-04-05T16:20:00Z',
-  },
-  {
-    id: '5',
-    name: 'محل الزهرة',
-    ownerId: '5',
-    ownerName: 'نور الدين',
-    ownerPhone: '01000004',
-    category: 'حلويات',
-    image: '/placeholder-store.jpg',
-    rating: 4.9,
-    totalOrders: 76,
-    status: 'suspended',
-    verificationStatus: 'rejected',
-    address: 'الإسكندرية، شارع النيل',
-    coordinates: { lat: 31.2001, lng: 29.9187 },
-    workingHours: { open: '08:00', close: '20:00' },
-    totalProducts: 41,
-    totalRevenue: 6500,
-    createdAt: '2023-05-12T11:30:00Z',
-  },
-];
 
 export default function StoresPage() {
-  const [stores, setStores] = useState<StoreType[]>(mockStores);
+  const [stores, setStores] = useState<StoreType[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -126,13 +28,28 @@ export default function StoresPage() {
   const [totalStores, setTotalStores] = useState(0);
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setStores(mockStores);
-      setTotalStores(mockStores.length);
-      setLoading(false);
-    }, 10);
-  }, []);
+    const fetchStores = async () => {
+      try {
+        const response = await storesAPI.getAll({
+          page: 1,
+          limit: 50,
+          search: searchTerm,
+          status: statusFilter !== 'all' ? statusFilter : undefined,
+          verificationStatus: verificationFilter !== 'all' ? verificationFilter : undefined
+        });
+        setStores(response.data.stores || []);
+        setTotalStores(response.data.total || 0);
+      } catch (error) {
+        console.error('Error fetching stores:', error);
+        setStores([]);
+        setTotalStores(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStores();
+  }, [searchTerm, statusFilter, verificationFilter]);
 
   // Define columns for the data table
   const columns = [

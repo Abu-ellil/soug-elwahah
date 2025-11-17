@@ -3,6 +3,8 @@ const StoreOwner = require("../models/StoreOwner");
 const User = require("../models/User");
 const Driver = require("../models/Driver");
 const SuperAdmin = require("../models/SuperAdmin");
+const Order = require("../models/Order");
+const Product = require("../models/Product");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { logLoginAttempt } = require("../services/loginLog.service");
@@ -47,12 +49,10 @@ const approveStoreCoordinates = async (req, res) => {
       !store.pendingCoordinates.lat ||
       !store.pendingCoordinates.lng
     ) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "لا توجد إحداثيات معلقة لهذا المتجر",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "لا توجد إحداثيات معلقة لهذا المتجر",
+      });
     }
 
     // Update the store's coordinates with the pending coordinates
@@ -98,12 +98,10 @@ const rejectStoreCoordinates = async (req, res) => {
       !store.pendingCoordinates.lat ||
       !store.pendingCoordinates.lng
     ) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "لا توجد إحداثيات معلقة لهذا المتجر",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "لا توجد إحداثيات معلقة لهذا المتجر",
+      });
     }
 
     // Remove pending coordinates without approving them
@@ -208,12 +206,10 @@ const loginAdmin = async (req, res) => {
 
     // Validate required fields - either email or phone is acceptable
     if ((!email && !phone) || !password) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "البريد الإلكتروني أو رقم الهاتف وكلمة المرور مطلوبين",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "البريد الإلكتروني أو رقم الهاتف وكلمة المرور مطلوبين",
+      });
     }
 
     // Use the provided identifier (email or phone)
@@ -351,10 +347,1070 @@ const loginAdmin = async (req, res) => {
   }
 };
 
+// Get analytics dashboard data
+const getAnalyticsDashboard = async (req, res) => {
+  try {
+    // Check if user is authorized as admin
+    if (!req.isAdmin) {
+      return res
+        .status(403)
+        .json({ success: false, message: "غير مصرح لك بالوصول" });
+    }
+
+    // Get date range from query parameters
+    const { dateFrom, dateTo } = req.query;
+
+    // Set up date filters if provided
+    const dateFilter = {};
+    if (dateFrom || dateTo) {
+      dateFilter.createdAt = {};
+      if (dateFrom) {
+        dateFilter.createdAt.$gte = new Date(dateFrom);
+      }
+      if (dateTo) {
+        dateFilter.createdAt.$lte = new Date(dateTo);
+      }
+    }
+
+    // Count total orders
+    const totalOrders = await Order.countDocuments(dateFilter);
+
+    // Calculate total revenue
+    const orders = await Order.find(dateFilter);
+    const totalRevenue = orders.reduce(
+      (sum, order) => sum + (order.total || 0),
+      0
+    );
+
+    // Count total users
+    const totalUsers = await User.countDocuments(dateFilter);
+
+    // Count total stores
+    const totalStores = await Store.countDocuments(dateFilter);
+
+    // Count total drivers
+    const totalDrivers = await Driver.countDocuments(dateFilter);
+
+    // Get revenue by date (for chart)
+    const revenueByDate = [];
+    if (orders.length > 0) {
+      // Group orders by date and sum revenue
+      const groupedOrders = orders.reduce((acc, order) => {
+        const date = new Date(order.createdAt).toISOString().split("T")[0];
+        if (!acc[date]) {
+          acc[date] = 0;
+        }
+        acc[date] += order.total || 0;
+        return acc;
+      }, {});
+
+      for (const [date, revenue] of Object.entries(groupedOrders)) {
+        revenueByDate.push({ date, revenue });
+      }
+      // Sort by date
+      revenueByDate.sort((a, b) => new Date(a.date) - new Date(b.date));
+    }
+
+    // Get orders by status
+    const ordersByStatus = await Order.aggregate([
+      ...(dateFilter.createdAt
+        ? [
+            {
+              $match: dateFilter,
+            },
+          ]
+        : []),
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          status: "$_id",
+          count: 1,
+        },
+      },
+    ]);
+
+    // Get top 5 stores by order count
+    const topStores = await Order.aggregate([
+      ...(dateFilter.createdAt
+        ? [
+            {
+              $match: dateFilter,
+            },
+          ]
+        : []),
+      {
+        $group: {
+          _id: "$storeId",
+          orderCount: { $sum: 1 },
+        },
+      },
+      {
+        $lookup: {
+          from: "stores",
+          localField: "_id",
+          foreignField: "_id",
+          as: "store",
+        },
+      },
+      {
+        $unwind: "$store",
+      },
+      {
+        $project: {
+          storeId: "$_id",
+          storeName: "$store.name",
+          orders: "$orderCount",
+        },
+      },
+      {
+        $sort: { orders: -1 },
+      },
+      {
+        $limit: 5,
+      },
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalOrders,
+        totalRevenue,
+        totalUsers,
+        totalStores,
+        totalDrivers,
+        revenueByDate,
+        ordersByStatus,
+        topStores,
+      },
+      message: "تم جلب بيانات الإحصائيات بنجاح",
+    });
+  } catch (error) {
+    console.error("Get analytics dashboard error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Get all orders - similar to super admin implementation but for regular admins
+const getAllOrders = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      search,
+      dateFrom,
+      dateTo,
+    } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const query = {};
+    if (status) {
+      query.status = status;
+    }
+    if (search) {
+      query.$or = [
+        { orderNumber: { $regex: search, $options: "i" } },
+        { customerName: { $regex: search, $options: "i" } },
+        { storeName: { $regex: search, $options: "i" } },
+        { customerPhone: { $regex: search, $options: "i" } },
+        { storePhone: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    // Add date range filter if provided
+    if (dateFrom || dateTo) {
+      query.createdAt = {};
+      if (dateFrom) {
+        query.createdAt.$gte = new Date(dateFrom);
+      }
+      if (dateTo) {
+        query.createdAt.$lte = new Date(dateTo);
+      }
+    }
+
+    const orders = await Order.find(query)
+      .populate("customerId", "name phone")
+      .populate("storeId", "name phone")
+      .populate("driverId", "name phone")
+      .populate("items.productId", "name price")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await Order.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        orders,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / parseInt(limit)),
+        },
+      },
+      message: "تم جلب الطلبات بنجاح",
+    });
+  } catch (error) {
+    console.error("Get all orders error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Get order by ID
+const getOrderById = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+
+    const order = await Order.findById(orderId)
+      .populate("customerId", "name phone email")
+      .populate("storeId", "name phone")
+      .populate("driverId", "name phone")
+      .populate("items.productId", "name price");
+
+    if (!order) {
+      return res
+        .status(404)
+        .json({ success: false, message: "الطلب غير موجود" });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: { order },
+      message: "تم جلب الطلب بنجاح",
+    });
+  } catch (error) {
+    console.error("Get order by ID error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Update order
+const updateOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { status, driverId } = req.body;
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res
+        .status(404)
+        .json({ success: false, message: "الطلب غير موجود" });
+    }
+
+    // Update order fields
+    if (status) order.status = status;
+    if (driverId) order.driverId = driverId;
+
+    await order.save();
+
+    // Populate the updated order for response
+    const updatedOrder = await Order.findById(orderId)
+      .populate("customerId", "name phone email")
+      .populate("storeId", "name phone")
+      .populate("driverId", "name phone")
+      .populate("items.productId", "name price");
+
+    res.status(200).json({
+      success: true,
+      data: { order: updatedOrder },
+      message: "تم تحديث الطلب بنجاح",
+    });
+  } catch (error) {
+    console.error("Update order error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Cancel order
+const cancelOrder = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const { reason } = req.body;
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res
+        .status(404)
+        .json({ success: false, message: "الطلب غير موجود" });
+    }
+
+    // Update status to cancelled
+    order.status = "cancelled";
+    if (reason) order.cancelReason = reason;
+    order.cancelledAt = new Date();
+
+    await order.save();
+
+    // Populate the updated order for response
+    const updatedOrder = await Order.findById(orderId)
+      .populate("customerId", "name phone email")
+      .populate("storeId", "name phone")
+      .populate("driverId", "name phone")
+      .populate("items.productId", "name price");
+
+    res.status(200).json({
+      success: true,
+      data: { order: updatedOrder },
+      message: "تم إلغاء الطلب بنجاح",
+    });
+  } catch (error) {
+    console.error("Cancel order error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Get stores with pending verification status
+const getPendingStores = async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const query = { verificationStatus: "pending" };
+
+    const stores = await Store.find(query)
+      .populate("categoryId", "name nameEn icon color")
+      .populate("ownerId", "name phone")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await Store.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        stores,
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+      },
+      message: "تم جلب المتاجر المعلقة بنجاح",
+    });
+  } catch (error) {
+    console.error("Get pending stores error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Get all stores with pagination and search
+const getAllStores = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      status,
+      verificationStatus,
+    } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const query = {};
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { nameEn: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
+      ];
+    }
+    if (status) {
+      query.status = status;
+    }
+    if (verificationStatus) {
+      query.verificationStatus = verificationStatus;
+    }
+
+    const stores = await Store.find(query)
+      .populate("categoryId", "name nameEn icon color")
+      .populate("ownerId", "name phone")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await Store.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        stores,
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+      },
+      message: "تم جلب المتاجر بنجاح",
+    });
+  } catch (error) {
+    console.error("Get all stores error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Get store by ID
+const getStoreById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const store = await Store.findById(id)
+      .populate("categoryId", "name nameEn icon color")
+      .populate("ownerId", "name phone");
+
+    if (!store) {
+      return res
+        .status(404)
+        .json({ success: false, message: "المحل غير موجود" });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: { store },
+      message: "تم جلب المحل بنجاح",
+    });
+  } catch (error) {
+    console.error("Get store by ID error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Update store
+const updateStore = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, verificationStatus } = req.body;
+
+    const store = await Store.findById(id);
+    if (!store) {
+      return res
+        .status(404)
+        .json({ success: false, message: "المحل غير موجود" });
+    }
+
+    // Update store fields
+    if (status) store.status = status;
+    if (verificationStatus) store.verificationStatus = verificationStatus;
+
+    await store.save();
+
+    // Populate and return updated store
+    const updatedStore = await Store.findById(id)
+      .populate("categoryId", "name nameEn icon color")
+      .populate("ownerId", "name phone");
+
+    res.status(200).json({
+      success: true,
+      data: { store: updatedStore },
+      message: "تم تحديث المحل بنجاح",
+    });
+  } catch (error) {
+    console.error("Update store error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Approve store
+const approveStore = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const store = await Store.findById(id);
+    if (!store) {
+      return res
+        .status(404)
+        .json({ success: false, message: "المحل غير موجود" });
+    }
+
+    store.verificationStatus = "approved";
+    await store.save();
+
+    // Populate and return updated store
+    const updatedStore = await Store.findById(id)
+      .populate("categoryId", "name nameEn icon color")
+      .populate("ownerId", "name phone");
+
+    res.status(200).json({
+      success: true,
+      data: { store: updatedStore },
+      message: "تم قبول المحل بنجاح",
+    });
+  } catch (error) {
+    console.error("Approve store error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Reject store
+const rejectStore = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    const store = await Store.findById(id);
+    if (!store) {
+      return res
+        .status(404)
+        .json({ success: false, message: "المحل غير موجود" });
+    }
+
+    store.verificationStatus = "rejected";
+    if (reason) store.rejectionReason = reason;
+    await store.save();
+
+    // Populate and return updated store
+    const updatedStore = await Store.findById(id)
+      .populate("categoryId", "name nameEn icon color")
+      .populate("ownerId", "name phone");
+
+    res.status(200).json({
+      success: true,
+      data: { store: updatedStore },
+      message: "تم رفض المحل بنجاح",
+    });
+  } catch (error) {
+    console.error("Reject store error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Delete store
+const deleteStore = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const store = await Store.findById(id);
+    if (!store) {
+      return res
+        .status(404)
+        .json({ success: false, message: "المحل غير موجود" });
+    }
+
+    await Store.findByIdAndDelete(id);
+
+    res.status(200).json({
+      success: true,
+      data: { store },
+      message: "تم حذف المحل بنجاح",
+    });
+  } catch (error) {
+    console.error("Delete store error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Get all drivers with pagination and search
+const getAllDrivers = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      status,
+      verificationStatus,
+    } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const query = {};
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
+      ];
+    }
+    if (status) {
+      query.status = status;
+    }
+    if (verificationStatus) {
+      query.verificationStatus = verificationStatus;
+    }
+
+    const drivers = await Driver.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await Driver.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        drivers,
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+      },
+      message: "تم جلب السائقين بنجاح",
+    });
+  } catch (error) {
+    console.error("Get all drivers error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Get drivers with pending verification status
+const getPendingDrivers = async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const query = { verificationStatus: "pending" };
+
+    const drivers = await Driver.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await Driver.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        drivers,
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+      },
+      message: "تم جلب السائقين المعلقين بنجاح",
+    });
+  } catch (error) {
+    console.error("Get pending drivers error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Get driver by ID
+const getDriverById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const driver = await Driver.findById(id);
+
+    if (!driver) {
+      return res
+        .status(404)
+        .json({ success: false, message: "السائق غير موجود" });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: { driver },
+      message: "تم جلب السائق بنجاح",
+    });
+  } catch (error) {
+    console.error("Get driver by ID error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Update driver
+const updateDriver = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, verificationStatus } = req.body;
+
+    const driver = await Driver.findById(id);
+    if (!driver) {
+      return res
+        .status(404)
+        .json({ success: false, message: "السائق غير موجود" });
+    }
+
+    // Update driver fields
+    if (status) driver.status = status;
+    if (verificationStatus) driver.verificationStatus = verificationStatus;
+
+    await driver.save();
+
+    res.status(200).json({
+      success: true,
+      data: { driver },
+      message: "تم تحديث السائق بنجاح",
+    });
+  } catch (error) {
+    console.error("Update driver error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Approve driver
+const approveDriver = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const driver = await Driver.findById(id);
+    if (!driver) {
+      return res
+        .status(404)
+        .json({ success: false, message: "السائق غير موجود" });
+    }
+
+    driver.verificationStatus = "approved";
+    await driver.save();
+
+    res.status(200).json({
+      success: true,
+      data: { driver },
+      message: "تم قبول السائق بنجاح",
+    });
+  } catch (error) {
+    console.error("Approve driver error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Reject driver
+const rejectDriver = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    const driver = await Driver.findById(id);
+    if (!driver) {
+      return res
+        .status(404)
+        .json({ success: false, message: "السائق غير موجود" });
+    }
+
+    driver.verificationStatus = "rejected";
+    if (reason) driver.rejectionReason = reason;
+    await driver.save();
+
+    res.status(200).json({
+      success: true,
+      data: { driver },
+      message: "تم رفض السائق بنجاح",
+    });
+  } catch (error) {
+    console.error("Reject driver error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Delete driver
+const deleteDriver = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const driver = await Driver.findById(id);
+    if (!driver) {
+      return res
+        .status(404)
+        .json({ success: false, message: "السائق غير موجود" });
+    }
+
+    await Driver.findByIdAndDelete(id);
+
+    res.status(200).json({
+      success: true,
+      data: { driver },
+      message: "تم حذف السائق بنجاح",
+    });
+  } catch (error) {
+    console.error("Delete driver error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Get all products with pagination and search
+const getAllProducts = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      storeId,
+      categoryId,
+      availability,
+    } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const query = {};
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { nameEn: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } },
+        { descriptionEn: { $regex: search, $options: "i" } },
+      ];
+    }
+    if (storeId) {
+      query.storeId = storeId;
+    }
+    if (categoryId) {
+      query.categoryId = categoryId;
+    }
+    if (availability) {
+      query.isAvailable = availability === "available" ? true : false;
+    }
+
+    const products = await Product.find(query)
+      .populate("storeId", "name phone")
+      .populate("categoryId", "name nameEn")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await Product.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        products,
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+      },
+      message: "تم جلب المنتجات بنجاح",
+    });
+  } catch (error) {
+    console.error("Get all products error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Get product by ID
+const getProductById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const product = await Product.findById(id)
+      .populate("storeId", "name phone")
+      .populate("categoryId", "name nameEn");
+
+    if (!product) {
+      return res
+        .status(404)
+        .json({ success: false, message: "المنتج غير موجود" });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: { product },
+      message: "تم جلب المنتج بنجاح",
+    });
+  } catch (error) {
+    console.error("Get product by ID error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Update product
+const updateProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { availability } = req.body;
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return res
+        .status(404)
+        .json({ success: false, message: "المنتج غير موجود" });
+    }
+
+    // Update product fields
+    if (availability)
+      product.isAvailable = availability === "available" ? true : false;
+
+    await product.save();
+
+    // Populate and return updated product
+    const updatedProduct = await Product.findById(id)
+      .populate("storeId", "name phone")
+      .populate("categoryId", "name nameEn");
+
+    res.status(200).json({
+      success: true,
+      data: { product: updatedProduct },
+      message: "تم تحديث المنتج بنجاح",
+    });
+  } catch (error) {
+    console.error("Update product error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Get all users with pagination and search
+const getAllUsers = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, search, status } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const query = {};
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ];
+    }
+    if (status) {
+      query.isActive = status === "active" ? true : false;
+    }
+
+    const users = await User.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await User.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        users,
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+      },
+      message: "تم جلب المستخدمين بنجاح",
+    });
+  } catch (error) {
+    console.error("Get all users error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Get user by ID
+const getUserById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findById(id);
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "المستخدم غير موجود" });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: { user },
+      message: "تم جلب المستخدم بنجاح",
+    });
+  } catch (error) {
+    console.error("Get user by ID error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Update user
+const updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "المستخدم غير موجود" });
+    }
+
+    // Update user fields
+    if (status) user.isActive = status === "active" ? true : false;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      data: { user },
+      message: "تم تحديث المستخدم بنجاح",
+    });
+  } catch (error) {
+    console.error("Update user error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Delete user
+const deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await User.findById(id);
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "المستخدم غير موجود" });
+    }
+
+    await User.findByIdAndDelete(id);
+
+    res.status(200).json({
+      success: true,
+      data: { user },
+      message: "تم حذف المستخدم بنجاح",
+    });
+  } catch (error) {
+    console.error("Delete user error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Delete product
+const deleteProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const product = await Product.findById(id);
+    if (!product) {
+      return res
+        .status(404)
+        .json({ success: false, message: "المنتج غير موجود" });
+    }
+
+    await Product.findByIdAndDelete(id);
+
+    res.status(200).json({
+      success: true,
+      data: { product },
+      message: "تم حذف المنتج بنجاح",
+    });
+  } catch (error) {
+    console.error("Delete product error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
 module.exports = {
   getStoresWithPendingCoordinates,
   approveStoreCoordinates,
   rejectStoreCoordinates,
   getAdminProfile,
   loginAdmin,
+  getAnalyticsDashboard,
+  getAllOrders,
+  getOrderById,
+  updateOrder,
+  cancelOrder,
+  // Store management functions
+  getPendingStores,
+  getAllStores,
+  getStoreById,
+  updateStore,
+  approveStore,
+  rejectStore,
+  deleteStore,
+  // Driver management functions
+  getPendingDrivers,
+  getAllDrivers,
+  getDriverById,
+  updateDriver,
+  approveDriver,
+  rejectDriver,
+  deleteDriver,
+  // Product management functions
+  getAllUsers,
+  getUserById,
+  updateUser,
+  deleteUser,
+  getAllProducts,
+  getProductById,
+  updateProduct,
+  deleteProduct,
 };

@@ -8,6 +8,8 @@ import { RevenueChart } from '@/components/dashboard/RevenueChart';
 import { TopStores } from '@/components/dashboard/TopStores';
 import { Package, ShoppingCart, Users, Car } from 'lucide-react';
 import { Order } from '@/types/order';
+import { dashboardAPI } from '@/lib/api/dashboard';
+import { ordersAPI } from '@/lib/api/orders';
 
 // Mock data - will be replaced with actual API calls
 const mockStats = {
@@ -127,17 +129,40 @@ const mockOrders: Order[] = [
   },
 ];
 
+interface DashboardStats {
+  totalOrders: number;
+  totalRevenue: number;
+  totalUsers: number;
+  activeDrivers: number;
+}
+
 export default function DashboardPage() {
-  const [stats, setStats] = useState(mockStats);
-  const [recentOrders, setRecentOrders] = useState(mockOrders);
+  const [stats, setStats] = useState<DashboardStats>({ totalOrders: 0, totalRevenue: 0, totalUsers: 0, activeDrivers: 0 });
+  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
-    }, 100);
-  }, []);
+      const fetchDashboardData = async () => {
+        try {
+          // Fetch dashboard statistics
+          const statsResponse = await dashboardAPI.getStats();
+          setStats(statsResponse);
+          
+          // Fetch recent orders
+                  const ordersResponse = await ordersAPI.getAll({ limit: 5 }); // Get last 5 orders as recent
+                  setRecentOrders(ordersResponse.data?.orders || []);
+        } catch (error) {
+          console.error('Error fetching dashboard data:', error);
+          // Set empty defaults in case of error
+          setStats({ totalOrders: 0, totalRevenue: 0, totalUsers: 0, activeDrivers: 0 });
+          setRecentOrders([]);
+        } finally {
+          setLoading(false);
+        }
+      };
+  
+      fetchDashboardData();
+    }, []);
 
   if (loading) {
     return (

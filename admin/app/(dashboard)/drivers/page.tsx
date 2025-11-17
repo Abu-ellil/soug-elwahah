@@ -18,92 +18,9 @@ import { Driver as DriverType } from '@/types/driver';
 import { driversAPI } from '@/lib/api/drivers';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 
-// Mock data - will be replaced with actual API calls
-const mockDrivers: DriverType[] = [
-  {
-    id: '1',
-    name: 'محمد علي',
-    email: 'mohamed@example.com',
-    phone: '01000000',
-    vehicleType: 'توك توك',
-    vehicleNumber: 'أ ب ج 1234',
-    rating: 4.8,
-    totalOrders: 124,
-    totalEarnings: 12500,
-    status: 'available',
-    verificationStatus: 'approved',
-    acceptanceRate: 95,
-    completionRate: 98,
-    createdAt: '2023-01-15T10:30:00Z',
- },
-  {
-    id: '2',
-    name: 'أيمن سعيد',
-    email: 'ayman@example.com',
-    phone: '0100001',
-    vehicleType: 'موتوسيكل',
-    vehicleNumber: 'س ف ح 5678',
-    rating: 4.5,
-    totalOrders: 89,
-    totalEarnings: 9800,
-    status: 'busy',
-    verificationStatus: 'approved',
-    acceptanceRate: 87,
-    completionRate: 92,
-    createdAt: '2023-02-20T14:45:00Z',
- },
-  {
-    id: '3',
-    name: 'خالد حسن',
-    email: 'khaled@example.com',
-    phone: '01000002',
-    vehicleType: 'توك توك',
-    vehicleNumber: 'د ر م 9012',
-    rating: 4.2,
-    totalOrders: 56,
-    totalEarnings: 4200,
-    status: 'offline',
-    verificationStatus: 'pending',
-    acceptanceRate: 78,
-    completionRate: 85,
-    createdAt: '2023-03-10T09:15:00Z',
-  },
-  {
-    id: '4',
-    name: 'محمود طاهر',
-    email: 'mahmoud@example.com',
-    phone: '01000003',
-    vehicleType: 'موتوسيكل',
-    vehicleNumber: 'ن ل ب 3456',
-    rating: 4.9,
-    totalOrders: 201,
-    totalEarnings: 18500,
-    status: 'available',
-    verificationStatus: 'approved',
-    acceptanceRate: 99,
-    completionRate: 99,
-    createdAt: '2023-04-05T16:20:00Z',
- },
-  {
-    id: '5',
-    name: 'أحمد مصطفى',
-    email: 'ahmed@example.com',
-    phone: '010000004',
-    vehicleType: 'توك توك',
-    vehicleNumber: 'ي س ع 7890',
-    rating: 4.6,
-    totalOrders: 76,
-    totalEarnings: 6500,
-    status: 'available',
-    verificationStatus: 'rejected',
-    acceptanceRate: 82,
-    completionRate: 89,
-    createdAt: '2023-05-12T11:30:00Z',
-  },
-];
 
 export default function DriversPage() {
-  const [drivers, setDrivers] = useState<DriverType[]>(mockDrivers);
+  const [drivers, setDrivers] = useState<DriverType[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -111,13 +28,28 @@ export default function DriversPage() {
   const [totalDrivers, setTotalDrivers] = useState(0);
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setDrivers(mockDrivers);
-      setTotalDrivers(mockDrivers.length);
-      setLoading(false);
-    }, 10);
-  }, []);
+    const fetchDrivers = async () => {
+      try {
+        const response = await driversAPI.getAll({
+          page: 1,
+          limit: 50,
+          search: searchTerm,
+          status: statusFilter !== 'all' ? statusFilter : undefined,
+          verificationStatus: verificationFilter !== 'all' ? verificationFilter : undefined
+        });
+        setDrivers(response.data.drivers || []);
+        setTotalDrivers(response.data.total || 0);
+      } catch (error) {
+        console.error('Error fetching drivers:', error);
+        setDrivers([]);
+        setTotalDrivers(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDrivers();
+  }, [searchTerm, statusFilter, verificationFilter]);
 
   // Define columns for the data table
   const columns = [

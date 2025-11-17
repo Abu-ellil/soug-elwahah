@@ -102,13 +102,7 @@ module.exports = {
   isAdmin: async (req, res, next) => {
     await authMiddleware(req, res, async () => {
       // Check if user is a super admin first
-      const superAdmin = await SuperAdmin.findOne({
-        phone:
-          req.userPhone ||
-          (req.user && req.user.phone) ||
-          (req.owner && req.owner.phone) ||
-          (req.driver && req.driver.phone),
-      });
+      const superAdmin = await SuperAdmin.findById(req.userId);
       if (superAdmin && superAdmin.isActive) {
         req.isAdmin = true;
         req.adminType = "super_admin";
@@ -116,12 +110,7 @@ module.exports = {
         return;
       }
 
-      // For now, we'll consider a user as admin if they have a specific admin phone number
-      // This should be stored in environment variables for security
-      const adminPhones = process.env.ADMIN_PHONES?.split(",") || [
-        "01234567890",
-      ]; // Default fallback
-
+      // For regular admins, check if their phone number is in the admin list
       // Get the user based on role to check their phone number
       let user;
       switch (req.userRole) {
@@ -137,6 +126,12 @@ module.exports = {
         default:
           user = null;
       }
+
+      // For now, we'll consider a user as admin if they have a specific admin phone number
+      // This should be stored in environment variables for security
+      const adminPhones = process.env.ADMIN_PHONES?.split(",") || [
+        "01234567890",
+      ]; // Default fallback
 
       if (!user || !adminPhones.includes(user.phone)) {
         return res
