@@ -5,6 +5,7 @@ const rateLimit = require("express-rate-limit");
 const path = require("path");
 const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("../swagger.json");
+const swaggerUiDist = require("swagger-ui-dist");
 require("dotenv").config();
 
 // Initialize Express app
@@ -75,8 +76,13 @@ app.use("/api/driver", require("./routes/driver"));
 // Serve Swagger documentation - IMPORTANT: This must be before the wildcard route
 const swaggerOptions = {
   explorer: true, // Enables the explorer functionality to interact with the API
+  // Set custom CSS to ensure proper loading in serverless environments
+  customCss: '.swagger-ui .topbar { display: none }'
 };
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument, swaggerOptions));
+
+// For serverless environments, serve swagger-ui-dist assets directly
+const swaggerUiAssetPath = swaggerUiDist.getAbsoluteFSPath();
+app.use('/api-docs', express.static(swaggerUiAssetPath), swaggerUi.setup(swaggerDocument, swaggerOptions));
 
 // 404 handler - This should be last
 app.use("*", (req, res) => {
