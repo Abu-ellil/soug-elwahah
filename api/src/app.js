@@ -73,7 +73,11 @@ app.use("/api/store", require("./routes/store"));
 app.use("/api/driver", require("./routes/driver"));
 
 // Serve Swagger documentation
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+const swaggerOptions = {
+  explorer: true, // Enables the explorer functionality to interact with the API
+};
+// Serve Swagger UI static files and setup
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument, swaggerOptions));
 
 // 404 handler
 app.use("*", (req, res) => {
