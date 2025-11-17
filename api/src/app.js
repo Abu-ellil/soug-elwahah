@@ -80,9 +80,8 @@ const swaggerOptions = {
   customCss: '.swagger-ui .topbar { display: none }'
 };
 
-// For serverless environments, serve swagger-ui-dist assets directly
-const swaggerUiAssetPath = swaggerUiDist.getAbsoluteFSPath();
-app.use('/api-docs', express.static(swaggerUiAssetPath), swaggerUi.setup(swaggerDocument, swaggerOptions));
+// Serve Swagger documentation properly for serverless environments
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, swaggerOptions));
 
 // 404 handler - This should be last
 app.use("*", (req, res) => {
