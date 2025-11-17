@@ -7,6 +7,10 @@
   },
   "servers": [
     {
+      "url": "http://localhost:5000",
+      "description": "Development server"
+    },
+    {
       "url": "https://soug-elwahah.vercel.app",
       "description": "Production server"
     }
