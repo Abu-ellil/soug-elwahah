@@ -25,7 +25,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, refreshAuth } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +42,7 @@ export default function LoginPage() {
       const response = await login(email, password);
       console.log("Login successful, response:", response);
 
-      // Check if token is properly stored in localStorage
+      // The token is now correctly stored via the authAPI.login -> apiClient.setToken chain
       const token = localStorage.getItem("admin_token");
       console.log("Token after login:", token);
 
@@ -54,8 +54,9 @@ export default function LoginPage() {
 
       toast.success("تم تسجيل الدخول بنجاح");
       console.log("Attempting to redirect to /");
-      // Use window.location.replace instead of router.push to force redirect
-      window.location.replace("/");
+      
+      router.push("/");
+
     } catch (error: any) {
       console.log("Login failed with error:", error);
       toast.error(error.message || "فشل تسجيل الدخول");

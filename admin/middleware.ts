@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  // Check for token in cookies or Authorization header
+  // Check for token in cookies, Authorization header, or query parameter
   const cookieToken = request.cookies.get('admin_token')?.value;
   const authHeader = request.headers.get('authorization');
   const headerToken = authHeader && authHeader.startsWith('Bearer ')

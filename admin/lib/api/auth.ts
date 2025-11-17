@@ -12,8 +12,8 @@ interface LoginResponse {
   message: string;
   data: {
     admin: Admin;
-    token: string;
   };
+  token: string;
 }
 
 interface AuthResponse {
@@ -26,21 +26,24 @@ interface AuthResponse {
 
 export const authAPI = {
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
-    const response: LoginResponse = await apiClient.post('/admin/auth/login', credentials);
+    const response: LoginResponse = await apiClient.post(
+      "/admin/auth/login",
+      credentials
+    );
     // Store the token in the API client after successful login
-    if (response.success && response.data.token) {
-      apiClient.setToken(response.data.token);
+    if (response.success && response.token) {
+      apiClient.setToken(response.token);
     }
     return response;
   },
 
   logout: async (): Promise<void> => {
-    await apiClient.post('/admin/auth/logout');
+    await apiClient.post("/admin/auth/logout");
     // Clear the token after logout
     apiClient.clearToken();
   },
 
   me: async (): Promise<AuthResponse> => {
-    return apiClient.get('/admin/auth/me');
- },
+    return apiClient.get("/admin/auth/me");
+  },
 };
