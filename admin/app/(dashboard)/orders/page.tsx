@@ -20,7 +20,7 @@ import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 
 // Mock data - will be replaced with actual API calls
 const mockOrders: OrderType[] = [
-  {
+ {
     id: 'ORD-001',
     userId: '1',
     userName: 'أحمد محمد',
@@ -29,15 +29,15 @@ const mockOrders: OrderType[] = [
     storeName: 'متجر العزيز',
     driverId: '1',
     driverName: 'محمد علي',
-    driverPhone: '010000',
+    driverPhone: '0100',
     items: [],
-    subtotal: 100,
+    subtotal: 10,
     deliveryFee: 20,
     total: 120,
     status: 'delivered',
     paymentMethod: 'cash',
     deliveryAddress: 'القاهرة، شارع النزهة',
-    deliveryCoordinates: { lat: 30.0444, lng: 31.2357 },
+    deliveryCoordinates: { lat: 30.044, lng: 31.2357 },
     createdAt: '2023-05-15T10:30:00Z',
     updatedAt: '2023-05-15T12:30:00Z',
     completedAt: '2023-05-15T12:30:00Z',
@@ -51,11 +51,11 @@ const mockOrders: OrderType[] = [
     storeName: 'سوبر ماركت النصر',
     driverId: '2',
     driverName: 'أيمن سعيد',
-    driverPhone: '01001',
+    driverPhone: '0101',
     items: [],
     subtotal: 200,
     deliveryFee: 25,
-    total: 25,
+    total: 225,
     status: 'in_transit',
     paymentMethod: 'cash',
     deliveryAddress: 'الإسكندرية، شارع الجمهورية',
@@ -72,7 +72,7 @@ const mockOrders: OrderType[] = [
     storeName: 'بقالة الفهد',
     driverId: '3',
     driverName: 'خالد حسن',
-    driverPhone: '0100002',
+    driverPhone: '010002',
     items: [],
     subtotal: 65,
     deliveryFee: 20,
@@ -93,7 +93,7 @@ const mockOrders: OrderType[] = [
     storeName: 'محل السعادة',
     driverId: '4',
     driverName: 'محمود طاهر',
-    driverPhone: '01000003',
+    driverPhone: '0100003',
     items: [],
     subtotal: 150,
     deliveryFee: 30,
@@ -291,6 +291,7 @@ export default function OrdersPage() {
                   className="pr-10"
                 />
               </div>
+            </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger>
                 <SelectValue placeholder="حالة الطلب" />
