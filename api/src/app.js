@@ -21,27 +21,10 @@ const limiter = rateLimit({
 });
 app.use(limiter);
  
-// CORS configuration
-const allowedOrigins = [
-  "exp://192.168.x.x:19000", // Expo Dev
-  "http://localhost:19006", // Expo Web
-  "http://localhost:19000", // Expo Dev
-  "http://localhost:3000", // Web app
-  "http://localhost:3001", // Web app
-  process.env.FRONTEND_URL, // Production URL if available
-].filter(Boolean); // Remove undefined values
-
+// CORS configuration - Allow all origins for API documentation access
 app.use(
   cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) !== -1) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    origin: "*", // Allow all origins for API documentation and general access
     credentials: true,
   })
 );
@@ -77,11 +60,20 @@ app.use("/api/driver", require("./routes/driver"));
 const swaggerOptions = {
   explorer: true, // Enables the explorer functionality to interact with the API
   // Set custom CSS to ensure proper loading in serverless environments
-  customCss: '.swagger-ui .topbar { display: none }'
+  customCss: '.swagger-ui .topbar { display: none }',
+  // Explicitly specify the swagger definition URL for serverless environments
+  url: '/api-docs/swagger.json'
 };
 
-// Serve Swagger documentation properly for serverless environments
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, swaggerOptions));
+// Serve the swagger document at a specific endpoint for proper access in serverless environments
+app.get('/api-docs/swagger.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerDocument);
+});
+
+// For serverless environments, serve swagger-ui-dist assets directly to fix MIME type issues
+const swaggerUiAssetPath = swaggerUiDist.getAbsoluteFSPath();
+app.use('/api-docs', express.static(swaggerUiAssetPath), swaggerUi.setup(swaggerDocument, swaggerOptions));
 
 // 404 handler - This should be last
 app.use("*", (req, res) => {

@@ -18,16 +18,11 @@ import StoreCard from '../../components/StoreCard';
 import CategoryCard from '../../components/CategoryCard';
 import ProductCard from '../../components/ProductCard';
 import SearchBar from '../../components/SearchBar';
-import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
 import RangeSelector from '../../components/RangeSelector';
 import COLORS from '../../constants/colors';
 import SIZES from '../../constants/sizes';
 import HomeScreenSkeleton from '../../components/HomeScreenSkeleton';
-import { formatDistance, calculateDistance } from '../../utils/distance';
-import { getStoresByVillage } from '../../utils/locationHelpers';
-import DebugLocationSetter from '../../components/DebugLocationSetter';
-
 const HomeScreen = ({ navigation }) => {
   const {
     userLocation,
@@ -244,8 +239,7 @@ const HomeScreen = ({ navigation }) => {
         data={[{ key: 'content' }]}
         renderItem={() => (
           <View>
-            {/* Debug Location Setter - Temporary for testing */}
-            <DebugLocationSetter />
+           
             
             {/* Categories */}
             <View style={styles.section}>
