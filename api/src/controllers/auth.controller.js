@@ -138,31 +138,30 @@ const registerStoreOwner = async (req, res) => {
             // Get the public URL
             storeImageUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
           } else {
-            // Firebase not configured, return error
-            return res.status(400).json({
-              success: false,
-              message:
-                "لا يمكن رفع الصورة في الوقت الحالي، يرجى استخدام رابط الصورة",
-            });
+            // Firebase not configured, log warning and continue without image
+            console.warn("Firebase not configured for image upload");
+            // Instead of returning an error, allow registration to continue without image
+            storeImageUrl = ""; // No image will be set
           }
         } catch (uploadError) {
           console.error("Firebase Storage upload error:", uploadError);
-          return res.status(500).json({
-            success: false,
-            message: "حدث خطأ أثناء رفع الصورة",
-          });
+          // Instead of returning an error, allow registration to continue without image
+          storeImageUrl = ""; // No image will be set
         }
       }
     } else if (storeImage && storeImage.startsWith("http")) {
       // Image URL was provided directly
       storeImageUrl = storeImage;
+    } else {
+      // No image provided, set to empty string
+      storeImageUrl = "";
     }
 
     // Use provided coordinates or default to 0,0 if not provided
     const storeCoordinates = coordinates
       ? {
-          lat: parseFloat(coordinates.lat),
-          lng: parseFloat(coordinates.lng),
+          lat: coordinates.lat ? parseFloat(coordinates.lat) : 0,
+          lng: coordinates.lng ? parseFloat(coordinates.lng) : 0,
         }
       : { lat: 0, lng: 0 };
 
