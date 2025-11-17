@@ -18,10 +18,22 @@ const limiter = rateLimit({
 });
 app.use(limiter);
   
-// CORS configuration - Allow all origins for API documentation access
+// CORS configuration - Allow specific origins when using credentials
+const allowedOrigins = [
+  'http://localhost:3000', // Admin app
+  'http://localhost:3001', // Alternative port for admin app
+  'http://localhost:19006', // Expo development server (for merchant app)
+  'http://localhost:19000', // Alternative Expo port
+  'http://localhost:3002', // Alternative port for admin app
+  'http://localhost:19001', // Alternative Expo port
+  process.env.ADMIN_URL || '', // Production admin URL from environment
+  process.env.MERCHANT_URL || '', // Production merchant URL from environment
+  'https://soug-elwahah.vercel.app' // Production deployment
+].filter(url => url); // Remove empty strings
+
 app.use(
   cors({
-    origin: "*", // Allow all origins for API documentation and general access
+    origin: allowedOrigins,
     credentials: true,
   })
 );
@@ -56,6 +68,7 @@ app.use("/api/customer", require("./routes/customer"));
 app.use("/api/store", require("./routes/store"));
 app.use("/api/driver", require("./routes/driver"));
 app.use("/api/admin", require("./routes/admin"));
+app.use("/api/super-admin", require("./routes/superAdmin/superAdmin.routes"));
 
 // 404 handler - This should be last
 app.use("*", (req, res) => {

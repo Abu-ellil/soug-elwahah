@@ -1,36 +1,66 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
-import { useAuth } from '@/lib/hooks/useAuth';
-import { toast } from 'react-hot-toast';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { useAuth } from "@/lib/hooks/useAuth";
+import { toast } from "react-hot-toast";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
- const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const router = useRouter();
   const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    console.log(
+      "Login attempt with email:",
+      email,
+      "and password length:",
+      password.length
+    );
 
     try {
-      await login(email, password);
-      toast.success('تم تسجيل الدخول بنجاح');
-      router.push('/');
+      console.log("Calling login function...");
+      const response = await login(email, password);
+      console.log("Login successful, response:", response);
+
+      // Check if token is properly stored in localStorage
+      const token = localStorage.getItem("admin_token");
+      console.log("Token after login:", token);
+
+      // Check if admin state is set
+      console.log("Current admin state after login:", {
+        email,
+        role: response?.data?.admin?.role,
+      });
+
+      toast.success("تم تسجيل الدخول بنجاح");
+      console.log("Attempting to redirect to /");
+      // Use window.location.replace instead of router.push to force redirect
+      window.location.replace("/");
     } catch (error: any) {
-      toast.error(error.message || 'فشل تسجيل الدخول');
+      console.log("Login failed with error:", error);
+      toast.error(error.message || "فشل تسجيل الدخول");
     } finally {
+      console.log("Setting loading state to false");
       setIsLoading(false);
     }
   };
@@ -60,7 +90,7 @@ export default function LoginPage() {
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="password">كلمة المرور</Label>
                 <div className="relative">
@@ -89,7 +119,7 @@ export default function LoginPage() {
                   </Button>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-2 space-x-reverse">
                 <input
                   id="remember"
@@ -102,13 +132,9 @@ export default function LoginPage() {
                   تذكرني
                 </Label>
               </div>
-              
-              <Button
-                type="submit"
-                className="w-full"
-                disabled={isLoading}
-              >
-                {isLoading ? 'جاري التحميل...' : 'تسجيل الدخول'}
+
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "جاري التحميل..." : "تسجيل الدخول"}
               </Button>
             </div>
           </form>

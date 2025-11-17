@@ -2,7 +2,13 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get('admin_token')?.value;
+  // Check for token in cookies or Authorization header
+  const cookieToken = request.cookies.get('admin_token')?.value;
+  const authHeader = request.headers.get('authorization');
+  const headerToken = authHeader && authHeader.startsWith('Bearer ')
+    ? authHeader.substring(7)
+    : null;
+  const token = cookieToken || headerToken;
   
   // Public paths
   if (request.nextUrl.pathname.startsWith('/login')) {

@@ -2,11 +2,16 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const StoreOwner = require("../models/StoreOwner");
 const Driver = require("../models/Driver");
+const SuperAdmin = require("../models/SuperAdmin");
 
 // Base auth middleware
 const authMiddleware = async (req, res, next) => {
   try {
-    const token = req.headers.authorization?.replace("Bearer ", "");
+    const authHeader = req.headers.authorization;
+    const token =
+      authHeader && authHeader.startsWith("Bearer ")
+        ? authHeader.substring(7, authHeader.length)
+        : null;
 
     if (!token) {
       return res
@@ -96,33 +101,120 @@ module.exports = {
   // Admin middleware - for now, we'll use a simple check based on a special admin phone number
   isAdmin: async (req, res, next) => {
     await authMiddleware(req, res, async () => {
+      // Check if user is a super admin first
+      const superAdmin = await SuperAdmin.findOne({
+        phone:
+          req.userPhone ||
+          (req.user && req.user.phone) ||
+          (req.owner && req.owner.phone) ||
+          (req.driver && req.driver.phone),
+      });
+      if (superAdmin && superAdmin.isActive) {
+        req.isAdmin = true;
+        req.adminType = "super_admin";
+        next();
+        return;
+      }
+
       // For now, we'll consider a user as admin if they have a specific admin phone number
       // This should be stored in environment variables for security
-      const adminPhones = process.env.ADMIN_PHONES?.split(',') || ['01234567890']; // Default fallback
-      
+      const adminPhones = process.env.ADMIN_PHONES?.split(",") || [
+        "01234567890",
+      ]; // Default fallback
+
       // Get the user based on role to check their phone number
       let user;
       switch (req.userRole) {
-        case 'customer':
+        case "customer":
           user = await User.findById(req.userId);
           break;
-        case 'store':
+        case "store":
           user = await StoreOwner.findById(req.userId);
           break;
-        case 'driver':
+        case "driver":
           user = await Driver.findById(req.userId);
           break;
         default:
           user = null;
       }
-      
+
       if (!user || !adminPhones.includes(user.phone)) {
         return res
           .status(403)
           .json({ success: false, message: "غير مصرح لك بالوصول" });
       }
-      
+
+      req.isAdmin = true;
+      req.adminType = "regular_admin";
       next();
     });
-  }
+  },
+
+  // Super Admin middleware - only for super admin users
+  isSuperAdmin: async (req, res, next) => {
+    await authMiddleware(req, res, async () => {
+      const superAdmin = await SuperAdmin.findById(req.userId);
+
+      if (
+        !superAdmin ||
+        !superAdmin.isActive ||
+        superAdmin.role !== "super_admin"
+      ) {
+        return res
+          .status(403)
+          .json({ success: false, message: "غير مصرح لك بالوصول كمشرف خاص" });
+      }
+
+      req.isSuperAdmin = true;
+      req.superAdmin = superAdmin;
+      next();
+    });
+  },
+
+  // General admin authentication that checks both super admin and regular admin
+  isAdminOrSuperAdmin: async (req, res, next) => {
+    await authMiddleware(req, res, async () => {
+      // First check if it's a super admin
+      const superAdmin = await SuperAdmin.findById(req.userId);
+      if (superAdmin && superAdmin.isActive) {
+        req.isAdmin = true;
+        req.isSuperAdmin = true;
+        req.adminType = "super_admin";
+        req.superAdmin = superAdmin;
+        next();
+        return;
+      }
+
+      // Then check if it's a regular admin (phone-based)
+      const adminPhones = process.env.ADMIN_PHONES?.split(",") || [
+        "01234567890",
+      ]; // Default fallback
+
+      // Get the user based on role to check their phone number
+      let user;
+      switch (req.userRole) {
+        case "customer":
+          user = await User.findById(req.userId);
+          break;
+        case "store":
+          user = await StoreOwner.findById(req.userId);
+          break;
+        case "driver":
+          user = await Driver.findById(req.userId);
+          break;
+        default:
+          user = null;
+      }
+
+      if (!user || !adminPhones.includes(user.phone)) {
+        return res
+          .status(403)
+          .json({ success: false, message: "غير مصرح لك بالوصول" });
+      }
+
+      req.isAdmin = true;
+      req.adminType = "regular_admin";
+      next();
+    });
+  },
 };

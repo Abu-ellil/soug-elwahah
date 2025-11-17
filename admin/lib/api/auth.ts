@@ -2,7 +2,8 @@ import { apiClient } from './client';
 import { Admin } from '../../types';
 
 interface LoginCredentials {
-  email: string;
+  email?: string;
+  phone?: string;
   password: string;
 }
 
@@ -25,11 +26,18 @@ interface AuthResponse {
 
 export const authAPI = {
   login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
-    return apiClient.post('/admin/auth/login', credentials);
+    const response: LoginResponse = await apiClient.post('/admin/auth/login', credentials);
+    // Store the token in the API client after successful login
+    if (response.success && response.data.token) {
+      apiClient.setToken(response.data.token);
+    }
+    return response;
   },
 
   logout: async (): Promise<void> => {
     await apiClient.post('/admin/auth/logout');
+    // Clear the token after logout
+    apiClient.clearToken();
   },
 
   me: async (): Promise<AuthResponse> => {

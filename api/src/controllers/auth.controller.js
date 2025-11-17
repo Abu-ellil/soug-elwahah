@@ -5,6 +5,7 @@ const Store = require("../models/Store");
 const Category = require("../models/Category");
 const { generateToken } = require("../utils/jwt");
 const bcrypt = require("bcryptjs");
+const { logLoginAttempt } = require("../services/loginLog.service");
 
 const registerCustomer = async (req, res) => {
   try {
@@ -204,6 +205,7 @@ const login = async (req, res) => {
     const { phone, password, role } = req.body;
 
     if (!phone || !password || !role) {
+      await logLoginAttempt(phone, role, false, null, req, "Missing required fields");
       return res
         .status(400)
         .json({ success: false, message: "يرجى تعبئة جميع الحقول" });
@@ -226,18 +228,21 @@ const login = async (req, res) => {
         userType = "driver";
         break;
       default:
+        await logLoginAttempt(phone, role, false, null, req, "Invalid role");
         return res
           .status(400)
           .json({ success: false, message: "نوع المستخدم غير صحيح" });
     }
 
     if (!user) {
+      await logLoginAttempt(phone, userType || role, false, null, req, "User not found");
       return res
         .status(401)
         .json({ success: false, message: "بيانات الدخول غير صحيحة" });
     }
 
     if (!user.isActive) {
+      await logLoginAttempt(phone, userType, false, user._id, req, "Account not active");
       return res
         .status(401)
         .json({ success: false, message: "الحساب غير نشط" });
@@ -245,6 +250,7 @@ const login = async (req, res) => {
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
+      await logLoginAttempt(phone, userType, false, user._id, req, "Invalid password");
       return res
         .status(401)
         .json({ success: false, message: "بيانات الدخول غير صحيحة" });
@@ -288,6 +294,9 @@ const login = async (req, res) => {
       };
     }
 
+    // Log successful login
+    await logLoginAttempt(phone, userType, true, user._id, req);
+
     res.status(200).json({
       success: true,
       data: {
@@ -299,6 +308,7 @@ const login = async (req, res) => {
     });
   } catch (error) {
     console.error("Login error:", error);
+    // Log the error but don't reveal internal details to the user
     res.status(500).json({ success: false, message: "خطأ في الخادم" });
   }
 };

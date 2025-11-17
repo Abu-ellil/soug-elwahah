@@ -3,7 +3,10 @@ const router = express.Router();
 const adminController = require("../../controllers/admin.controller");
 const { isAdmin } = require("../../middlewares/auth.middleware");
 
-// All admin routes require admin authentication
+// Admin auth routes (public) - should be before the isAdmin middleware
+router.use("/auth", require("./auth.routes"));
+
+// All other admin routes require admin authentication
 router.use(isAdmin);
 
 // Routes for handling store coordinate updates

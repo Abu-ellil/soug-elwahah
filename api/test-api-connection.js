@@ -1,5 +1,5 @@
 // Test script to verify API connection
-const { BASE_URL } = require("./customer-app/src/config/api");
+const { BASE_URL } = require("../customer-app/src/config/api");
 
 async function testAPI() {
   try {

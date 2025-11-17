@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { authAPI } from '../api/auth';
 import { Admin } from '../../types';
 
-export function useAuth() {
+export function useAuth() { 
   const [admin, setAdmin] = useState<Admin | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
- useEffect(() => {
+  useEffect(() => {
+    // Initialize auth check when component mounts
     checkAuth();
   }, []);
 
@@ -22,11 +23,14 @@ export function useAuth() {
     }
   };
 
-  const login = async (email: string, password: string) => {
-    const response = await authAPI.login({ email, password });
+  const login = async (identifier: string, password: string) => {
+    // Determine if the identifier is an email or phone
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
+    const credentials = isEmail ? { email: identifier, password } : { phone: identifier, password };
+    const response = await authAPI.login(credentials);
     setAdmin(response.data.admin);
     return response;
- };
+  };
 
   const logout = async () => {
     try {
