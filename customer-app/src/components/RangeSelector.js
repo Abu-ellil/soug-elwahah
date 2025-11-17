@@ -12,7 +12,7 @@ import SIZES from '../constants/sizes';
 const RangeSelector = ({
   value,
   onValueChange,
-  min = 10,
+  min = 20,
   max = 200,
   step = 5,
   unit = 'كم',

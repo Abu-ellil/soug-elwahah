@@ -94,9 +94,9 @@ const CategoryStoresScreen = ({ route }) => {
           <RangeSelector
             value={deliveryRadius}
             onValueChange={updateDeliveryRadius}
-            min={1}
-            max={50}
-            step={1}
+            min={20}
+            max={200}
+            step={5}
             unit="كم"
             title="نطاق التوصيل"
           />
