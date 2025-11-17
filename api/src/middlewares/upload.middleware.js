@@ -3,7 +3,7 @@ const path = require("path");
 const fs = require("fs");
 
 // Check if running on Vercel (serverless environment)
-const isVercel = !!process.env.VERCEL;
+const isVercel = !!process.env.VERCEL || process.env.NODE_ENV === "production";
 
 // Configure storage
 let storage;

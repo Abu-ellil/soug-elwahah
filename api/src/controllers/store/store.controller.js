@@ -93,19 +93,14 @@ const updateStoreImage = async (req, res) => {
 
     let imageUrl = "";
 
-    if (req.file.path) {
-      // File was uploaded to disk (local environment), use Cloudinary
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "stores",
-      });
-      imageUrl = result.secure_url;
-    } else if (req.file.buffer) {
+    if (req.file.buffer) {
       // File is in memory (serverless environment), upload to Firebase Storage
       if (admin && admin.storage) {
         const bucket = admin.storage().bucket(); // Get the default bucket
         const fileName = `store-images/storeImage-${Date.now()}-${Math.round(
           Math.random() * 1e9
         )}-${req.file.originalname}`;
+
         const file = bucket.file(fileName);
 
         const stream = file.createWriteStream({
@@ -132,8 +127,13 @@ const updateStoreImage = async (req, res) => {
           message: "لا يمكن رفع الصورة في الوقت الحالي",
         });
       }
+    } else if (req.file.path) {
+      // File was uploaded to disk (local environment), use Cloudinary
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "stores",
+      });
+      imageUrl = result.secure_url;
     }
-
     // Update store image
     const updatedStore = await Store.findOneAndUpdate(
       { ownerId: req.userId },

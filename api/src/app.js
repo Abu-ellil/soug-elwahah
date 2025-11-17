@@ -31,10 +31,14 @@ app.use(
 // Security middleware
 app.use(helmet());
 
+// Trust proxy for deployment behind reverse proxy/load balancer
+app.set("trust proxy", 1);
+
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
+  trustProxy: true, // Enable trust proxy for rate limiter
 });
 app.use(limiter);
 

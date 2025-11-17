@@ -103,13 +103,10 @@ const registerStoreOwner = async (req, res) => {
       });
     }
 
-    // Handle store image - if file was uploaded, use its path; otherwise use the URL provided
+    // Handle store image - if file was uploaded, process it; otherwise use the URL provided
     let storeImageUrl = "";
     if (req.file) {
-      if (req.file.path) {
-        // File was uploaded to disk (local environment), use its path
-        storeImageUrl = req.file.path;
-      } else if (req.file.buffer) {
+      if (req.file.buffer) {
         // File is in memory (serverless environment), upload to Firebase Storage
         try {
           // Check if Firebase is properly configured
@@ -148,6 +145,9 @@ const registerStoreOwner = async (req, res) => {
           // Instead of returning an error, allow registration to continue without image
           storeImageUrl = ""; // No image will be set
         }
+      } else if (req.file.path) {
+        // File was uploaded to disk (local environment), use its path
+        storeImageUrl = req.file.path;
       }
     } else if (storeImage && storeImage.startsWith("http")) {
       // Image URL was provided directly

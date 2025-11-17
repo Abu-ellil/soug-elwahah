@@ -78,13 +78,7 @@ const addProduct = async (req, res) => {
 
     let imageUrl = "";
 
-    if (req.file.path) {
-      // File was uploaded to disk (local environment), use Cloudinary
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "products",
-      });
-      imageUrl = result.secure_url;
-    } else if (req.file.buffer) {
+    if (req.file.buffer) {
       // File is in memory (serverless environment), upload to Firebase Storage
       if (admin && admin.storage) {
         const bucket = admin.storage().bucket(); // Get the default bucket
@@ -117,6 +111,12 @@ const addProduct = async (req, res) => {
           message: "لا يمكن رفع الصورة في الوقت الحالي",
         });
       }
+    } else if (req.file.path) {
+      // File was uploaded to disk (local environment), use Cloudinary
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "products",
+      });
+      imageUrl = result.secure_url;
     }
 
     // Create product
@@ -208,13 +208,7 @@ const updateProductImage = async (req, res) => {
 
     let imageUrl = "";
 
-    if (req.file.path) {
-      // File was uploaded to disk (local environment), use Cloudinary
-      const result = await cloudinary.uploader.upload(req.file.path, {
-        folder: "products",
-      });
-      imageUrl = result.secure_url;
-    } else if (req.file.buffer) {
+    if (req.file.buffer) {
       // File is in memory (serverless environment), upload to Firebase Storage
       if (admin && admin.storage) {
         const bucket = admin.storage().bucket(); // Get the default bucket
@@ -247,6 +241,12 @@ const updateProductImage = async (req, res) => {
           message: "لا يمكن رفع الصورة في الوقت الحالي",
         });
       }
+    } else if (req.file.path) {
+      // File was uploaded to disk (local environment), use Cloudinary
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "products",
+      });
+      imageUrl = result.secure_url;
     }
 
     // Update product image
