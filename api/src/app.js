@@ -72,14 +72,13 @@ app.use("/api/customer", require("./routes/customer"));
 app.use("/api/store", require("./routes/store"));
 app.use("/api/driver", require("./routes/driver"));
 
-// Serve Swagger documentation
+// Serve Swagger documentation - IMPORTANT: This must be before the wildcard route
 const swaggerOptions = {
   explorer: true, // Enables the explorer functionality to interact with the API
 };
-// Serve Swagger UI static files and setup
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument, swaggerOptions));
 
-// 404 handler
+// 404 handler - This should be last
 app.use("*", (req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });
 });
