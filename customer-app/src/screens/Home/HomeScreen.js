@@ -241,7 +241,7 @@ const HomeScreen = ({ navigation }) => {
           <View>
            
             
-            {/* Categories */}
+            {/* Categories */}    
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>الفئات</Text>
               <FlatList
