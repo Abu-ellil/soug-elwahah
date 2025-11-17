@@ -52,6 +52,11 @@ app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 // Database connection
 require("./config/database");
 
+// Root route - redirect to API documentation
+app.get("/", (req, res) => {
+  res.redirect("/api-docs");
+});
+
 // Public routes
 app.use("/api/health", (req, res) =>
   res.json({ success: true, message: "API is running" })
@@ -67,13 +72,13 @@ app.use("/api/customer", require("./routes/customer"));
 app.use("/api/store", require("./routes/store"));
 app.use("/api/driver", require("./routes/driver"));
 
+// Serve Swagger documentation
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
 // 404 handler
 app.use("*", (req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });
 });
-
-// Serve Swagger documentation
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Error handler
 app.use(require("./middlewares/error.middleware"));
