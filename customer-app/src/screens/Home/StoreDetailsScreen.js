@@ -43,19 +43,30 @@ const StoreDetailsScreen = ({ navigation, route }) => {
   );
 
   const loadStoreData = useCallback(async () => {
+    // Check if storeId is valid before making API calls
+    if (!storeId || storeId === 'undefined') {
+      Toast.show({
+        type: 'error',
+        text1: 'خطأ',
+        text2: 'رقم المتجر غير صحيح',
+      });
+      navigation.goBack();
+      return;
+    }
+  
     setLoading(true);
     try {
       // Get store details from API
       const storeResponse = await API.storesAPI.getStoreDetails(storeId);
       if (!storeResponse.success) {
-        Alert.alert('خطأ', 'المتجر غير موجود');
+        Alert.alert('خطأ', storeResponse.message || 'المتجر غير موجود');
         navigation.goBack();
         return;
       }
-
+  
       const foundStore = storeResponse.data.store;
       setStore(foundStore);
-
+  
       // Calculate distance from user location
       if (userLocation && foundStore.coordinates) {
         const distance = calculateDistance(
@@ -66,17 +77,17 @@ const StoreDetailsScreen = ({ navigation, route }) => {
         );
         setStoreDistance(distance);
       }
-
+  
       // Get products for this store from API
       const productsResponse = await API.storesAPI.getStoreProducts(storeId);
       if (productsResponse.success) {
         setStoreProducts(productsResponse.data.products);
-
+  
         // Get unique category IDs from products
         const uniqueCategoryIds = [
           ...new Set(productsResponse.data.products.map((p) => p.categoryId)),
         ];
-
+  
         // Get categories from API
         const categoriesResponse = await API.categoriesAPI.getCategories();
         if (categoriesResponse.success) {

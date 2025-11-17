@@ -96,6 +96,20 @@ const getStoreDetails = async (req, res) => {
   try {
     const { storeId } = req.params;
 
+    // Validate storeId parameter
+    if (!storeId || storeId === 'undefined') {
+      return res
+        .status(400)
+        .json({ success: false, message: "رقم المتجر مطلوب" });
+    }
+
+    // Validate ObjectId format
+    if (!/^[0-9a-fA-F]{24}$/.test(storeId)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "رقم المتجر غير صحيح" });
+    }
+
     const store = await Store.findById(storeId)
       .populate("categoryId", "name nameEn icon color")
       .populate("ownerId", "name phone");
@@ -125,6 +139,20 @@ const getStoreProducts = async (req, res) => {
   try {
     const { storeId } = req.params;
     const { categoryId, search, page = 1, limit = 20 } = req.query;
+
+    // Validate storeId parameter
+    if (!storeId || storeId === 'undefined') {
+      return res
+        .status(400)
+        .json({ success: false, message: "رقم المتجر مطلوب" });
+    }
+
+    // Validate ObjectId format
+    if (!/^[0-9a-fA-F]{24}$/.test(storeId)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "رقم المتجر غير صحيح" });
+    }
 
     // Check if store exists and is active
     const store = await Store.findById(storeId);
@@ -174,9 +202,55 @@ const getStoreProducts = async (req, res) => {
   }
 };
 
+const getAllStores = async (req, res) => {
+  try {
+    const { page = 1, limit = 20, isActive, isOpen, categoryId } = req.query;
+
+    let filter = {};
+    
+    // Add filters if provided
+    if (isActive !== undefined) {
+      filter.isActive = isActive === 'true';
+    }
+    if (isOpen !== undefined) {
+      filter.isOpen = isOpen === 'true';
+    }
+    if (categoryId) {
+      filter.categoryId = categoryId;
+    }
+
+    const stores = await Store.find(filter)
+      .populate("categoryId", "name nameEn icon color")
+      .sort({ createdAt: -1 })
+      .skip((parseInt(page) - 1) * parseInt(limit))
+      .limit(parseInt(limit));
+
+    const total = await Store.countDocuments(filter);
+    const pages = Math.ceil(total / parseInt(limit));
+
+    res.status(200).json({
+      success: true,
+      data: {
+        stores,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages,
+        },
+      },
+      message: "تم جلب جميع المتاجر بنجاح",
+    });
+  } catch (error) {
+    console.error("Get all stores error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
 module.exports = {
   getNearbyStores,
   searchStores,
   getStoreDetails,
   getStoreProducts,
+  getAllStores,
 };

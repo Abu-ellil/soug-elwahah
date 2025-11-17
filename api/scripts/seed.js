@@ -296,13 +296,73 @@ const seedData = async (options = {}) => {
           to: "23:00",
         },
       },
+      {
+        name: "بقالية الصعيد الجديدة",
+        categoryId: createdCategories[0]._id,
+        ownerId: createdStoreOwners[0]._id,
+        image:
+          "https://images.unsplash.com/photo-1563013544-824ae1b704d3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D&auto=format&fit=crop&w=500&q=80",
+        phone: "0107777778",
+        address: "المنيا الجديدة",
+        description: "بقالية متكاملة بالقرب من المنيا",
+        coordinates: {
+          lat: 28.35092,
+          lng: 29.0737717,
+        },
+        villageId: "village3",
+        deliveryTime: "20-30 دقيقة",
+        deliveryFee: 12,
+        workingHours: {
+          from: "08:00",
+          to: "22:00",
+        },
+      },
+      {
+        name: "فواكه و خضروات الصعيد",
+        categoryId: createdCategories[2]._id,
+        ownerId: createdStoreOwners[1]._id,
+        image:
+          "https://images.unsplash.com/photo-1542838132-92c5300491e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+        phone: "0108888889",
+        address: "المنيا الجديدة",
+        description: "فواكه و خضروات طازجة من أرض الصعيد",
+        coordinates: {
+          lat: 28.35092,
+          lng: 29.0737717,
+        },
+        villageId: "village3",
+        deliveryTime: "15-25 دقيقة",
+        deliveryFee: 10,
+        workingHours: {
+          from: "07:00",
+          to: "21:00",
+        },
+      },
+      {
+        name: "مخبز وحلويات الصعيد",
+        categoryId: createdCategories[1]._id,
+        ownerId: createdStoreOwners[2]._id,
+        image:
+          "https://images.unsplash.com/photo-1509401596-024908772ff?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+        phone: "0109999990",
+        address: "المنيا الجديدة",
+        description: "مخبز طازج وحلويات صعيدية أصيلة",
+        coordinates: {
+          lat: 28.35092,
+          lng: 29.0737717,
+        },
+        villageId: "village3",
+        deliveryTime: "10-20 دقيقة",
+        deliveryFee: 8,
+        workingHours: {
+          from: "05:00",
+          to: "23:00",
+        },
+      },
     ];
 
     const createdStoresWithCoordinates = await Store.insertMany(storesWithCoordinates);
     console.log(`${createdStoresWithCoordinates.length} stores created at requested coordinates`);
-
-    // Combine all stores
-    const allCreatedStores = [...createdStores, ...createdStoresWithCoordinates];
 
     // Update store owners with their store IDs (using the original 3 stores since we only have 3 owners)
     for (let i = 0; i < createdStoreOwners.length; i++) {
