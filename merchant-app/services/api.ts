@@ -33,21 +33,19 @@ class ApiService {
   // Generic API request method
   async request(endpoint: string, options: RequestInit = {}) {
     const url = `${this.baseUrl}${endpoint}`;
-    const headers = {
-      'Content-Type': 'application/json',
-      ...options.headers,
+    const config: RequestInit = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+      ...options,
     };
 
     // Add authorization header if token exists
     const token = await this.getToken();
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      (config.headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
     }
-
-    const config: RequestInit = {
-      headers,
-      ...options,
-    };
 
     try {
       const response = await fetch(url, config);
@@ -66,17 +64,53 @@ class ApiService {
   }
 
   // Authentication methods
-  login(credentials: { email: string; password: string }) {
+  login(credentials: { phone: string; password: string; role: string }) {
     return this.request('/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
   }
 
-  register(merchantData: { email: string; password: string; name: string; storeName: string }) {
+  register(merchantData: { email: string; phone: string; password: string; name: string; storeName: string; storeDescription?: string; storeImage?: string; coordinates?: { lat: number; lng: number } }) {
+    // Create FormData for file upload
+    const formData = new FormData();
+    formData.append('email', merchantData.email);
+    formData.append('phone', merchantData.phone);
+    formData.append('password', merchantData.password);
+    formData.append('name', merchantData.name);
+    formData.append('storeName', merchantData.storeName);
+    
+    if (merchantData.storeDescription) {
+      formData.append('storeDescription', merchantData.storeDescription);
+    }
+    
+    // Add coordinates if provided
+    if (merchantData.coordinates) {
+      formData.append('coordinates[lat]', merchantData.coordinates.lat.toString());
+      formData.append('coordinates[lng]', merchantData.coordinates.lng.toString());
+    }
+    
+    // Add image as file if it exists and is not just a URL
+    if (merchantData.storeImage) {
+      if (merchantData.storeImage.startsWith('http')) {
+        // If it's a URL, send as string
+        formData.append('storeImage', merchantData.storeImage);
+      } else {
+        // If it's a local file URI, add as a file
+        formData.append('storeImage', {
+          uri: merchantData.storeImage,
+          type: 'image/jpeg', // Could be improved to detect type
+          name: 'store_image.jpg' // Could be improved to extract filename
+        } as any);
+      }
+    }
+
     return this.request('/auth/store/register', {
       method: 'POST',
-      body: JSON.stringify(merchantData),
+      body: formData,
+      headers: {
+        // Don't set Content-Type header for FormData (it will be set automatically)
+      },
     });
   }
 
@@ -151,6 +185,14 @@ class ApiService {
   // Statistics methods
   getStatistics() {
     return this.request('/store/statistics');
+  }
+
+  // Update store coordinates
+  updateStoreCoordinates(coordinates: { lat: number; lng: number }) {
+    return this.request('/store/coordinates', {
+      method: 'PUT',
+      body: JSON.stringify({ coordinates }),
+    });
   }
 }
 

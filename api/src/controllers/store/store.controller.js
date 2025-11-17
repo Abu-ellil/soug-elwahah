@@ -192,10 +192,54 @@ const getAllStores = async (req, res) => {
   }
 };
 
+// Update store coordinates function
+const updateStoreCoordinates = async (req, res) => {
+  try {
+    const { coordinates } = req.body;
+
+    if (!coordinates || !coordinates.lat || !coordinates.lng) {
+      return res
+        .status(400)
+        .json({ success: false, message: "الإحداثيات مطلوبة" });
+    }
+
+    const store = await Store.findOne({ ownerId: req.userId });
+
+    if (!store) {
+      return res
+        .status(404)
+        .json({ success: false, message: "المحل غير موجود" });
+    }
+
+    // Update store coordinates - these will need admin approval before taking effect
+    const updatedStore = await Store.findOneAndUpdate(
+      { ownerId: req.userId },
+      {
+        pendingCoordinates: {
+          lat: parseFloat(coordinates.lat),
+          lng: parseFloat(coordinates.lng)
+        },
+        updatedAt: Date.now(),
+      },
+      { new: true }
+    ).populate("categoryId", "name nameEn icon color");
+
+    res.status(200).json({
+      success: true,
+      data: { store: updatedStore },
+      message: "تم تحديث إحداثيات المتجر بنجاح، في انتظار موافقة الإدارة",
+    });
+  } catch (error) {
+    console.error("Update store coordinates error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
 module.exports = {
   getMyStore,
   updateStore,
   updateStoreImage,
   toggleStoreStatus,
   getAllStores,
+  updateStoreCoordinates,
 };

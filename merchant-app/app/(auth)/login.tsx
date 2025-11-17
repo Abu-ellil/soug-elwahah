@@ -15,32 +15,32 @@ import { useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
 
 const LoginScreen = () => {
-  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { login } = useAuth();
 
   const handleLogin = async () => {
-    if (!phone.trim() || !password.trim()) {
+    if (!email.trim() || !password.trim()) {
       Alert.alert('خطأ', 'يرجى ملء جميع الحقول');
       return;
     }
 
-    // Validate phone number (Egyptian format)
-    if (!/^(01)[0-9]{9}$/.test(phone)) {
-      Alert.alert('خطأ', 'رقم الموبايل غير صحيح');
+    // Validate email format
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      Alert.alert('خطأ', 'البريد الإلكتروني غير صحيح');
       return;
     }
 
     setIsLoading(true);
     try {
-      const result = await login(phone, password);
+      const result = await login(email, password);
       if (result.success) {
         // Navigate to the main dashboard
-        router.replace('/(tabs)/');
+        router.replace('/');
       } else {
-        Alert.alert('خطأ', result.error || 'رقم الموبايل أو كلمة المرور غير صحيحة');
+        Alert.alert('خطأ', result.error || 'البريد الإلكتروني أو كلمة المرور غير صحيحة');
       }
     } catch (error) {
       Alert.alert('خطأ', 'حدث خطأ أثناء تسجيل الدخول');
@@ -67,18 +67,17 @@ const LoginScreen = () => {
           {/* Form */}
           <View className="mb-8">
             <View className="mb-4">
-              <Text className="mb-2 text-sm font-medium text-gray-800">رقم الموبايل</Text>
+              <Text className="mb-2 text-sm font-medium text-gray-800">البريد الإلكتروني</Text>
               <View className="flex-row items-center rounded-xl border border-gray-300 px-4 py-3">
                 <TextInput
-                  value={phone}
-                  onChangeText={setPhone}
-                  placeholder="01xxxxxxxxx"
-                  keyboardType="phone-pad"
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="example@email.com"
+                  keyboardType="email-address"
                   className="flex-1 text-right"
                   style={{ color: 'black' }}
-                  maxLength={11}
                 />
-                <Ionicons name="call-outline" size={20} color="#6B7280" />
+                <Ionicons name="mail-outline" size={20} color="#6B7280" />
               </View>
             </View>
 

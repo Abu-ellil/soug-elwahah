@@ -1,121 +1,141 @@
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import apiService from '../services/api';
 
-// Define merchant application type
-interface MerchantApplication {
-  id: string;
-  name: string;
-  phone: string;
-  storeName: string;
-  storeDescription: string;
-  storeImage?: string;
-  approved: boolean;
+// Define store type with pending coordinates
+interface StoreWithPendingCoordinates {
+  _id: string;
+ name: string;
+ categoryId: {
+    name: string;
+ };
+  ownerId: {
+    name: string;
+    phone: string;
+  };
+  pendingCoordinates: {
+    lat: number;
+    lng: number;
+  };
   createdAt: string;
 }
 
 const AdminScreen = () => {
-  const [applications, setApplications] = useState<MerchantApplication[]>([]);
+  const [stores, setStores] = useState<StoreWithPendingCoordinates[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    loadApplications();
+    loadStoresWithPendingCoordinates();
   }, []);
 
-  const loadApplications = async () => {
+  const loadStoresWithPendingCoordinates = async () => {
     try {
-      const merchantsData = await AsyncStorage.getItem('merchants');
-      if (merchantsData) {
-        const merchants: MerchantApplication[] = JSON.parse(merchantsData);
-        // Filter to show only pending applications
-        const pendingApps = merchants.filter((merchant) => merchant.approved === false);
-        setApplications(pendingApps);
+      setLoading(true);
+      const response = await apiService.request('/admin/stores/pending-coordinates', {
+        method: 'GET'
+      });
+      
+      if (response.success) {
+        setStores(response.data.stores);
+      } else {
+        Alert.alert('خطأ', response.message || 'حدث خطأ أثناء تحميل المتاجر');
       }
     } catch (error) {
-      console.error('Error loading applications:', error);
-      Alert.alert('خطأ', 'حدث خطأ أثناء تحميل طلبات التسجيل');
+      console.error('Error loading stores with pending coordinates:', error);
+      Alert.alert('خطأ', 'حدث خطأ أثناء تحميل المتاجر');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const handleApprove = async (id: string) => {
-    try {
-      const merchantsData = await AsyncStorage.getItem('merchants');
-      if (merchantsData) {
-        const merchants: MerchantApplication[] = JSON.parse(merchantsData);
-        const updatedMerchants = merchants.map((merchant) =>
-          merchant.id === id ? { ...merchant, approved: true } : merchant
-        );
-        await AsyncStorage.setItem('merchants', JSON.stringify(updatedMerchants));
+  const handleApprove = async (storeId: string) => {
+    Alert.alert('قبول الإحداثيات', 'هل أنت متأكد أنك تريد قبول الإحداثيات الجديدة لهذا المتجر؟', [
+      { text: 'إلغاء', style: 'cancel' },
+      {
+        text: 'قبول',
+        style: 'default',
+        onPress: async () => {
+          try {
+            const response = await apiService.request(`/admin/stores/${storeId}/approve-coordinates`, {
+              method: 'PATCH'
+            });
+            
+            if (response.success) {
+              // Update local state
+              setStores(stores.filter(store => store._id !== storeId));
+              Alert.alert('تم', 'تم قبول الإحداثيات بنجاح');
+            } else {
+              Alert.alert('خطأ', response.message || 'حدث خطأ أثناء قبول الإحداثيات');
+            }
+          } catch (error) {
+            console.error('Error approving coordinates:', error);
+            Alert.alert('خطأ', 'حدث خطأ أثناء قبول الإحداثيات');
+          }
+        },
+      },
+    ]);
+ };
 
-        // Update local state
-        setApplications(applications.filter((app) => app.id !== id));
-
-        Alert.alert('تم', 'تم قبول طلب التسجيل بنجاح');
-      }
-    } catch (error) {
-      console.error('Error approving application:', error);
-      Alert.alert('خطأ', 'حدث خطأ أثناء قبول طلب التسجيل');
-    }
-  };
-
-  const handleReject = async (id: string) => {
-    Alert.alert('رفض الطلب', 'هل أنت متأكد أنك تريد رفض هذا الطلب؟', [
+  const handleReject = async (storeId: string) => {
+    Alert.alert('رفض الإحداثيات', 'هل أنت متأكد أنك تريد رفض الإحداثيات الجديدة لهذا المتجر؟', [
       { text: 'إلغاء', style: 'cancel' },
       {
         text: 'رفض',
         style: 'destructive',
         onPress: async () => {
           try {
-            const merchantsData = await AsyncStorage.getItem('merchants');
-            if (merchantsData) {
-              const merchants: MerchantApplication[] = JSON.parse(merchantsData);
-              const updatedMerchants = merchants.filter((merchant) => merchant.id !== id);
-              await AsyncStorage.setItem('merchants', JSON.stringify(updatedMerchants));
-
+            const response = await apiService.request(`/admin/stores/${storeId}/reject-coordinates`, {
+              method: 'PATCH'
+            });
+            
+            if (response.success) {
               // Update local state
-              setApplications(applications.filter((app) => app.id !== id));
-
-              Alert.alert('تم', 'تم رفض طلب التسجيل');
+              setStores(stores.filter(store => store._id !== storeId));
+              Alert.alert('تم', 'تم رفض الإحداثيات');
+            } else {
+              Alert.alert('خطأ', response.message || 'حدث خطأ أثناء رفض الإحداثيات');
             }
           } catch (error) {
-            console.error('Error rejecting application:', error);
-            Alert.alert('خطأ', 'حدث خطأ أثناء رفض طلب التسجيل');
+            console.error('Error rejecting coordinates:', error);
+            Alert.alert('خطأ', 'حدث خطأ أثناء رفض الإحداثيات');
           }
         },
       },
     ]);
+ };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    loadStoresWithPendingCoordinates();
   };
 
-  const renderApplication = ({ item }: { item: MerchantApplication }) => (
+  const renderStore = ({ item }: { item: StoreWithPendingCoordinates }) => (
     <View style={styles.applicationCard}>
       <View style={styles.applicationInfo}>
         <View style={styles.storeImageContainer}>
-          {item.storeImage ? (
-            <Ionicons name="image" size={40} color="#9CA3AF" />
-          ) : (
-            <Ionicons name="image-outline" size={40} color="#D1D5DB" />
-          )}
+          <Ionicons name="location-outline" size={40} color="#9CA3AF" />
         </View>
         <View style={styles.infoContainer}>
-          <Text style={styles.storeName}>{item.storeName}</Text>
-          <Text style={styles.ownerName}>{item.name}</Text>
-          <Text style={styles.phone}>{item.phone}</Text>
-          <Text style={styles.description} numberOfLines={2}>
-            {item.storeDescription}
+          <Text style={styles.storeName}>{item.name}</Text>
+          <Text style={styles.ownerName}>{item.ownerId.name}</Text>
+          <Text style={styles.phone}>{item.ownerId.phone}</Text>
+          <Text style={styles.category}>{item.categoryId.name}</Text>
+          <Text style={styles.coordinates}>
+            الإحداثيات الجديدة: ({item.pendingCoordinates.lat.toFixed(6)}, {item.pendingCoordinates.lng.toFixed(6)})
           </Text>
           <Text style={styles.date}>
-            تم التسجيل: {new Date(item.createdAt).toLocaleDateString('ar-EG')}
+            تم التحديث: {new Date(item.createdAt).toLocaleDateString('ar-EG')}
           </Text>
         </View>
       </View>
       <View style={styles.actionButtons}>
-        <TouchableOpacity style={styles.approveButton} onPress={() => handleApprove(item.id)}>
+        <TouchableOpacity style={styles.approveButton} onPress={() => handleApprove(item._id)}>
           <Ionicons name="checkmark" size={20} color="white" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.rejectButton} onPress={() => handleReject(item.id)}>
+        <TouchableOpacity style={styles.rejectButton} onPress={() => handleReject(item._id)}>
           <Ionicons name="close" size={20} color="white" />
         </TouchableOpacity>
       </View>
@@ -134,21 +154,24 @@ const AdminScreen = () => {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>إدارة طلبات التسجيل</Text>
+        <Text style={styles.headerTitle}>إدارة إحداثيات المتاجر</Text>
       </View>
 
-      {/* Applications List */}
+      {/* Stores List */}
       <FlatList
-        data={applications}
-        renderItem={renderApplication}
-        keyExtractor={(item) => item.id}
+        data={stores}
+        renderItem={renderStore}
+        keyExtractor={(item) => item._id}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Ionicons name="checkmark-circle-outline" size={60} color="#D1D5DB" />
-            <Text style={styles.emptyText}>لا توجد طلبات معلقة</Text>
-            <Text style={styles.emptySubtext}>جميع طلبات التسجيل تمت معالجتها</Text>
+            <Text style={styles.emptyText}>لا توجد إحداثيات معلقة</Text>
+            <Text style={styles.emptySubtext}>جميع طلبات تحديث الإحداثيات تمت معالجتها</Text>
           </View>
         }
       />
@@ -267,6 +290,16 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     marginTop: 8,
     textAlign: 'center',
+  },
+  category: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginBottom: 2,
+  },
+  coordinates: {
+    fontSize: 12,
+    color: '#3B82F6',
+    marginBottom: 4,
   },
 });
 

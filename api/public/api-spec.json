@@ -49,7 +49,7 @@
         "summary": "Get all categories",
         "description": "Retrieve all active categories",
         "responses": {
-          "20": {
+          "200": {
             "description": "List of categories",
             "content": {
               "application/json": {
@@ -87,7 +87,7 @@
                               "createdAt": {
                                 "type": "string",
                                 "format": "date-time",
-                                "example": "2024-01-01T00:00:00.000Z"
+                                "example": "2024-01-01T00:00.000Z"
                               }
                             }
                           }
@@ -498,6 +498,6 @@
         "bearerFormat": "JWT"
       }
     }
- },
+  },
   "security": []
 }

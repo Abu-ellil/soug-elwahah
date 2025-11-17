@@ -93,4 +93,36 @@ module.exports = {
   isCustomer,
   isStoreOwner,
   isDriver,
+  // Admin middleware - for now, we'll use a simple check based on a special admin phone number
+  isAdmin: async (req, res, next) => {
+    await authMiddleware(req, res, async () => {
+      // For now, we'll consider a user as admin if they have a specific admin phone number
+      // This should be stored in environment variables for security
+      const adminPhones = process.env.ADMIN_PHONES?.split(',') || ['01234567890']; // Default fallback
+      
+      // Get the user based on role to check their phone number
+      let user;
+      switch (req.userRole) {
+        case 'customer':
+          user = await User.findById(req.userId);
+          break;
+        case 'store':
+          user = await StoreOwner.findById(req.userId);
+          break;
+        case 'driver':
+          user = await Driver.findById(req.userId);
+          break;
+        default:
+          user = null;
+      }
+      
+      if (!user || !adminPhones.includes(user.phone)) {
+        return res
+          .status(403)
+          .json({ success: false, message: "غير مصرح لك بالوصول" });
+      }
+      
+      next();
+    });
+  }
 };

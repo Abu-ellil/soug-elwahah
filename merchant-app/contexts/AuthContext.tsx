@@ -1,24 +1,29 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
+import apiService from '../services/api';
 
 interface User {
-  id: string;
+  _id: string;
+  id?: string;
   name: string;
-  phone: string;
-  password: string;
+  email: string;
+  phone?: string;
   storeName: string;
-  storeDescription: string;
+  storeDescription?: string;
   storeImage?: string;
-  role: 'merchant';
-  approved: boolean;
+  role: string;
+  approved?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  // Add any other fields that might come from the API
 }
 
 interface AuthContextType {
   currentUser: User | null;
   isLoading: boolean;
   login: (phone: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  register: (userData: any) => Promise<{ success: boolean; error?: string }>;
+  register: (userData: { email: string; phone: string; password: string; name: string; storeName: string; storeDescription?: string; storeImage?: string; coordinates?: { lat: number; lng: number } }) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -47,9 +52,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const loadUser = async () => {
     try {
-      const userData = await AsyncStorage.getItem('user');
-      if (userData) {
-        setCurrentUser(JSON.parse(userData));
+      // Check if we have a token stored
+      const token = await apiService.getToken();
+      if (token) {
+        // Token exists, try to get user profile from API
+        try {
+          const profile = await apiService.getProfile();
+          if (profile) {
+            setCurrentUser(profile);
+          }
+        } catch (error) {
+          // If getting profile fails, token might be invalid, so clear it
+          await apiService.clearToken();
+          console.error('Error getting user profile:', error);
+        }
       }
     } catch (error) {
       console.error('Error loading user:', error);
@@ -59,78 +75,75 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const login = async (
-    phone: string,
+    phone: string, // Using phone as identifier for login
     password: string
   ): Promise<{ success: boolean; error?: string }> => {
     try {
-      // In a real app, this would be an API call
-      // For now, we'll simulate checking against stored merchant applications
-      const merchantsData = await AsyncStorage.getItem('merchants');
-      const merchants: User[] = merchantsData ? JSON.parse(merchantsData) : [];
-
-      const user = merchants.find((u) => u.phone === phone);
-
-      if (user) {
-        // Verify password
-        if (user.password === password) {
-          if (user.approved) {
-            const userData = { ...user };
-            delete (userData as any).password; // Don't store password in current user
-            setCurrentUser(userData);
-            await AsyncStorage.setItem('user', JSON.stringify(userData));
-            return { success: true };
-          } else {
-            return { success: false, error: 'حسابك قيد المراجعة، انتظر موافقة الإدارة' };
-          }
-        } else {
-          return { success: false, error: 'رقم الموبايل أو كلمة المرور غير صحيحة' };
+      setIsLoading(true);
+      // Use the API service for login
+      const response = await apiService.login({ phone, password, role: 'store' });
+      
+      if (response && response.token) {
+        // Store the token in the API service
+        await apiService.setToken(response.token);
+        
+        // Get user profile after successful login
+        const profile = await apiService.getProfile();
+        if (profile) {
+          setCurrentUser(profile);
+          await AsyncStorage.setItem('user', JSON.stringify(profile));
         }
+        return { success: true };
       } else {
-        return { success: false, error: 'رقم الموبايل أو كلمة المرور غير صحيحة' };
+        return { success: false, error: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' };
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error);
-      return { success: false, error: 'حدث خطأ أثناء تسجيل الدخول' };
+      let errorMessage = 'حدث خطأ أثناء تسجيل الدخول';
+      if (error.message) {
+        errorMessage = error.message;
+      }
+      return { success: false, error: errorMessage };
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const register = async (userData: any): Promise<{ success: boolean; error?: string }> => {
+  const register = async (userData: { email: string; phone: string; password: string; name: string; storeName: string; storeDescription?: string; storeImage?: string; coordinates?: { lat: number; lng: number } }): Promise<{ success: boolean; error?: string }> => {
     try {
-      // In a real app, this would be an API call
-      // For now, we'll store the merchant application in AsyncStorage
-      const merchantsData = await AsyncStorage.getItem('merchants');
-      const merchants: User[] = merchantsData ? JSON.parse(merchantsData) : [];
-
-      const existingUser = merchants.find((u) => u.phone === userData.phone);
-      if (existingUser) {
-        return { success: false, error: 'رقم الموبايل مسجل بالفعل' };
-      }
-
-      const newMerchant: User = {
-        id: `merchant${Date.now()}`,
-        name: userData.name,
+      setIsLoading(true);
+      // Use the API service for registration
+      const response = await apiService.register({
+        email: userData.email,
         phone: userData.phone,
         password: userData.password,
+        name: userData.name,
         storeName: userData.storeName,
         storeDescription: userData.storeDescription,
         storeImage: userData.storeImage,
-        role: 'merchant',
-        approved: false, // Default to not approved
-      };
-
-      merchants.push(newMerchant);
-      await AsyncStorage.setItem('merchants', JSON.stringify(merchants));
-
-      Toast.show({
-        type: 'success',
-        text1: 'تم',
-        text2: 'تم تقديم طلبك بنجاح، انتظر موافقة الإدارة',
+        coordinates: userData.coordinates
       });
 
-      return { success: true };
-    } catch (error) {
+      if (response) {
+        Toast.show({
+          type: 'success',
+          text1: 'تم',
+          text2: 'تم تقديم طلبك بنجاح، انتظر موافقة الإدارة',
+        });
+
+        return { success: true };
+      } else {
+        return { success: false, error: 'حدث خطأ أثناء التسجيل' };
+      }
+    } catch (error: any) {
       console.error('Registration error:', error);
-      return { success: false, error: 'حدث خطأ أثناء التسجيل' };
+      let errorMessage = 'حدث خطأ أثناء التسجيل';
+      if (error.message) {
+        errorMessage = error.message;
+      }
+      return { success: false, error: errorMessage };
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -138,6 +151,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setCurrentUser(null);
       await AsyncStorage.removeItem('user');
+      // Also clear the API token
+      await apiService.clearToken();
     } catch (error) {
       console.error('Logout error:', error);
     }

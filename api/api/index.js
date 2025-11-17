@@ -22,16 +22,7 @@ const corsOptions = {
     if (!origin) return callback(null, true);
 
     // In production, add your frontend domains here
-    const allowedOrigins = [
-      "http://localhost:19006", // Expo web
-      "exp://192.168.1.4:19000", // Expo development
-      "http://192.168.1.4:19000", // Expo development
-      "http://localhost:19000", // Expo development
-      "exp://localhost:19000", // Expo development
-      "exp://localhost:8081", // Expo development
-      "exp://192.168.1.4:8081", // Expo development
-      // Add production domains when ready
-    ];
+    const allowedOrigins = [*];
 
     if (allowedOrigins.includes(origin)) {
       callback(null, true);

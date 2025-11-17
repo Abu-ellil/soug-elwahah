@@ -17,6 +17,10 @@ const storeSchema = new mongoose.Schema({
     lat: { type: Number, required: true },
     lng: { type: Number, required: true }
   },
+  pendingCoordinates: {
+    lat: { type: Number },
+    lng: { type: Number }
+  },
   villageId: { type: String, required: true },
   workingHours: {
     from: { type: String, default: '08:00' },

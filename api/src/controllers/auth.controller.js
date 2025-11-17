@@ -1,6 +1,8 @@
 const User = require("../models/User");
 const StoreOwner = require("../models/StoreOwner");
 const Driver = require("../models/Driver");
+const Store = require("../models/Store");
+const Category = require("../models/Category");
 const { generateToken } = require("../utils/jwt");
 const bcrypt = require("bcryptjs");
 
@@ -57,7 +59,7 @@ const registerCustomer = async (req, res) => {
 
 const registerStoreOwner = async (req, res) => {
   try {
-    const { name, phone, password } = req.body;
+    const { name, email, phone, password, storeName, storeDescription, storeImage, coordinates } = req.body;
 
     // Check if store owner already exists
     const existingOwner = await StoreOwner.findOne({ phone });
@@ -79,6 +81,50 @@ const registerStoreOwner = async (req, res) => {
 
     await owner.save();
 
+    // Get a default category (using the first one available)
+    let defaultCategory = await Category.findOne();
+    if (!defaultCategory) {
+      // If no category exists, we might need to handle this case differently
+      // For now, let's create a default category ID (this might need adjustment)
+      return res
+        .status(400)
+        .json({ success: false, message: "لا توجد فئات متاحة، يرجى الاتصال بالمسؤول" });
+    }
+
+    // Handle store image - if file was uploaded, use its path; otherwise use the URL provided
+    let storeImageUrl = "";
+    if (req.file) {
+      // File was uploaded, use its path
+      storeImageUrl = req.file.path;
+    } else if (storeImage && storeImage.startsWith("http")) {
+      // Image URL was provided directly
+      storeImageUrl = storeImage;
+    }
+
+    // Use provided coordinates or default to 0,0 if not provided
+    const storeCoordinates = coordinates ? {
+      lat: parseFloat(coordinates.lat),
+      lng: parseFloat(coordinates.lng)
+    } : { lat: 0, lng: 0 };
+
+    const store = new Store({
+      name: storeName,
+      categoryId: defaultCategory._id,
+      ownerId: owner._id,
+      image: storeImageUrl,
+      phone: phone, // Use the owner's phone as store phone
+      address: "", // Empty address initially, can be updated later
+      description: storeDescription || "",
+      coordinates: storeCoordinates,
+      villageId: "", // Empty initially, can be updated later
+    });
+
+    await store.save();
+
+    // Update the owner with the storeId
+    owner.storeId = store._id;
+    await owner.save();
+
     // Generate token
     const token = generateToken({
       userId: owner._id,
@@ -98,7 +144,7 @@ const registerStoreOwner = async (req, res) => {
         },
         token,
       },
-      message: "تم إنشاء حساب التاجر بنجاح",
+      message: "تم إنشاء حساب التاجر ومتجره بنجاح",
     });
   } catch (error) {
     console.error("Register store owner error:", error);

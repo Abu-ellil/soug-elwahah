@@ -13,16 +13,19 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import Toast from 'react-native-toast-message';
 
 const RegisterScreen = () => {
-  const [name, setName] = useState('');
+ const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [storeName, setStoreName] = useState('');
   const [storeDescription, setStoreDescription] = useState('');
-  const [storeImage, setStoreImage] = useState<string | null>(null);
+  const [storeImage, setStoreImage] = useState<string | undefined>(undefined);
+  const [coordinates, setCoordinates] = useState<{ lat: number; lng: number } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { register } = useAuth();
@@ -44,12 +47,43 @@ const RegisterScreen = () => {
 
     if (!result.canceled) {
       setStoreImage(result.assets[0].uri);
+    } else {
+      setStoreImage(undefined);
     }
   };
+
+  const getCurrentLocation = async () => {
+    try {
+      // Request permission to access location
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('خطأ', 'نحتاج إلى إذن للوصول إلى موقعك');
+        return;
+      }
+
+      // Get current location
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+
+      // Update coordinates state
+      const newCoordinates = {
+        lat: location.coords.latitude,
+        lng: location.coords.longitude,
+      };
+      setCoordinates(newCoordinates);
+
+      Alert.alert('تم', 'تم الحصول على موقعك بنجاح');
+    } catch (error) {
+      console.error('Error getting location:', error);
+      Alert.alert('خطأ', 'حدث خطأ أثناء الحصول على موقعك');
+    }
+ };
 
   const handleRegister = async () => {
     if (
       !name.trim() ||
+      !email.trim() ||
       !phone.trim() ||
       !password.trim() ||
       !confirmPassword.trim() ||
@@ -60,7 +94,7 @@ const RegisterScreen = () => {
     }
 
     // Validate phone number (Egyptian format)
-    if (!/^(01)[0-9]{9}$/.test(phone)) {
+    if (!/^(01)[0-9]{9}$/.test(phone.trim())) {
       Alert.alert('خطأ', 'رقم الموبايل غير صحيح');
       return;
     }
@@ -77,13 +111,22 @@ const RegisterScreen = () => {
 
     setIsLoading(true);
     try {
+      // Validate that coordinates are provided
+      if (!coordinates) {
+        Alert.alert('خطأ', 'يرجى تحديد موقع المتجر');
+        setIsLoading(false);
+        return;
+      }
+
       const result = await register({
         name: name.trim(),
-        phone,
+        email: email.trim(),
+        phone: phone.trim(),
         password,
         storeName: storeName.trim(),
         storeDescription: storeDescription.trim(),
         storeImage,
+        coordinates,
       });
 
       if (result.success) {
@@ -288,7 +331,7 @@ const RegisterScreen = () => {
               </View>
             </View>
 
-            <View style={{ marginBottom: 24 }}>
+            <View style={{ marginBottom: 16 }}>
               <Text style={{ marginBottom: 8, fontSize: 14, fontWeight: '500', color: '#1F2937' }}>
                 صورة المتجر
               </Text>
@@ -318,6 +361,36 @@ const RegisterScreen = () => {
                   </View>
                 )}
               </TouchableOpacity>
+            </View>
+            
+            {/* Location Information */}
+            <View style={{ marginBottom: 24 }}>
+              <Text style={{ marginBottom: 8, fontSize: 14, fontWeight: '500', color: '#1F2937' }}>
+                موقع المتجر
+              </Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                <Text style={{ fontSize: 14, color: '#6B7280' }}>
+                  {coordinates ? `(${coordinates.lat.toFixed(6)}, ${coordinates.lng.toFixed(6)})` : 'لم يتم تحديد الموقع'}
+                </Text>
+                <TouchableOpacity
+                  onPress={getCurrentLocation}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: coordinates ? '#10B981' : '#3B82F6',
+                    paddingHorizontal: 16,
+                    paddingVertical: 8,
+                    borderRadius: 8,
+                  }}>
+                  <Ionicons name="location-outline" size={16} color="white" />
+                  <Text style={{ color: 'white', marginRight: 6, fontSize: 12 }}>
+                    {coordinates ? 'تحديث الموقع' : 'تحديد الموقع'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={{ fontSize: 12, color: '#9CA3AF' }}>
+                يرجى تحديد موقع المتجر بدقة للسماح للعملاء بالعثور عليه بسهولة
+              </Text>
             </View>
           </View>
 

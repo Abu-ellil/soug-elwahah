@@ -11,5 +11,6 @@ router.put(
   storeController.updateStoreImage
 );
 router.patch("/toggle-status", storeController.toggleStoreStatus);
+router.put("/coordinates", storeController.updateStoreCoordinates);
 
 module.exports = router;

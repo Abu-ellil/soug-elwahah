@@ -25,6 +25,10 @@ const registerStoreOwnerSchema = Joi.object({
     "string.max": "الاسم يجب أن لا يزيد عن 50 حرف",
     "any.required": "الاسم مطلوب",
   }),
+  email: Joi.string().email().required().messages({
+    "string.email": "البريد الإلكتروني غير صحيح",
+    "any.required": "البريد الإلكتروني مطلوب",
+  }),
   phone: Joi.string()
     .pattern(/^01[0-9]{9}$/)
     .required()
@@ -35,6 +39,33 @@ const registerStoreOwnerSchema = Joi.object({
   password: Joi.string().min(6).required().messages({
     "string.min": "كلمة المرور يجب أن تكون على الأقل 6 أحرف",
     "any.required": "كلمة المرور مطلوبة",
+  }),
+  storeName: Joi.string().min(3).max(100).required().messages({
+    "string.min": "اسم المتجر يجب أن يحتوي على الأقل 3 أحرف",
+    "string.max": "اسم المتجر يجب أن لا يزيد عن 100 حرف",
+    "any.required": "اسم المتجر مطلوب",
+  }),
+  storeDescription: Joi.string().max(500).optional().messages({
+    "string.max": "وصف المتجر يجب أن لا يزيد عن 500 حرف",
+  }),
+  storeImage: Joi.string().uri().optional().messages({
+    "string.uri": "صورة المتجر يجب أن تكون رابط صحيح",
+  }),
+  coordinates: Joi.object({
+    lat: Joi.number().min(-90).max(90).required().messages({
+      "number.base": "خط العرض يجب أن يكون عدد",
+      "number.min": "خط العرض يجب أن يكون بين -90 و 90",
+      "number.max": "خط العرض يجب أن يكون بين -90 و 90",
+      "any.required": "خط العرض مطلوب"
+    }),
+    lng: Joi.number().min(-180).max(180).required().messages({
+      "number.base": "خط الطول يجب أن يكون عدد",
+      "number.min": "خط الطول يجب أن يكون بين -180 و 180",
+      "number.max": "خط الطول يجب أن يكون بين -180 و 180",
+      "any.required": "خط الطول مطلوب"
+    })
+  }).optional().messages({
+    "any.required": "الإحداثيات مطلوبة"
   }),
 });
 
