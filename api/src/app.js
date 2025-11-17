@@ -3,6 +3,8 @@ const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const path = require("path");
+const swaggerUi = require("swagger-ui-express");
+const swaggerDocument = require("../swagger.json");
 require("dotenv").config();
 
 // Initialize Express app
@@ -69,6 +71,9 @@ app.use("/api/driver", require("./routes/driver"));
 app.use("*", (req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });
 });
+
+// Serve Swagger documentation
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Error handler
 app.use(require("./middlewares/error.middleware"));
