@@ -131,9 +131,71 @@ const toggleStoreStatus = async (req, res) => {
   }
 };
 
+// Get all public stores (no authentication required)
+const getAllStores = async (req, res) => {
+  try {
+    const { categoryId, search, minRating, maxDeliveryTime, page = 1, limit = 10 } = req.query;
+    
+    // Build query for public stores only
+    let query = { isActive: true, isOpen: true };
+    
+    // Add filters if provided
+    if (categoryId) {
+      query.categoryId = categoryId;
+    }
+    
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    if (minRating) {
+      query.rating = { $gte: parseFloat(minRating) };
+    }
+    
+    if (maxDeliveryTime) {
+      query.maxDeliveryTime = { $lte: parseInt(maxDeliveryTime) };
+    }
+    
+    // Calculate pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    // Get stores with populated category info
+    const stores = await Store.find(query)
+      .populate('categoryId', 'name nameEn icon color')
+      .populate('ownerId', 'name phone') // Only basic owner info
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 });
+    
+    // Get total count for pagination
+    const total = await Store.countDocuments(query);
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        stores,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / parseInt(limit))
+        }
+      },
+      message: 'تم جلب المتاجر بنجاح'
+    });
+  } catch (error) {
+    console.error('Get all stores error:', error);
+    res.status(500).json({ success: false, message: 'خطأ في الخادم' });
+  }
+};
+
 module.exports = {
   getMyStore,
   updateStore,
   updateStoreImage,
   toggleStoreStatus,
+  getAllStores,
 };

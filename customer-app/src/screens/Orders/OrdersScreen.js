@@ -9,9 +9,11 @@ import EmptyState from '../../components/EmptyState';
 import COLORS from '../../constants/colors';
 import SIZES from '../../constants/sizes';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 
 const OrdersScreen = ({ navigation }) => {
   const { orders: cartOrders } = useCart();
+  const { token, isAuthenticated } = useAuth();
 
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
@@ -47,7 +49,7 @@ const OrdersScreen = ({ navigation }) => {
 
   useEffect(() => {
     loadOrders();
-  }, [cartOrders]);
+  }, [cartOrders, isAuthenticated]);
 
   useEffect(() => {
     if (orders.length > 0) {
@@ -64,9 +66,13 @@ const OrdersScreen = ({ navigation }) => {
   }, [selectedFilter]);
 
   const loadOrders = useCallback(async () => {
+    if (!isAuthenticated) {
+      setLoading(false);
+      return;
+    }
     try {
       // Fetch orders from API instead of using mock data
-      const response = await API.ordersAPI.getOrders();
+      const response = await API.ordersAPI.getMyOrders(token);
       if (response.success) {
         const apiOrders = response.data.orders;
         setOrders(apiOrders);
@@ -79,7 +85,7 @@ const OrdersScreen = ({ navigation }) => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [token, isAuthenticated]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -237,7 +243,13 @@ const OrdersScreen = ({ navigation }) => {
         onLeftPress={() => navigation.goBack()}
         rightComponent={
           <TouchableOpacity
-            onPress={() => navigation.getParent().navigate('Home')}
+            onPress={() => {
+              if (isAuthenticated) {
+                navigation.getParent().navigate('Home');
+              } else {
+                navigation.navigate('Auth', { screen: 'Login' });
+              }
+            }}
             style={styles.shopButton}>
             <MaterialIcons name="shopping-cart" size={24} color={COLORS.primary} />
           </TouchableOpacity>
@@ -276,12 +288,22 @@ const OrdersScreen = ({ navigation }) => {
         ) : (
           <EmptyState
             icon="document-outline"
-            title="لا توجد طلبات"
+            title={isAuthenticated ? 'لا توجد طلبات' : 'سجل دخولك لعرض طلباتك'}
             message={
-              selectedFilter === 'current' ? 'لا توجد طلبات جارية حالياً' : 'لم تقم بأي طلبات بعد'
+              isAuthenticated
+                ? selectedFilter === 'current'
+                  ? 'لا توجد طلبات جارية حالياً'
+                  : 'لم تقم بأي طلبات بعد'
+                : 'سجل دخولك لعرض طلباتك السابقة'
             }
-            actionText="تسوق الآن"
-            onActionPress={() => navigation.getParent().navigate('Home')}
+            actionText={isAuthenticated ? 'تسوق الآن' : 'تسجيل الدخول'}
+            onActionPress={() => {
+              if (isAuthenticated) {
+                navigation.getParent().navigate('Home');
+              } else {
+                navigation.navigate('Auth', { screen: 'Login' });
+              }
+            }}
           />
         )}
       </View>
@@ -290,12 +312,26 @@ const OrdersScreen = ({ navigation }) => {
       <View style={styles.quickActions}>
         <TouchableOpacity
           style={styles.actionButton}
-          onPress={() => navigation.getParent().navigate('Home')}>
+          onPress={() => {
+            if (isAuthenticated) {
+              navigation.getParent().navigate('Home');
+            } else {
+              navigation.navigate('Auth', { screen: 'Login' });
+            }
+          }}>
           <MaterialIcons name="home" size={20} color={COLORS.primary} />
           <Text style={styles.actionText}>الرئيسية</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate('Cart')}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => {
+            if (isAuthenticated) {
+              navigation.navigate('Cart');
+            } else {
+              navigation.navigate('Auth', { screen: 'Login' });
+            }
+          }}>
           <MaterialIcons name="shopping-cart" size={20} color={COLORS.primary} />
           <Text style={styles.actionText}>السلة</Text>
         </TouchableOpacity>

@@ -12,6 +12,8 @@ import SIZES from '../../constants/sizes';
 
 const OrderDetailsScreen = () => {
   const route = useRoute();
+  const navigation = useNavigation();
+  const { isAuthenticated } = useAuth();
   const { order, focusOnDriverLocation } = route.params || {};
   const scrollViewRef = useRef(null);
 
@@ -93,7 +95,7 @@ const OrderDetailsScreen = () => {
             {item.items.map((item) => (
               <CartItem
                 item={item}
-                key={item.id || item.productId || Math.random()}
+                key={item.id || item.productId || item.product?.id || Math.random()}
                 isCartScreen={false}
               />
             ))}
@@ -204,7 +206,7 @@ const OrderDetailsScreen = () => {
             <RTLText style={styles.sectionTitle}>تتبع الطلب</RTLText>
             {order.statusHistory && order.statusHistory.length > 0
               ? order.statusHistory.map((item, index) => (
-                  <Fragment key={item.id || item.date || index}>
+                  <Fragment key={item.id || item.date || item.timestamp || index}>
                     {renderTimelineStep({ item, index })}
                   </Fragment>
                 ))

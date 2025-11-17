@@ -8,8 +8,10 @@ import RTLText from '../../components/RTLText';
 import COLORS from '../../constants/colors';
 import SIZES from '../../constants/sizes';
 import { API } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 const AddressesScreen = ({ navigation, route }) => {
+  const { token } = useAuth();
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,7 +31,7 @@ const AddressesScreen = ({ navigation, route }) => {
 
   const loadAddresses = async () => {
     try {
-      const response = await API.addressesAPI.getAddresses();
+      const response = await API.addressesAPI.getMyAddresses(token);
       if (response.success) {
         setAddresses(response.data.addresses);
       } else {

@@ -1,7 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const { isStoreOwner } = require("../../middlewares/auth.middleware");
+const storeController = require("../../controllers/store/store.controller");
 
+// Public routes - no authentication required
+router.get("/", storeController.getAllStores); // Get all public store information
+
+// Protected routes - require store owner authentication
 router.use(isStoreOwner);
 
 router.use("/profile", require("./profile.routes"));

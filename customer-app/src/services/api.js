@@ -1,5 +1,6 @@
 // API Service for Customer App
 import { BASE_URL } from '../config/api';
+import { getToken, removeToken } from '../utils/storage';
 
 // Create a base API request function with retry mechanism
 const apiRequest = async (endpoint, options = {}) => {
@@ -10,7 +11,7 @@ const apiRequest = async (endpoint, options = {}) => {
     timeout = 30000,
     retries = 3,
     ...restOptions
-  } = options; // Increased timeout from 10000 to 30000, added retries
+  } = options; // Increased timeout from 1000 to 30000, added retries
 
   const config = {
     method,
@@ -42,6 +43,25 @@ const apiRequest = async (endpoint, options = {}) => {
       if (!response.ok) {
         // Handle different response status codes
         const errorData = await response.json().catch(() => ({}));
+
+        // If token is invalid or expired (401), log out the user
+        if (response.status === 401) {
+          // Check if the error is related to token
+          if (
+            errorData.message &&
+            (errorData.message.includes('Token') ||
+              errorData.message.toLowerCase().includes('token') ||
+              errorData.message.includes('jwt') ||
+              errorData.message.toLowerCase().includes('invalid') ||
+              errorData.message.toLowerCase().includes('expired'))
+          ) {
+            // Remove the invalid token from storage
+            await removeToken();
+            // Re-throw the error so the calling function can handle it
+            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+          }
+        }
+
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
 

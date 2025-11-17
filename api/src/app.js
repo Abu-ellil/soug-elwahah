@@ -17,7 +17,7 @@ const limiter = rateLimit({
   max: 100, // limit each IP to 100 requests per windowMs
 });
 app.use(limiter);
-
+ 
 // CORS configuration
 const allowedOrigins = [
   "exp://192.168.x.x:19000", // Expo Dev

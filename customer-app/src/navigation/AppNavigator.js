@@ -9,7 +9,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
-  const { isLoading } = useAuth();
+  const { isLoading, isAuthenticated } = useAuth();
 
   if (isLoading) {
     return <LoadingSpinner fullScreen />;
@@ -19,6 +19,7 @@ const AppNavigator = () => {
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false, statusBarStyle: 'dark' }}>
         <Stack.Screen name="Main" component={MainTabNavigator} />
+        <Stack.Screen name="Auth" component={AuthNavigator} />
       </Stack.Navigator>
     </NavigationContainer>
   );

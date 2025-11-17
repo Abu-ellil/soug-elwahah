@@ -12,6 +12,8 @@ const getNearbyStores = async (req, res) => {
         .json({ success: false, message: "يرجى تزويد الإحداثيات" });
     }
 
+    console.log(`Searching for stores near: lat=${lat}, lng=${lng}, radius=${radius}km`);
+
     // Convert radius from km to meters for MongoDB query
     const radiusInMeters = parseFloat(radius) * 1000;
 
@@ -33,9 +35,13 @@ const getNearbyStores = async (req, res) => {
       filter.categoryId = categoryId;
     }
 
+    console.log('Store filter:', JSON.stringify(filter, null, 2));
+
     const stores = await Store.find(filter)
       .populate("categoryId", "name nameEn icon color")
       .sort({ createdAt: -1 });
+
+    console.log(`Found ${stores.length} stores near location`);
 
     res.status(200).json({
       success: true,

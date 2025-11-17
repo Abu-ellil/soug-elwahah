@@ -17,9 +17,9 @@ const seedData = async (options = {}) => {
 
     if (!skipConfirmation) {
       console.log(
-        "⚠️  WARNING: This will delete all existing data in the database!"
+        "⚠️ WARNING: This will delete all existing data in the database!"
       );
-      console.log("Database:", process.env.MONGODB_URI.split("/").pop());
+      console.log("Database:", process.env.MONGODB_URI.split("/").pop()); 
 
       if (!clearOnly) {
         console.log("This will create sample data for testing.");
@@ -121,14 +121,14 @@ const seedData = async (options = {}) => {
       },
       {
         name: "فاطمة علي",
-        phone: "010222222",
+        phone: "0102222",
         password: await bcrypt.hash("123456", 12),
         avatar:
           "https://ui-avatars.com/api/?name=Fatma+Ali&background=0D8ABC&color=fff",
       },
       {
         name: "محمد خالد",
-        phone: "010333333",
+        phone: "01033333",
         password: await bcrypt.hash("123456", 12),
         avatar:
           "https://ui-avatars.com/api/?name=Mohamed+Khaled&background=0D8ABC&color=fff",
@@ -147,12 +147,12 @@ const seedData = async (options = {}) => {
       },
       {
         name: "بقالية فاطمة",
-        phone: "010555555",
+        phone: "01055555",
         password: await bcrypt.hash("123456", 12),
       },
       {
         name: "مخبز محمد",
-        phone: "010666666",
+        phone: "01066666",
         password: await bcrypt.hash("123456", 12),
       },
     ];
@@ -188,8 +188,8 @@ const seedData = async (options = {}) => {
         categoryId: createdCategories[2]._id,
         ownerId: createdStoreOwners[1]._id,
         image:
-          "https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
-        phone: "01055555555",
+          "https://images.unsplash.com/photo-1542838132-92c5300491e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+        phone: "0105555555",
         address: "شارع السوق، قرية النور",
         description: "فواكه و خضروات طازجة يومياً",
         coordinates: {
@@ -210,7 +210,7 @@ const seedData = async (options = {}) => {
         ownerId: createdStoreOwners[2]._id,
         image:
           "https://images.unsplash.com/photo-150940159596-024908772ff?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
-        phone: "01066666666",
+        phone: "010666666",
         address: "شارع المصنع، قرية النور",
         description: "مخبز طازج وحلويات متنوعة",
         coordinates: {
@@ -222,22 +222,95 @@ const seedData = async (options = {}) => {
         deliveryFee: 8,
         workingHours: {
           from: "05:00",
+          to: "23:00", 
+        },
+      },
+    ];
+
+    // Create original stores
+    const createdStores = await Store.insertMany(stores);
+    console.log(`${createdStores.length} original stores created`);
+
+    // Create stores with the requested coordinates
+    const storesWithCoordinates = [
+      {
+        name: "بقالية الصعيد",
+        categoryId: createdCategories[0]._id,
+        ownerId: createdStoreOwners[0]._id,
+        image:
+          "https://images.unsplash.com/photo-1563013544-824ae1b704d3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+        phone: "0107777777",
+        address: "شارع الجلاء، المنيا",
+        description: "بقالية متكاملة في قلب المنيا",
+        coordinates: {
+          lat: 29.9360,
+          lng: 30.9295,
+        },
+        villageId: "village2",
+        deliveryTime: "20-30 دقيقة",
+        deliveryFee: 12,
+        workingHours: {
+          from: "08:00",
+          to: "22:00",
+        },
+      },
+      {
+        name: "فواكه و خضروات المنيا",
+        categoryId: createdCategories[2]._id,
+        ownerId: createdStoreOwners[1]._id,
+        image:
+          "https://images.unsplash.com/photo-1542838132-92c5300491e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+        phone: "01088888",
+        address: "ميدان المنيا، المنيا",
+        description: "فواكه و خضروات طازجة من أرض الصعيد",
+        coordinates: {
+          lat: 29.9360,
+          lng: 30.9295,
+        },
+        villageId: "village2",
+        deliveryTime: "15-25 دقيقة",
+        deliveryFee: 10,
+        workingHours: {
+          from: "07:00",
+          to: "21:00",
+        },
+      },
+      {
+        name: "مخبز وحلويات النيل",
+        categoryId: createdCategories[1]._id,
+        ownerId: createdStoreOwners[2]._id,
+        image:
+          "https://images.unsplash.com/photo-150940159596-024908772ff?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+        phone: "010999999",
+        address: "طريق النيل، المنيا",
+        description: "مخبز طازج وحلويات صعيدية أصيلة",
+        coordinates: {
+          lat: 29.9360,
+          lng: 30.9295,
+        },
+        villageId: "village2",
+        deliveryTime: "10-20 دقيقة",
+        deliveryFee: 8,
+        workingHours: {
+          from: "05:00",
           to: "23:00",
         },
       },
     ];
 
-    const createdStores = await Store.insertMany(stores);
+    const createdStoresWithCoordinates = await Store.insertMany(storesWithCoordinates);
+    console.log(`${createdStoresWithCoordinates.length} stores created at requested coordinates`);
 
-    // Update store owners with their store IDs
+    // Combine all stores
+    const allCreatedStores = [...createdStores, ...createdStoresWithCoordinates];
+
+    // Update store owners with their store IDs (using the original 3 stores since we only have 3 owners)
     for (let i = 0; i < createdStoreOwners.length; i++) {
-      createdStoreOwners[i].storeId = createdStores[i]._id;
+      createdStoreOwners[i].storeId = createdStores[i]._id; // Use original stores for owners
       await createdStoreOwners[i].save();
     }
 
-    console.log(`${createdStores.length} stores created`);
-
-    // Create sample products
+    // Create sample products for original stores only (to match store owners)
     const products = [
       // Products for store 1 (Grocery)
       {
@@ -255,7 +328,7 @@ const seedData = async (options = {}) => {
         name: "زيت عباد شمس",
         price: 20,
         image:
-          "https://images.unsplash.com/photo-1581044777550-4cfa60707c03?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+          "https://images.unsplash.com/photo-158104477750-4cfa60707c03?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
         categoryId: "oil",
         description: "زيت عباد شمس نقي",
         isAvailable: true,
@@ -287,7 +360,7 @@ const seedData = async (options = {}) => {
         name: "طماطم",
         price: 8,
         image:
-          "https://images.unsplash.com/photo-1579954115545-a95591f28bfc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+          "https://images.unsplash.com/photo-1579954115545-a9591f28bfc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
         categoryId: "vegetables",
         description: "طماطم طازجة",
         isAvailable: true,
@@ -309,7 +382,7 @@ const seedData = async (options = {}) => {
         name: "كعك",
         price: 30,
         image:
-          "https://images.unsplash.com/photo-1587132130866-8382b624a1c9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
+          "https://images.unsplash.com/photo-158713213086-8382b624a1c9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80",
         categoryId: "sweets",
         description: "كعك سكر طازج",
         isAvailable: true,
@@ -321,11 +394,11 @@ const seedData = async (options = {}) => {
 
     console.log("🎉 Database seeding completed successfully!");
     console.log("\nSample login credentials:");
-    console.log("Customer: Phone: 01011111111, Password: 123456");
+    console.log("Customer: Phone: 011111111, Password: 123456");
     console.log("Customer: Phone: 01022222222, Password: 123456");
     console.log("Customer: Phone: 01033333333, Password: 123456");
-    console.log("Store Owner: Phone: 01044444444, Password: 123456");
-    console.log("Store Owner: Phone: 01055555555, Password: 123456");
+    console.log("Store Owner: Phone: 0104444444, Password: 123456");
+    console.log("Store Owner: Phone: 0105555555, Password: 123456");
     console.log("Store Owner: Phone: 01066666666, Password: 123456");
 
     process.exit(0);
@@ -344,7 +417,7 @@ if (args.includes("--clear-only") || args.includes("-c")) {
 }
 
 if (args.includes("--skip-confirmation") || args.includes("-f")) {
-  options.skipConfirmation = true;
+ options.skipConfirmation = true;
 }
 
 // Run the seed function

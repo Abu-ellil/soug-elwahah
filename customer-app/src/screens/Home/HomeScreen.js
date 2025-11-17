@@ -26,6 +26,7 @@ import SIZES from '../../constants/sizes';
 import HomeScreenSkeleton from '../../components/HomeScreenSkeleton';
 import { formatDistance, calculateDistance } from '../../utils/distance';
 import { getStoresByVillage } from '../../utils/locationHelpers';
+import DebugLocationSetter from '../../components/DebugLocationSetter';
 
 const HomeScreen = ({ navigation }) => {
   const {
@@ -165,6 +166,7 @@ const HomeScreen = ({ navigation }) => {
       rows.push(
         <View key={i} style={styles.productsRow}>
           <ProductCard
+            key={randomProducts[i].id}
             product={randomProducts[i]}
             onPress={() =>
               navigation.navigate('StoreDetails', { storeId: randomProducts[i].storeId })
@@ -174,6 +176,7 @@ const HomeScreen = ({ navigation }) => {
           />
           {randomProducts[i + 1] && (
             <ProductCard
+              key={randomProducts[i + 1].id}
               product={randomProducts[i + 1]}
               onPress={() =>
                 navigation.navigate('StoreDetails', { storeId: randomProducts[i + 1].storeId })
@@ -241,6 +244,9 @@ const HomeScreen = ({ navigation }) => {
         data={[{ key: 'content' }]}
         renderItem={() => (
           <View>
+            {/* Debug Location Setter - Temporary for testing */}
+            <DebugLocationSetter />
+            
             {/* Categories */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>الفئات</Text>

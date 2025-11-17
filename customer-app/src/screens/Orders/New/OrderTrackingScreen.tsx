@@ -387,7 +387,7 @@ export default function OrderTrackingScreen({ orderId: propOrderId }: OrderTrack
             <Text className="mb-4 text-lg font-bold">تفاصيل الطلب</Text>
             {order.items.map((item, index) => (
               <View
-                key={index}
+                key={item.id || item.productId || index}
                 className="flex-row items-center justify-between border-b border-neutral-100 py-2 last:border-b-0">
                 <View className="flex-1">
                   <Text className="font-medium">{item.product?.name || 'منتج'}</Text>

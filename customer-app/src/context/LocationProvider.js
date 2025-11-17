@@ -28,58 +28,6 @@ export const LocationProvider = ({ children }) => {
   // طلب إذن الموقع عند تحميل المكون - Request location permission on component mount
   useEffect(() => {
     initializeLocation();
-
-    // Set up location watching for continuous updates
-    let locationTask = null;
-
-    const startLocationWatching = async () => {
-      const hasPermission = await requestLocationPermission();
-      if (hasPermission && userLocation) {
-        try {
-          // Set up background location updates
-          locationTask = await Location.watchPositionAsync(
-            {
-              accuracy: Location.Accuracy.High,
-              timeInterval: 10000, // Update every 10 seconds
-              distanceInterval: 10, // Update every 10 meters
-            },
-            (location) => {
-              const newLocation = {
-                lat: location.coords.latitude,
-                lng: location.coords.longitude,
-              };
-
-              // Only update if location has changed significantly (more than 10 meters)
-              if (userLocation) {
-                // Update available stores for new location
-                updateAvailableStores();
-              } else {
-                setUserLocation(newLocation);
-              }
-            }
-          );
-        } catch (error) {
-          console.log('Failed to start location watching:', error);
-          // Fallback to manual location updates
-          const interval = setInterval(async () => {
-            await getCurrentLocation();
-          }, 30000); // Update every 30 seconds
-
-          return () => {
-            clearInterval(interval);
-          };
-        }
-      }
-    };
-
-    startLocationWatching();
-
-    // Cleanup function
-    return () => {
-      if (locationTask) {
-        locationTask.then((task) => task && task.cancel && task.cancel()).catch(() => {});
-      }
-    };
   }, []);
 
   // تحديث المتاجر عند تغيير الموقع أو النطاق - Update stores when location or radius changes
@@ -115,29 +63,24 @@ export const LocationProvider = ({ children }) => {
     try {
       const hasPermission = await requestLocationPermission();
       if (hasPermission) {
-        // Add a timeout to ensure location is fetched even if it takes longer
         const location = await Promise.race([
           getCurrentLocation(),
           new Promise(
-            (_, reject) => setTimeout(() => reject(new Error('Timeout getting location')), 10000) // Increased from 10 to 1000 ms
+            (_, reject) => setTimeout(() => reject(new Error('Timeout getting location')), 10000)
           ),
         ]);
 
         if (location) {
-          // Location was successfully set, update available stores
           updateAvailableStores();
         } else {
           console.log('Failed to get current location, using fallback');
-          updateAvailableStores();
         }
       } else {
         console.log('GPS permission denied, using fallback');
-        updateAvailableStores();
       }
     } catch (error) {
       console.log('خطأ في تهيئة الموقع:', error);
       setError('فشل في تهيئة نظام الموقع');
-      updateAvailableStores();
     } finally {
       setLoading(false);
     }
@@ -145,23 +88,26 @@ export const LocationProvider = ({ children }) => {
 
   // دالة تحديث المتاجر المتاحة - Update available stores
   const updateAvailableStores = async () => {
-    try {
-      if (userLocation) {
-        // Use API to get nearby stores
-        const response = await API.storesAPI.getNearbyStores({
-          lat: userLocation.lat,
-          lng: userLocation.lng,
-          radius: deliveryRadius,
-        });
+    if (!userLocation) {
+      setAvailableStores([]);
+      console.log('No user location available, clearing stores');
+      return;
+    }
 
-        if (response.success) {
-          setAvailableStores(response.data.stores);
-        } else {
-          console.error('Failed to get nearby stores:', response.message);
-          setAvailableStores([]);
-        }
+    try {
+      console.log('Updating available stores for location:', userLocation, 'with radius:', deliveryRadius);
+      const response = await API.storesAPI.getNearbyStores({
+        lat: userLocation.lat,
+        lng: userLocation.lng,
+        radius: deliveryRadius,
+      });
+
+      console.log('Nearby stores API response:', response);
+      if (response.success) {
+        setAvailableStores(response.data.stores);
+        console.log('Set', response.data.stores.length, 'stores as available');
       } else {
-        // If no location, we can't get nearby stores
+        console.error('Failed to get nearby stores:', response.message);
         setAvailableStores([]);
       }
     } catch (error) {
@@ -217,6 +163,12 @@ export const LocationProvider = ({ children }) => {
     setDeliveryRadius(newRadius);
   };
 
+  // دالة تعيين الموقع يدويًا - Function to manually set location for testing
+  const setLocation = (location) => {
+    setUserLocation(location);
+    setGpsEnabled(true);
+  };
+
   // دالة الحصول على سلسلة نصية للموقع - Function to get location string
   const getLocationString = () => {
     if (userLocation) {
@@ -268,6 +220,7 @@ export const LocationProvider = ({ children }) => {
     getCurrentLocation,
     updateDeliveryRadius,
     clearLocation,
+    setLocation, // Add the manual location setting function
 
     // الأدوات المساعدة - Utilities
     getLocationString,
