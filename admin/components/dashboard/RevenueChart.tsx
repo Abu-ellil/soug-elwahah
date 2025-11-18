@@ -19,29 +19,16 @@ export function RevenueChart() {
       try {
         // Fetch real revenue data from the API
         const response = await analyticsAPI.getDashboardStats();
-        // Using mock data structure for now - in a real implementation, you would transform the API response
-        // to match the expected chart data format
-        setData([
-          { name: 'يناير', revenue: 4000 },
-          { name: 'فبراير', revenue: 3000 },
-          { name: 'مارس', revenue: 2000 },
-          { name: 'أبريل', revenue: 2780 },
-          { name: 'مايو', revenue: 1890 },
-          { name: 'يونيو', revenue: 2390 },
-          { name: 'يوليو', revenue: 3490 },
-        ]);
+        // Transform the revenueByDate data to match the chart format
+        const transformedData = response.data.revenueByDate?.map(item => ({
+          name: new Date(item.date).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' }),
+          revenue: item.revenue
+        })) || [];
+        setData(transformedData);
       } catch (error) {
         console.error('Error fetching revenue data:', error);
-        // Fallback to mock data in case of error
-        setData([
-          { name: 'يناير', revenue: 4000 },
-          { name: 'فبراير', revenue: 3000 },
-          { name: 'مارس', revenue: 2000 },
-          { name: 'أبريل', revenue: 2780 },
-          { name: 'مايو', revenue: 1890 },
-          { name: 'يونيو', revenue: 2390 },
-          { name: 'يوليو', revenue: 3490 },
-        ]);
+        // Set empty data instead of fallback fake data
+        setData([]);
       } finally {
         setLoading(false);
       }

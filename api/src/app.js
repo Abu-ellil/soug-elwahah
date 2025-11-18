@@ -53,7 +53,7 @@ require("./config/database");
 app.use(express.static("public"));
 
 // Serve static files from uploads directory
-app.use("/uploads", express.static("uploads"));
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // Root route - serve API documentation
 app.get("/", (req, res) => {

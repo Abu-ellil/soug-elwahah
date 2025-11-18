@@ -2,10 +2,10 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 import { TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '../../stores/authStore';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function TabLayout() {
-  const { logout, currentUser } = useAuthStore();
+  const { logout, currentUser } = useAuth();
   const hasStores = currentUser?.stores && currentUser.stores.length > 0;
 
   const handleLogout = async () => {

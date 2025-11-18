@@ -46,12 +46,18 @@ const getStoreStatistics = async (req, res) => {
     const cancelledOrders = orders.filter(
       (order) => order.status === "cancelled"
     ).length;
+    const pendingOrders = orders.filter(
+      (order) => order.status === "pending"
+    ).length;
 
-    const totalSales = orders
+    const revenue = orders
       .filter((order) => order.status === "delivered")
       .reduce((sum, order) => sum + order.total, 0);
 
-    const avgOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
+    const avgOrderValue = totalOrders > 0 ? revenue / totalOrders : 0;
+
+    // Get total products count
+    const totalProducts = await Product.countDocuments({ storeId: store._id });
 
     // Get top selling products
     const productQuantities = {};
@@ -83,8 +89,10 @@ const getStoreStatistics = async (req, res) => {
     res.status(200).json({
       success: true,
       data: {
+        totalProducts,
         totalOrders,
-        totalSales,
+        pendingOrders,
+        revenue,
         avgOrderValue,
         completedOrders,
         cancelledOrders,

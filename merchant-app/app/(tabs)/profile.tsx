@@ -27,7 +27,7 @@ const ProfileScreen = () => {
     try {
       setIsLoading(true);
       // Get user's stores
-      const storesResponse = await apiService.request('/store/all');
+      const storesResponse = await apiService.request('/store/my-store/all');
       if (storesResponse.success && storesResponse.data?.stores?.length > 0) {
         const approvedStore = storesResponse.data.stores.find((s: any) => s.verificationStatus === 'approved');
         if (approvedStore) {

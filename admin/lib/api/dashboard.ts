@@ -4,13 +4,14 @@ import { apiClient } from "./client";
 
 // Dashboard stats interface matching the actual API response
 export interface DashboardStats {
- totalOrders: number;
+  totalOrders: number;
   totalRevenue: number;
   totalUsers: number;
- totalStores: number;
+  totalStores: number;
   totalDrivers: number;
+  activeDrivers: number;
   revenueByDate: Array<{ date: string; revenue: number }>;
- ordersByStatus: Array<{ status: string; count: number }>;
+  ordersByStatus: Array<{ status: string; count: number }>;
   topStores: Array<{ storeId: string; storeName: string; orders: number }>;
 }
 

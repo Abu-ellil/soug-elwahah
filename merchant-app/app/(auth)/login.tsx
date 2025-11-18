@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -13,9 +13,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAuthStore } from '../../stores/authStore';
+import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'expo-router';
-import apiService from '../../services/api';
 
 const { width, height } = Dimensions.get('window');
 
@@ -26,11 +25,7 @@ const LoginScreen = () => {
   const [isValidating, setIsValidating] = useState(false);
 
   const router = useRouter();
-  const { login, isLoading, loadUser } = useAuthStore();
-
-  useEffect(() => {
-    loadUser();
-  }, []);
+  const { login, isLoading, currentUser } = useAuth();
 
   const validateInputs = () => {
     if (!phone.trim()) {
@@ -78,43 +73,31 @@ const LoginScreen = () => {
       console.log('📡 Login API response:', result);
 
       if (result.success) {
-        console.log('✅ Login successful, fetching user profile...');
+        console.log('✅ Login successful');
 
-        // Get user profile to determine next screen
-        try {
-          const profileResponse = await apiService.getProfile();
-          console.log('👤 Profile response:', profileResponse);
+        if (result.verificationStatus === 'pending') {
+          console.log('⏳ Navigating to pending approval');
+          router.replace('/pending-approval');
+        } else {
+          // Check stores from currentUser
+          const stores = currentUser?.stores || [];
+          console.log('🏪 User stores:', stores);
 
-          const user = profileResponse?.data?.user;
-          console.log('👤 User data:', user);
+          const approvedStores = stores.filter((store: any) =>
+            store.verificationStatus === 'approved'
+          );
+          console.log('✅ Approved stores:', approvedStores.length);
 
-          if (user) {
-            const stores = user.stores || [];
-            console.log('🏪 User stores:', stores);
-
-            const approvedStores = stores.filter((store: any) =>
-              store.verificationStatus === 'approved'
-            );
-            console.log('✅ Approved stores:', approvedStores.length);
-
-            if (approvedStores.length > 0) {
-              console.log('🏠 Navigating to main app (approved stores)');
-              router.replace('/');
-            } else if (stores.length > 0) {
-              console.log('⏳ Navigating to pending approval (has stores but not approved)');
-              router.replace('/pending-approval');
-            } else {
-              console.log('📝 Navigating to store application (no stores)');
-              router.replace('/(tabs)/store-application');
-            }
+          if (approvedStores.length > 0) {
+            console.log('🏠 Navigating to main app (approved stores)');
+            router.replace('/');
+          } else if (stores.length > 0) {
+            console.log('⏳ Navigating to pending approval (has stores but not approved)');
+            router.replace('/pending-approval');
           } else {
-            console.log('⚠️ No user data, navigating to store application');
+            console.log('📝 Navigating to store application (no stores)');
             router.replace('/(tabs)/store-application');
           }
-        } catch (profileError) {
-          console.error('❌ Error fetching profile:', profileError);
-          console.log('📝 Navigating to store application due to profile error');
-          router.replace('/(tabs)/store-application');
         }
       } else {
         console.log('❌ Login failed:', result);
@@ -124,12 +107,6 @@ const LoginScreen = () => {
         if (result.error) {
           errorMessage = result.error;
           console.log('🚨 Error message:', result.error);
-        } else if (result.verificationStatus === 'pending') {
-          errorMessage = 'حسابك قيد المراجعة. يرجى الانتظار حتى يتم الموافقة عليه.';
-          console.log('⏳ Account pending verification');
-        } else if (result.verificationStatus === 'rejected') {
-          errorMessage = 'تم رفض حسابك. يرجى التواصل مع الدعم.';
-          console.log('❌ Account rejected');
         }
 
         console.log('🚨 Showing error alert:', errorMessage);

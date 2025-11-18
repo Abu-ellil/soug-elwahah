@@ -17,124 +17,51 @@ import { Store as StoreType, StoreDocument } from '@/types/store';
 import { storesAPI } from '@/lib/api/stores';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 
-// Mock data - will be replaced with actual API calls
-const mockPendingStores: StoreType[] = [
-  {
-    id: '3',
-    name: 'بقالة الفهد',
-    ownerId: '3',
-    ownerName: 'محمود أحمد',
-    ownerPhone: '01000002',
-    category: 'بقالة',
-    image: '/placeholder-store.jpg',
-    rating: 0, // New store
-    totalOrders: 0,
-    status: 'closed',
-    verificationStatus: 'pending',
-    address: 'الجيزة، شارع الهرم',
-    coordinates: { lat: 30.0131, lng: 31.2089 },
-    workingHours: { open: '09:00', close: '21:00' },
-    documents: [
-      {
-        id: 'd1',
-        storeId: '3',
-        type: 'commercial_register',
-        fileName: 'السجل_التجاري.pdf',
-        filePath: '/docs/commercial_register.pdf',
-        uploadedAt: '2023-03-10T09:15:00Z',
-      },
-      {
-        id: 'd2',
-        storeId: '3',
-        type: 'tax_card',
-        fileName: 'البطاقة_الضريبية.pdf',
-        filePath: '/docs/tax_card.pdf',
-        uploadedAt: '2023-03-10T09:15:00Z',
-      },
-      {
-        id: 'd3',
-        storeId: '3',
-        type: 'owner_id',
-        fileName: 'الهوية_المالك.pdf',
-        filePath: '/docs/owner_id.pdf',
-        uploadedAt: '2023-03-10T09:15:00Z',
-      },
-    ],
-    totalProducts: 0,
-    totalRevenue: 0,
-    createdAt: '2023-03-10T09:15:00Z',
-  },
-  {
-    id: '6',
-    name: 'محل الزعفران',
-    ownerId: '6',
-    ownerName: 'رانيا محمد',
-    ownerPhone: '010000005',
-    category: 'بقالة',
-    image: '/placeholder-store.jpg',
-    rating: 0, // New store
-    totalOrders: 0,
-    status: 'closed',
-    verificationStatus: 'pending',
-    address: 'القاهرة، شارع رمسيس',
-    coordinates: { lat: 30.0444, lng: 31.2357 },
-    workingHours: { open: '08:00', close: '2:00' },
-    documents: [
-      {
-        id: 'd4',
-        storeId: '6',
-        type: 'commercial_register',
-        fileName: 'السجل_التجاري.pdf',
-        filePath: '/docs/commercial_register2.pdf',
-        uploadedAt: '2023-04-15T14:30:00Z',
-      },
-      {
-        id: 'd5',
-        storeId: '6',
-        type: 'tax_card',
-        fileName: 'البطاقة_الضريبية.pdf',
-        filePath: '/docs/tax_card2.pdf',
-        uploadedAt: '2023-04-15T14:30:00Z',
-      },
-      {
-        id: 'd6',
-        storeId: '6',
-        type: 'owner_id',
-        fileName: 'الهوية_المالك.pdf',
-        filePath: '/docs/owner_id2.pdf',
-        uploadedAt: '2023-04-15T14:30:00Z',
-      },
-    ],
-    totalProducts: 0,
-    totalRevenue: 0,
-    createdAt: '2023-04-15T14:30:00Z',
-  },
-];
-
 export default function PendingStoresPage() {
-  const [stores, setStores] = useState<StoreType[]>(mockPendingStores);
+  const [stores, setStores] = useState<StoreType[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalStores, setTotalStores] = useState(0);
   const [rejectionReason, setRejectionReason] = useState('');
   const [storeToReject, setStoreToReject] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setStores(mockPendingStores);
-      setTotalStores(mockPendingStores.length);
-      setLoading(false);
-    }, 10);
+    const fetchPendingStores = async () => {
+      try {
+        const response = await storesAPI.getPending();
+        if (response.success) {
+          setStores(response.data.stores);
+          setTotalStores(response.data.total);
+        } else {
+          console.error('Failed to fetch pending stores:', response.message);
+          setStores([]);
+          setTotalStores(0);
+        }
+      } catch (error) {
+        console.error('Error fetching pending stores:', error);
+        setStores([]);
+        setTotalStores(0);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPendingStores();
   }, []);
 
   const handleApprove = async (storeId: string) => {
     try {
-      // Simulate API call
-      console.log(`Approving store: ${storeId}`);
-      // Update the store status in the UI
-      setStores(stores.map(store => 
-        store.id === storeId ? { ...store, verificationStatus: 'approved' } : store
-      ));
+      const response = await storesAPI.approve(storeId);
+      if (response.success) {
+        // Update the store status in the UI
+        setStores(stores.map(store =>
+          store.id === storeId ? { ...store, verificationStatus: 'approved' } : store
+        ));
+        // Remove from the list since it's no longer pending
+        setStores(stores.filter(store => store.id !== storeId));
+        setTotalStores(totalStores - 1);
+      } else {
+        console.error('Failed to approve store:', response.message);
+      }
     } catch (error) {
       console.error('Error approving store:', error);
     }
@@ -142,15 +69,21 @@ export default function PendingStoresPage() {
 
   const handleReject = async (storeId: string) => {
     try {
-      // Simulate API call with reason
-      console.log(`Rejecting store: ${storeId} with reason: ${rejectionReason}`);
-      // Update the store status in the UI
-      setStores(stores.map(store => 
-        store.id === storeId ? { ...store, verificationStatus: 'rejected' } : store
-      ));
-      // Reset the dialog
-      setStoreToReject(null);
-      setRejectionReason('');
+      const response = await storesAPI.reject(storeId, rejectionReason);
+      if (response.success) {
+        // Update the store status in the UI
+        setStores(stores.map(store =>
+          store.id === storeId ? { ...store, verificationStatus: 'rejected' } : store
+        ));
+        // Remove from the list since it's no longer pending
+        setStores(stores.filter(store => store.id !== storeId));
+        setTotalStores(totalStores - 1);
+        // Reset the dialog
+        setStoreToReject(null);
+        setRejectionReason('');
+      } else {
+        console.error('Failed to reject store:', response.message);
+      }
     } catch (error) {
       console.error('Error rejecting store:', error);
     }

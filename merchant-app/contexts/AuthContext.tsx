@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
+import { useRouter } from 'expo-router'; // Import useRouter
 import apiService from '../services/api';
 
 interface Store {
@@ -51,6 +52,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter(); // Initialize useRouter
 
   useEffect(() => {
     loadUser();
@@ -64,8 +66,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Token exists, try to get user profile from API
         try {
           const profile = await apiService.getProfile();
-          if (profile) {
-            setCurrentUser(profile);
+          if (profile && profile.data && profile.data.user) {
+            setCurrentUser(profile.data.user);
           }
         } catch (error) {
           // If getting profile fails, token might be invalid, so clear it
@@ -95,24 +97,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         // Get user profile after successful login
         const profile = await apiService.getProfile();
-        if (profile) {
-          setCurrentUser(profile);
-          await AsyncStorage.setItem('user', JSON.stringify(profile));
+        if (profile && profile.data && profile.data.user) {
+          setCurrentUser(profile.data.user);
+          await AsyncStorage.setItem('user', JSON.stringify(profile.data.user));
         }
         return { success: true };
       } else if (response && response.verificationStatus === 'pending') {
         // If verification status is pending, we still want to set the user info
         // so the app can show the pending approval screen
         const profile = await apiService.getProfile();
-        if (profile) {
-          setCurrentUser(profile);
-          await AsyncStorage.setItem('user', JSON.stringify(profile));
+        if (profile && profile.data && profile.data.user) {
+          setCurrentUser(profile.data.user);
+          await AsyncStorage.setItem('user', JSON.stringify(profile.data.user));
         }
         return { success: true, verificationStatus: 'pending' };
       } else if (response && response.verificationStatus === 'rejected') {
         return { success: false, error: 'الحساب مرفوض من قبل الإدارة' };
       } else {
-        return { success: false, error: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' };
+        return { success: false, error: 'رقم الهاتف أو كلمة المرور غير صحيحة' };
       }
     } catch (error: any) {
       console.error('Login error:', error);
@@ -166,10 +168,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     try {
+      await apiService.logout();
       setCurrentUser(null);
       await AsyncStorage.removeItem('user');
       // Also clear the API token
       await apiService.clearToken();
+      router.replace('/(auth)/login'); // Redirect to login page
     } catch (error) {
       console.error('Logout error:', error);
     }

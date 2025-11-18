@@ -16,11 +16,16 @@ interface DashboardStats {
   totalOrders: number;
   totalRevenue: number;
   totalUsers: number;
+  totalStores: number;
+  totalDrivers: number;
   activeDrivers: number;
+  revenueByDate: Array<{ date: string; revenue: number }>;
+  ordersByStatus: Array<{ status: string; count: number }>;
+  topStores: Array<{ storeId: string; storeName: string; orders: number }>;
 }
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<DashboardStats>({ totalOrders: 0, totalRevenue: 0, totalUsers: 0, activeDrivers: 0 });
+  const [stats, setStats] = useState<DashboardStats>({ totalOrders: 0, totalRevenue: 0, totalUsers: 0, totalStores: 0, totalDrivers: 0, activeDrivers: 0, revenueByDate: [], ordersByStatus: [], topStores: [] });
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -37,7 +42,7 @@ export default function DashboardPage() {
         } catch (error) {
           console.error('Error fetching dashboard data:', error);
           // Set empty defaults in case of error
-          setStats({ totalOrders: 0, totalRevenue: 0, totalUsers: 0, activeDrivers: 0 });
+          setStats({ totalOrders: 0, totalRevenue: 0, totalUsers: 0, totalStores: 0, totalDrivers: 0, activeDrivers: 0, revenueByDate: [], ordersByStatus: [], topStores: [] });
           setRecentOrders([]);
         } finally {
           setLoading(false);

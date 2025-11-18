@@ -196,23 +196,17 @@ connectDB()
 
     // Function to start server with fallback ports
     function startServer(port, maxRetries = 5, retryCount = 0) {
-      server.listen(port, "0.0.0.0", () => {
-        console.log(`Server running on port ${port}`);
-        console.log(`API available at http://localhost:${port}/api`);
-        console.log(`API also available at http://192.168.1.4:${port}/api`);
-        console.log(`WebSocket available at ws://localhost:${port}`);
-      });
-
       server.on("error", (error) => {
         if (error.code === "EADDRINUSE") {
           if (retryCount < maxRetries) {
-            const newPort = parseInt(port) + 1; // Ensure we're doing numeric addition
+            const newPort = parseInt(port) + 1;
             console.log(
               `Port ${port} is already in use. Trying port ${newPort}...`
             );
-            setTimeout(() => {
+            // Close the current server before attempting to listen on a new port
+            server.close(() => {
               startServer(newPort, maxRetries, retryCount + 1);
-            }, 10); // Wait 10ms before trying the next port
+            });
           } else {
             console.error(
               `Could not start server after trying ${maxRetries + 1} ports`
@@ -222,6 +216,13 @@ connectDB()
         } else {
           console.error("Server error:", error);
         }
+      });
+
+      server.listen(port, "0.0.0.0", () => {
+        console.log(`Server running on port ${port}`);
+        console.log(`API available at http://localhost:${port}/api`);
+        console.log(`API also available at http://192.168.1.4:${port}/api`);
+        console.log(`WebSocket available at ws://localhost:${port}`);
       });
 
       // Handle graceful shutdown

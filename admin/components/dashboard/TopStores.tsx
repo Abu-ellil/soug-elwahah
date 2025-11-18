@@ -27,14 +27,8 @@ export function TopStores() {
             setData(transformedData);
           } catch (error) {
             console.error('Error fetching top stores data:', error);
-            // Fallback to sample data in case of error
-                         setData([
-                           { name: 'المحل 1', orders: 400 },
-                           { name: 'المحل 2', orders: 300 },
-                           { name: 'المحل 3', orders: 200 },
-                           { name: 'المحل 4', orders: 278 },
-                           { name: 'المحل 5', orders: 189 },
-                         ]);
+            // Set empty data instead of fallback fake data
+            setData([]);
           } finally {
             setLoading(false);
           }

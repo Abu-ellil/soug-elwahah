@@ -393,6 +393,9 @@ const getAnalyticsDashboard = async (req, res) => {
     // Count total drivers
     const totalDrivers = await Driver.countDocuments(dateFilter);
 
+    // Count active drivers (isActive: true)
+    const activeDrivers = await Driver.countDocuments({ ...dateFilter, isActive: true });
+
     // Get revenue by date (for chart)
     const revenueByDate = [];
     if (orders.length > 0) {
@@ -486,6 +489,7 @@ const getAnalyticsDashboard = async (req, res) => {
         totalUsers,
         totalStores,
         totalDrivers,
+        activeDrivers,
         revenueByDate,
         ordersByStatus,
         topStores,
@@ -687,6 +691,8 @@ const getPendingStores = async (req, res) => {
     // Transform the stores data to match the expected frontend format
     const transformedStores = stores.map(store => {
       const storeObj = store.toObject();
+      // Add id field
+      storeObj.id = storeObj._id.toString();
       // Flatten the populated owner data into ownerName and ownerPhone fields
       if (storeObj.ownerId) {
         storeObj.ownerName = storeObj.ownerId.name;
@@ -694,6 +700,23 @@ const getPendingStores = async (req, res) => {
         // Remove the original ownerId object to avoid conflicts
         delete storeObj.ownerId;
       }
+      // Flatten category data
+      if (storeObj.categoryId) {
+        storeObj.category = storeObj.categoryId.name;
+        delete storeObj.categoryId;
+      }
+      // Map working hours
+      if (storeObj.workingHours) {
+        storeObj.workingHours = {
+          open: storeObj.workingHours.from,
+          close: storeObj.workingHours.to
+        };
+      }
+      // Add missing fields with defaults
+      storeObj.totalOrders = 0;
+      storeObj.totalProducts = 0;
+      storeObj.totalRevenue = 0;
+      storeObj.status = storeObj.isOpen ? 'open' : 'closed';
       return storeObj;
     });
 
@@ -752,6 +775,8 @@ const getAllStores = async (req, res) => {
     // Transform the stores data to match the expected frontend format
     const transformedStores = stores.map(store => {
       const storeObj = store.toObject();
+      // Add id field
+      storeObj.id = storeObj._id.toString();
       // Flatten the populated owner data into ownerName and ownerPhone fields
       if (storeObj.ownerId) {
         storeObj.ownerName = storeObj.ownerId.name;
@@ -759,6 +784,23 @@ const getAllStores = async (req, res) => {
         // Remove the original ownerId object to avoid conflicts
         delete storeObj.ownerId;
       }
+      // Flatten category data
+      if (storeObj.categoryId) {
+        storeObj.category = storeObj.categoryId.name;
+        delete storeObj.categoryId;
+      }
+      // Map working hours
+      if (storeObj.workingHours) {
+        storeObj.workingHours = {
+          open: storeObj.workingHours.from,
+          close: storeObj.workingHours.to
+        };
+      }
+      // Add missing fields with defaults
+      storeObj.totalOrders = 0;
+      storeObj.totalProducts = 0;
+      storeObj.totalRevenue = 0;
+      storeObj.status = storeObj.isOpen ? 'open' : 'closed';
       return storeObj;
     });
 
@@ -820,7 +862,7 @@ const getStoreById = async (req, res) => {
 const updateStore = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, verificationStatus } = req.body;
+    const { status, verificationStatus, isActive } = req.body;
 
     const store = await Store.findById(id);
     if (!store) {
@@ -832,6 +874,7 @@ const updateStore = async (req, res) => {
     // Update store fields
     if (status) store.status = status;
     if (verificationStatus) store.verificationStatus = verificationStatus;
+    if (typeof isActive === 'boolean') store.isActive = isActive; // Handle suspend/unsuspend
 
     await store.save();
 
@@ -842,6 +885,8 @@ const updateStore = async (req, res) => {
 
     // Transform the store data to match the expected frontend format
     const storeObj = updatedStore.toObject();
+    // Add id field
+    storeObj.id = storeObj._id.toString();
     // Flatten the populated owner data into ownerName and ownerPhone fields
     if (storeObj.ownerId) {
       storeObj.ownerName = storeObj.ownerId.name;
@@ -849,6 +894,23 @@ const updateStore = async (req, res) => {
       // Remove the original ownerId object to avoid conflicts
       delete storeObj.ownerId;
     }
+    // Flatten category data
+    if (storeObj.categoryId) {
+      storeObj.category = storeObj.categoryId.name;
+      delete storeObj.categoryId;
+    }
+    // Map working hours
+    if (storeObj.workingHours) {
+      storeObj.workingHours = {
+        open: storeObj.workingHours.from,
+        close: storeObj.workingHours.to
+      };
+    }
+    // Add missing fields with defaults
+    storeObj.totalOrders = 0;
+    storeObj.totalProducts = 0;
+    storeObj.totalRevenue = 0;
+    storeObj.status = storeObj.isOpen ? 'open' : 'closed';
 
     res.status(200).json({
       success: true,
@@ -927,6 +989,8 @@ const approveStore = async (req, res) => {
 
     // Transform the store data to match the expected frontend format
     const storeObj = updatedStore.toObject();
+    // Add id field
+    storeObj.id = storeObj._id.toString();
     // Flatten the populated owner data into ownerName and ownerPhone fields
     if (storeObj.ownerId) {
       storeObj.ownerName = storeObj.ownerId.name;
@@ -934,6 +998,23 @@ const approveStore = async (req, res) => {
       // Remove the original ownerId object to avoid conflicts
       delete storeObj.ownerId;
     }
+    // Flatten category data
+    if (storeObj.categoryId) {
+      storeObj.category = storeObj.categoryId.name;
+      delete storeObj.categoryId;
+    }
+    // Map working hours
+    if (storeObj.workingHours) {
+      storeObj.workingHours = {
+        open: storeObj.workingHours.from,
+        close: storeObj.workingHours.to
+      };
+    }
+    // Add missing fields with defaults
+    storeObj.totalOrders = 0;
+    storeObj.totalProducts = 0;
+    storeObj.totalRevenue = 0;
+    storeObj.status = storeObj.isOpen ? 'open' : 'closed';
 
     res.status(200).json({
       success: true,
@@ -1354,7 +1435,7 @@ const getProductById = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { availability } = req.body;
+    const { name, price, categoryId, description, isAvailable, isActive } = req.body;
 
     const product = await Product.findById(id);
     if (!product) {
@@ -1364,8 +1445,12 @@ const updateProduct = async (req, res) => {
     }
 
     // Update product fields
-    if (availability)
-      product.isAvailable = availability === "available" ? true : false;
+    if (name) product.name = name;
+    if (price) product.price = price;
+    if (categoryId) product.categoryId = categoryId;
+    if (description) product.description = description;
+    if (typeof isAvailable === 'boolean') product.isAvailable = isAvailable;
+    if (typeof isActive === 'boolean') product.isActive = isActive;
 
     await product.save();
 

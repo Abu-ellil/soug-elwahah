@@ -7,14 +7,14 @@ import {
   RefreshControl,
 } from "react-native";
 import React, { useState, useEffect } from "react";
-import { useAuthStore } from "../../stores/authStore";
+import { useAuth } from "../../contexts/AuthContext";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import apiService from "../../services/api";
 import Toast from "react-native-toast-message";
 
 const HomeScreen = () => {
-  const { currentUser, isLoading: authLoading } = useAuthStore();
+  const { currentUser, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const [stats, setStats] = useState({
     totalProducts: 0,

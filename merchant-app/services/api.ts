@@ -262,6 +262,25 @@ class ApiService {
     return this.request("/store/my-store/all");
   }
 
+  // Upload image
+  uploadImage(imageUri: string) {
+    const formData = new FormData();
+    const fileName = imageUri.split("/").pop() || "image.jpg";
+    const fileExtension = fileName.split(".").pop()?.toLowerCase() || "jpg";
+    const fileType = `image/${fileExtension === "jpg" ? "jpeg" : fileExtension}`;
+
+    formData.append("image", {
+      uri: imageUri,
+      type: fileType,
+      name: fileName,
+    } as any);
+
+    return this.request("/upload/image", {
+      method: "POST",
+      body: formData,
+    });
+  }
+
   // Create store application
   createStoreApplication(storeData: {
     name: string;

@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -17,6 +17,7 @@ const ProductFormScreen = () => {
   const [image, setImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingProduct, setIsLoadingProduct] = useState(isEditing);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const fetchProduct = async () => {
     if (!isEditing || !id) return;
@@ -80,12 +81,34 @@ const ProductFormScreen = () => {
     try {
       setIsLoading(true);
 
+      let imageUrl = image;
+
+      // If image is selected, upload it first
+      if (image) {
+        setIsUploadingImage(true);
+        try {
+          const uploadResponse = await apiService.uploadImage(image);
+          if (uploadResponse.success) {
+            imageUrl = uploadResponse.data.imageUrl;
+          } else {
+            Alert.alert('خطأ', 'فشل في رفع الصورة');
+            return;
+          }
+        } catch (uploadError: any) {
+          console.error('Error uploading image:', uploadError);
+          Alert.alert('خطأ', 'فشل في رفع الصورة');
+          return;
+        } finally {
+          setIsUploadingImage(false);
+        }
+      }
+
       const productData = {
         name: name.trim(),
         description: description.trim(),
         price: parseFloat(price),
         stock: parseInt(stock),
-        ...(image && { image }),
+        ...(imageUrl && { image: imageUrl }),
       };
 
       let response;
@@ -130,8 +153,13 @@ const ProductFormScreen = () => {
       <View style={styles.formContainer}>
         {/* Product Image */}
         <View style={styles.imageContainer}>
-          <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
-            {image ? (
+          <TouchableOpacity style={styles.imagePicker} onPress={pickImage} disabled={isUploadingImage}>
+            {isUploadingImage ? (
+              <View style={styles.imagePlaceholder}>
+                <ActivityIndicator size="large" color="#3B82F6" />
+                <Text style={styles.imagePlaceholderText}>جاري رفع الصورة...</Text>
+              </View>
+            ) : image ? (
               <View style={styles.imageWrapper}>
                 <Ionicons name="image" size={40} color="#9CA3AF" />
               </View>
@@ -207,11 +235,11 @@ const ProductFormScreen = () => {
 
         {/* Save Button */}
         <TouchableOpacity
-          style={[styles.saveButton, isLoading && styles.saveButtonDisabled]}
+          style={[styles.saveButton, (isLoading || isUploadingImage) && styles.saveButtonDisabled]}
           onPress={handleSaveProduct}
-          disabled={isLoading}>
+          disabled={isLoading || isUploadingImage}>
           <Text style={styles.saveButtonText}>
-            {isLoading ? 'جاري الحفظ...' : 'حفظ المنتج'}
+            {isUploadingImage ? 'جاري رفع الصورة...' : isLoading ? 'جاري الحفظ...' : 'حفظ المنتج'}
           </Text>
         </TouchableOpacity>
       </View>

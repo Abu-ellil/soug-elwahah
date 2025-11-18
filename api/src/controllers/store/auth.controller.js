@@ -51,7 +51,7 @@ class StoreAuthController extends BaseAuthController {
         await this.logLogin(phone, false, null, req, "User not found");
         return res.status(401).json({
           success: false,
-          message: "Phone number or password is incorrect"
+          error: "Phone number or password is incorrect"
         });
       }
 
@@ -60,7 +60,7 @@ class StoreAuthController extends BaseAuthController {
         await this.logLogin(phone, false, user._id, req, "Store owner account rejected");
         return res.status(401).json({
           success: false,
-          message: "الحساب مرفوض",
+          error: "الحساب مرفوض",
           verificationStatus: "rejected"
         });
       }
@@ -73,7 +73,7 @@ class StoreAuthController extends BaseAuthController {
         await this.logLogin(phone, false, user._id, req, "Invalid password");
         return res.status(401).json({
           success: false,
-          message: "Phone number or password is incorrect"
+          error: "Phone number or password is incorrect"
         });
       }
 
