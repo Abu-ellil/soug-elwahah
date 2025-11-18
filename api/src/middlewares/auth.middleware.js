@@ -72,6 +72,50 @@ const isStoreOwner = async (req, res, next) => {
   });
 };
 
+// Store Owner with approved store middleware - for store operations that require an approved store
+const isStoreOwnerWithApprovedStore = async (req, res, next) => {
+  await authMiddleware(req, res, async () => {
+    if (req.userRole !== "store") {
+      return res
+        .status(403)
+        .json({ success: false, message: "غير مصرح لك بالوصول" });
+    }
+
+    const owner = await StoreOwner.findById(req.userId).populate("storeId");
+    if (!owner || !owner.isActive) {
+      return res
+        .status(403)
+        .json({ success: false, message: "الحساب غير نشط" });
+    }
+
+    // Check that the store owner has been approved before allowing access to store operations
+    if (owner.verificationStatus !== "approved") {
+      return res
+        .status(403)
+        .json({
+          success: false,
+          message: "الحساب في انتظار الموافقة",
+          verificationStatus: owner.verificationStatus
+        });
+    }
+
+    // Also check if the associated store is approved
+    if (owner.storeId && owner.storeId.verificationStatus !== "approved") {
+      return res
+        .status(403)
+        .json({
+          success: false,
+          message: "المتجر في انتظار الموافقة",
+          verificationStatus: owner.storeId.verificationStatus
+        });
+    }
+
+    req.owner = owner;
+    req.storeId = owner.storeId;
+    next();
+  });
+};
+
 // Driver-only middleware
 const isDriver = async (req, res, next) => {
   await authMiddleware(req, res, async () => {
@@ -97,6 +141,7 @@ module.exports = {
   authMiddleware,
   isCustomer,
   isStoreOwner,
+ isStoreOwnerWithApprovedStore,
   isDriver,
   // Admin middleware - for now, we'll use a simple check based on a special admin phone number
   isAdmin: async (req, res, next) => {
@@ -201,6 +246,16 @@ module.exports = {
           user = null;
       }
 
+      // IMPORTANT: Store owners who are not approved should NOT be able to access admin functions
+      if (req.userRole === "store") {
+        const storeOwner = await StoreOwner.findById(req.userId);
+        if (!storeOwner || storeOwner.verificationStatus !== "approved") {
+          return res
+            .status(403)
+            .json({ success: false, message: "غير مصرح لك بالوصول - المتجر غير معتمد" });
+        }
+      }
+
       if (!user || !adminPhones.includes(user.phone)) {
         return res
           .status(403)
@@ -211,5 +266,5 @@ module.exports = {
       req.adminType = "regular_admin";
       next();
     });
-  },
+ },
 };

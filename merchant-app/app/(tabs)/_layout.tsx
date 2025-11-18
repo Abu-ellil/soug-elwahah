@@ -58,6 +58,14 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="pending-approval"
+        options={{
+          title: 'في انتظار الموافقة',
+          tabBarButton: () => null, // This hides the tab from the bottom tab bar
+          headerShown: true,
+        }}
+      />
     </Tabs>
   );
 }

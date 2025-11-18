@@ -20,6 +20,7 @@ import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { ActionDropdown } from '@/components/shared/ActionDropdown';
 import { ConfirmModal } from '@/components/modals/ConfirmModal';
 import { EditStoreModal } from '@/components/modals/EditStoreModal';
+import { ViewStoreModal } from '@/components/modals/ViewStoreModal';
 
 
 export default function StoresPage() {
@@ -33,6 +34,7 @@ export default function StoresPage() {
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
 
   const handleApproveStore = async () => {
     if (!selectedStore) return;
@@ -122,7 +124,7 @@ export default function StoresPage() {
     fetchStores();
   }, [searchTerm, statusFilter, verificationFilter]);
 
-  // Define columns for the data table
+ // Define columns for the data table
   const columns = [
     {
       accessorKey: 'name',
@@ -196,7 +198,10 @@ export default function StoresPage() {
           actions={[
             {
               label: 'عرض',
-              onClick: () => console.log('View store:', row.id),
+              onClick: () => {
+                setSelectedStore(row);
+                setShowViewModal(true);
+              },
             },
             {
               label: 'تعديل',
@@ -300,10 +305,23 @@ export default function StoresPage() {
           <DataTable
             data={stores}
             columns={columns}
-            onRowClick={(store) => console.log('View store:', (store as StoreType).id)}
+            onRowClick={(store) => {
+              setSelectedStore(store as StoreType);
+              setShowViewModal(true);
+            }}
           />
         </CardContent>
       </Card>
+
+      {/* View Store Modal */}
+      <ViewStoreModal
+        isOpen={showViewModal}
+        onClose={() => {
+          setShowViewModal(false);
+          setSelectedStore(null);
+        }}
+        store={selectedStore}
+      />
 
       {/* Approval Confirmation Modal */}
       <ConfirmModal

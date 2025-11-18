@@ -26,6 +26,11 @@ router.patch(
 // Analytics routes
 router.use("/analytics", require("./analytics.routes"));
 
+// Categories routes - added to fix the missing callback function error
+router.get("/categories", (req, res) => {
+  res.json({ success: true, message: "Categories route is working" });
+});
+
 // Orders routes
 router.get("/orders", adminController.getAllOrders);
 router.get("/orders/:orderId", adminController.getOrderById);
@@ -55,6 +60,9 @@ router.get("/users", adminController.getAllUsers);
 router.get("/users/:id", adminController.getUserById);
 router.patch("/users/:id", adminController.updateUser);
 router.delete("/users/:id", adminController.deleteUser);
+
+// Store owners routes
+router.get("/store-owners", adminController.getAllStoreOwners);
 
 // Products routes
 router.get("/products", adminController.getAllProducts);

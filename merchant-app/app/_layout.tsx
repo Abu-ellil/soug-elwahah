@@ -22,8 +22,17 @@ function RootLayoutNav() {
       if (!currentUser) {
         router.replace("/(auth)/login");
       } else {
-        // Optionally redirect to tabs if on auth screen while logged in
-        // This is optional and depends on the specific requirements
+        // Check if store owner is pending approval
+        if (currentUser.verificationStatus === 'pending') {
+          router.replace("/(tabs)/pending-approval");
+        } else if (currentUser.verificationStatus === 'rejected') {
+          // If rejected, user might need to contact admin or update information
+          // For now, we can still show the pending approval screen with rejection message
+          router.replace("/(tabs)/pending-approval");
+        } else {
+          // If approved, ensure user is on main tabs
+          // This is optional and depends on the specific requirements
+        }
       }
     }
   }, [currentUser, isLoading]);

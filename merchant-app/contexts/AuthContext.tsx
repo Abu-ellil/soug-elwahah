@@ -12,6 +12,7 @@ interface User {
   avatar?: string;
   storeId?: string;
   isActive: boolean;
+  verificationStatus?: string;
   createdAt?: string;
   updatedAt?: string;
   // Add any other fields that might come from the API
@@ -20,7 +21,7 @@ interface User {
 interface AuthContextType {
   currentUser: User | null;
   isLoading: boolean;
-  login: (phone: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (phone: string, password: string) => Promise<{ success: boolean; error?: string; verificationStatus?: string }>;
   register: (userData: { email: string; phone: string; password: string; name: string; storeName: string; storeDescription?: string; storeImage?: string; coordinates?: { lat: number; lng: number } }) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
@@ -75,7 +76,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (
     phone: string, // Using phone as identifier for login
     password: string
-  ): Promise<{ success: boolean; error?: string }> => {
+  ): Promise<{ success: boolean; error?: string; verificationStatus?: string }> => {
     try {
       setIsLoading(true);
       // Use the API service for login
@@ -92,6 +93,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           await AsyncStorage.setItem('user', JSON.stringify(profile));
         }
         return { success: true };
+      } else if (response && response.verificationStatus === 'pending') {
+        // If verification status is pending, we still want to set the user info
+        // so the app can show the pending approval screen
+        const profile = await apiService.getProfile();
+        if (profile) {
+          setCurrentUser(profile);
+          await AsyncStorage.setItem('user', JSON.stringify(profile));
+        }
+        return { success: true, verificationStatus: 'pending' };
+      } else if (response && response.verificationStatus === 'rejected') {
+        return { success: false, error: 'الحساب مرفوض من قبل الإدارة' };
       } else {
         return { success: false, error: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' };
       }

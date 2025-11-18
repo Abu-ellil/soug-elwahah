@@ -1,48 +1,37 @@
 const Notification = require("../../models/Notification");
+const StoreOwner = require("../../models/StoreOwner");
 
-const getMyNotifications = async (req, res) => {
+// Get store owner's notifications
+const getNotifications = async (req, res) => {
   try {
-    const { page = 1, limit = 20 } = req.query;
+    const storeOwnerId = req.userId;
 
-    const filter = {
-      userId: req.userId,
-      userType: "StoreOwner",
-    };
-
-    const notifications = await Notification.find(filter)
-      .sort({ sentAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit));
-
-    const total = await Notification.countDocuments(filter);
-    const unreadCount = await Notification.countDocuments({
-      ...filter,
-      isRead: false,
-    });
+    const notifications = await Notification.find({ 
+      userId: storeOwnerId 
+    }).sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
-      data: {
-        notifications,
-        unreadCount,
-      },
+      data: { notifications },
       message: "تم جلب الإشعارات بنجاح",
     });
   } catch (error) {
-    console.error("Get store notifications error:", error);
+    console.error("Get notifications error:", error);
     res.status(500).json({ success: false, message: "خطأ في الخادم" });
   }
 };
 
+// Mark notification as read
 const markAsRead = async (req, res) => {
   try {
     const { notificationId } = req.params;
+    const storeOwnerId = req.userId;
 
-    const notification = await Notification.findOne({
-      _id: notificationId,
-      userId: req.userId,
-      userType: "StoreOwner",
-    });
+    const notification = await Notification.findOneAndUpdate(
+      { _id: notificationId, userId: storeOwnerId },
+      { isRead: true },
+      { new: true }
+    );
 
     if (!notification) {
       return res
@@ -50,44 +39,61 @@ const markAsRead = async (req, res) => {
         .json({ success: false, message: "الإشعار غير موجود" });
     }
 
-    notification.isRead = true;
-    notification.readAt = new Date();
-    await notification.save();
-
     res.status(200).json({
       success: true,
+      data: { notification },
       message: "تم تعليم الإشعار كمقروء",
     });
   } catch (error) {
-    console.error("Mark store notification as read error:", error);
+    console.error("Mark as read error:", error);
     res.status(500).json({ success: false, message: "خطأ في الخادم" });
   }
 };
 
-const updateFcmToken = async (req, res) => {
+// Get unread notifications count
+const getUnreadCount = async (req, res) => {
   try {
-    const { fcmToken } = req.body;
+    const storeOwnerId = req.userId;
 
-    if (!fcmToken) {
-      return res
-        .status(400)
-        .json({ success: false, message: "رمز الإشعار مطلوب" });
-    }
-
-    await StoreOwner.findByIdAndUpdate(req.userId, { fcmToken }, { new: true });
+    const unreadCount = await Notification.countDocuments({ 
+      userId: storeOwnerId,
+      isRead: false
+    });
 
     res.status(200).json({
       success: true,
-      message: "تم تحديث رمز الإشعار بنجاح",
+      data: { unreadCount },
+      message: "تم جلب عدد الإشعارات غير المقروءة بنجاح",
     });
   } catch (error) {
-    console.error("Update store FCM token error:", error);
+    console.error("Get unread count error:", error);
     res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Mark all notifications as read
+const markAllAsRead = async (req, res) => {
+  try {
+    const storeOwnerId = req.userId;
+
+    await Notification.updateMany(
+      { userId: storeOwnerId, isRead: false },
+      { isRead: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "تم تعليم جميع الإشعارات كمقروءة",
+    });
+  } catch (error) {
+    console.error("Mark all as read error:", error);
+    res.status(50).json({ success: false, message: "خطأ في الخادم" });
   }
 };
 
 module.exports = {
-  getMyNotifications,
+  getNotifications,
+  getUnreadCount,
   markAsRead,
-  updateFcmToken,
+  markAllAsRead,
 };

@@ -68,7 +68,7 @@ const initialSettings = {
 };
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<Settings>({} as Settings);
+  const [settings, setSettings] = useState<Settings>(initialSettings);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -76,11 +76,24 @@ export default function SettingsPage() {
     const fetchSettings = async () => {
       try {
         const response = await settingsAPI.getSettings();
-        setSettings(response.data.settings || {} as Settings);
+        // Ensure all nested properties exist by merging with initial settings
+        const mergedSettings = {
+          ...initialSettings,
+          ...response.data.settings,
+          deliveryTimeEstimates: {
+            ...initialSettings.deliveryTimeEstimates,
+            ...response.data.settings?.deliveryTimeEstimates
+          },
+          firebaseConfig: {
+            ...initialSettings.firebaseConfig,
+            ...response.data.settings?.firebaseConfig
+          }
+        };
+        setSettings(mergedSettings);
       } catch (error) {
         console.error('Error fetching settings:', error);
         // Set default settings in case of error
-        setSettings({} as Settings);
+        setSettings(initialSettings);
       } finally {
         setLoading(false);
       }
@@ -104,7 +117,9 @@ export default function SettingsPage() {
     setSettings(prev => ({
       ...prev,
       [parentField]: {
-        ...(prev[parentField] as any),
+        ...(prev[parentField] || (parentField === 'deliveryTimeEstimates'
+          ? initialSettings.deliveryTimeEstimates
+          : initialSettings.firebaseConfig)),
         [field]: value
       }
     }));
@@ -113,7 +128,19 @@ export default function SettingsPage() {
   const handleSave = async () => {
       setSaving(true);
       try {
-        const response = await settingsAPI.updateSettings(settings);
+        // Prepare settings to ensure proper structure when sending to API
+        const settingsToSend = {
+          ...settings,
+          deliveryTimeEstimates: {
+            min: settings.deliveryTimeEstimates?.min ?? initialSettings.deliveryTimeEstimates.min,
+            max: settings.deliveryTimeEstimates?.max ?? initialSettings.deliveryTimeEstimates.max
+          },
+          firebaseConfig: {
+            ...initialSettings.firebaseConfig,
+            ...settings.firebaseConfig
+          }
+        };
+        const response = await settingsAPI.updateSettings(settingsToSend);
         console.log('Settings saved:', response);
       } catch (error) {
         console.error('Error saving settings:', error);
@@ -157,7 +184,7 @@ export default function SettingsPage() {
                   <Label htmlFor="appName">اسم التطبيق</Label>
                   <Input
                     id="appName"
-                    value={settings.appName}
+                    value={settings.appName ?? initialSettings.appName}
                     onChange={(e) => handleInputChange('appName', e.target.value)}
                   />
                 </div>
@@ -166,7 +193,7 @@ export default function SettingsPage() {
                   <Input
                     id="supportEmail"
                     type="email"
-                    value={settings.supportEmail}
+                    value={settings.supportEmail ?? initialSettings.supportEmail}
                     onChange={(e) => handleInputChange('supportEmail', e.target.value)}
                   />
                 </div>
@@ -174,7 +201,7 @@ export default function SettingsPage() {
                   <Label htmlFor="supportPhone">هاتف الدعم</Label>
                   <Input
                     id="supportPhone"
-                    value={settings.supportPhone}
+                    value={settings.supportPhone ?? initialSettings.supportPhone}
                     onChange={(e) => handleInputChange('supportPhone', e.target.value)}
                   />
                 </div>
@@ -199,7 +226,7 @@ export default function SettingsPage() {
                   <Input
                     id="defaultDeliveryFee"
                     type="number"
-                    value={settings.defaultDeliveryFee}
+                    value={settings.defaultDeliveryFee ?? initialSettings.defaultDeliveryFee}
                     onChange={(e) => handleInputChange('defaultDeliveryFee', Number(e.target.value))}
                   />
                 </div>
@@ -208,7 +235,7 @@ export default function SettingsPage() {
                   <Input
                     id="maxDeliveryRadius"
                     type="number"
-                    value={settings.maxDeliveryRadius}
+                    value={settings.maxDeliveryRadius ?? initialSettings.maxDeliveryRadius}
                     onChange={(e) => handleInputChange('maxDeliveryRadius', Number(e.target.value))}
                   />
                 </div>
@@ -217,7 +244,7 @@ export default function SettingsPage() {
                   <Input
                     id="deliveryTimeMin"
                     type="number"
-                    value={settings.deliveryTimeEstimates.min}
+                    value={settings.deliveryTimeEstimates?.min ?? initialSettings.deliveryTimeEstimates.min}
                     onChange={(e) => handleNestedInputChange('deliveryTimeEstimates', 'min', Number(e.target.value))}
                   />
                 </div>
@@ -226,7 +253,7 @@ export default function SettingsPage() {
                   <Input
                     id="deliveryTimeMax"
                     type="number"
-                    value={settings.deliveryTimeEstimates.max}
+                    value={settings.deliveryTimeEstimates?.max ?? initialSettings.deliveryTimeEstimates.max}
                     onChange={(e) => handleNestedInputChange('deliveryTimeEstimates', 'max', Number(e.target.value))}
                   />
                 </div>
@@ -240,7 +267,7 @@ export default function SettingsPage() {
                   <Label htmlFor="enableCash">الدفع نقدًا</Label>
                   <Switch
                     id="enableCash"
-                    checked={settings.enableCash}
+                    checked={settings.enableCash ?? initialSettings.enableCash}
                     onCheckedChange={(checked) => handleInputChange('enableCash', checked)}
                   />
                 </div>
@@ -248,7 +275,7 @@ export default function SettingsPage() {
                   <Label htmlFor="enableCard">الدفع بالبطاقة</Label>
                   <Switch
                     id="enableCard"
-                    checked={settings.enableCard}
+                    checked={settings.enableCard ?? initialSettings.enableCard}
                     onCheckedChange={(checked) => handleInputChange('enableCard', checked)}
                   />
                 </div>
@@ -256,7 +283,7 @@ export default function SettingsPage() {
                   <Label htmlFor="enableWallet">الدفع بالمحفظة</Label>
                   <Switch
                     id="enableWallet"
-                    checked={settings.enableWallet}
+                    checked={settings.enableWallet ?? initialSettings.enableWallet}
                     onCheckedChange={(checked) => handleInputChange('enableWallet', checked)}
                   />
                 </div>
@@ -265,7 +292,7 @@ export default function SettingsPage() {
                   <Input
                     id="commissionRate"
                     type="number"
-                    value={settings.commissionRate}
+                    value={settings.commissionRate ?? initialSettings.commissionRate}
                     onChange={(e) => handleInputChange('commissionRate', Number(e.target.value))}
                   />
                 </div>
@@ -279,7 +306,7 @@ export default function SettingsPage() {
                   <Label htmlFor="maintenanceMode">وضع الصيانة</Label>
                   <Switch
                     id="maintenanceMode"
-                    checked={settings.maintenanceMode}
+                    checked={settings.maintenanceMode ?? initialSettings.maintenanceMode}
                     onCheckedChange={(checked) => handleInputChange('maintenanceMode', checked)}
                   />
                 </div>
@@ -288,7 +315,7 @@ export default function SettingsPage() {
                   <Input
                     id="apiRateLimit"
                     type="number"
-                    value={settings.apiRateLimit}
+                    value={settings.apiRateLimit ?? initialSettings.apiRateLimit}
                     onChange={(e) => handleInputChange('apiRateLimit', Number(e.target.value))}
                   />
                 </div>
@@ -297,7 +324,7 @@ export default function SettingsPage() {
                   <Input
                     id="firebaseApiKey"
                     type="password"
-                    value={settings.firebaseConfig.apiKey}
+                    value={settings.firebaseConfig?.apiKey ?? initialSettings.firebaseConfig.apiKey}
                     onChange={(e) => handleNestedInputChange('firebaseConfig', 'apiKey', e.target.value)}
                   />
                 </div>

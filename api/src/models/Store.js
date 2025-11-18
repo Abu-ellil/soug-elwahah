@@ -10,7 +10,7 @@ const storeSchema = new mongoose.Schema({
   description: { type: String, default: '' },
   rating: { type: Number, default: 0, min: 0, max: 5 },
   totalReviews: { type: Number, default: 0 },
-  isOpen: { type: Boolean, default: true },
+  isOpen: { type: Boolean, default: false }, // Default to false until approved
   deliveryTime: { type: String, default: '20-30 دقيقة' },
   deliveryFee: { type: Number, default: 10 },
   coordinates: {
@@ -26,7 +26,9 @@ const storeSchema = new mongoose.Schema({
     from: { type: String, default: '08:00' },
     to: { type: String, default: '23:00' }
   },
-  isActive: { type: Boolean, default: true },
+  isActive: { type: Boolean, default: false }, // Default to false until approved
+  verificationStatus: { type: String, default: 'pending', enum: ['pending', 'approved', 'rejected'] },
+  rejectionReason: { type: String, default: null },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });

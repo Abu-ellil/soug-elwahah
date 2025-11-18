@@ -5,12 +5,13 @@ const storeOwnerSchema = new mongoose.Schema({
   phone: { type: String, required: true, unique: true },
   password: { type: String, required: true }, // hashed
   storeId: { type: mongoose.Schema.Types.ObjectId, ref: "Store" },
-  isActive: { type: Boolean, default: true },
+  isActive: { type: Boolean, default: false }, // Default to false until approved
+  verificationStatus: { type: String, default: 'pending', enum: ['pending', 'approved', 'rejected'] },
+  rejectionReason: { type: String, default: null },
   fcmToken: { type: String, default: null },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
 // Create indexes for better query performance
-storeOwnerSchema.index({ phone: 1 });
 
 module.exports = mongoose.model("StoreOwner", storeOwnerSchema);

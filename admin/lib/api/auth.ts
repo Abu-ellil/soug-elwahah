@@ -1,5 +1,5 @@
-import { apiClient } from './client';
-import { Admin } from '../../types';
+import { apiClient } from "./client";
+import { Admin } from "../../types";
 
 interface LoginCredentials {
   email?: string;
@@ -44,6 +44,7 @@ export const authAPI = {
   },
 
   me: async (): Promise<AuthResponse> => {
-    return apiClient.get("/admin/auth/me");
+    const response = await apiClient.get<AuthResponse>("/admin/auth/me");
+    return response;
   },
 };

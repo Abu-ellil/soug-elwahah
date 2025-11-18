@@ -2,8 +2,9 @@ const express = require("express");
 const router = express.Router();
 const notificationsController = require("../../controllers/store/notifications.controller");
 
-router.get("/", notificationsController.getMyNotifications);
+router.get("/", notificationsController.getNotifications);
+router.get("/unread-count", notificationsController.getUnreadCount);
 router.patch("/:notificationId/read", notificationsController.markAsRead);
-router.post("/token", notificationsController.updateFcmToken);
+router.patch("/mark-all-read", notificationsController.markAllAsRead);
 
 module.exports = router;

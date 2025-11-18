@@ -38,8 +38,13 @@ const LoginScreen = () => {
     try {
       const result = await login(phone, password);
       if (result.success) {
-        // Navigate to the main dashboard
-        router.replace('/');
+        if (result.verificationStatus === 'pending') {
+          // Navigate to pending approval screen
+          router.replace('/pending-approval');
+        } else {
+          // Navigate to the main dashboard
+          router.replace('/');
+        }
       } else {
         Alert.alert('خطأ', result.error || 'رقم الهاتف أو كلمة المرور غير صحيحة');
       }

@@ -61,7 +61,7 @@ const registerCustomer = async (req, res) => {
 
 const registerStoreOwner = async (req, res) => {
   try {
-    const {
+    let {
       name,
       email,
       phone,
@@ -69,8 +69,18 @@ const registerStoreOwner = async (req, res) => {
       storeName,
       storeDescription,
       storeImage,
-      coordinates,
     } = req.body;
+    
+    // Parse coordinates if they are sent as a JSON string in form data
+    let coordinates = req.body.coordinates;
+    if (coordinates && typeof coordinates === 'string') {
+      try {
+        coordinates = JSON.parse(coordinates);
+      } catch (e) {
+        console.warn('Failed to parse coordinates from form data:', coordinates);
+        coordinates = null;
+      }
+    }
 
     // Check if store owner already exists with timeout
     const existingOwner = await StoreOwner.findOne({ phone }).maxTimeMS(10000);
@@ -202,7 +212,7 @@ const registerStoreOwner = async (req, res) => {
         },
         token,
       },
-      message: "تم إنشاء حساب التاجر ومتجره بنجاح",
+      message: "تم إنشاء حساب التاجر ومتجره بنجاح، في انتظار موافقة الإدارة",
     });
   } catch (error) {
     console.error("Register store owner error:", error);
@@ -312,7 +322,38 @@ const login = async (req, res) => {
         .json({ success: false, message: "بيانات الدخول غير صحيحة" });
     }
 
-    if (!user.isActive) {
+    // For store owners, allow login but check verification status for operations
+    if (userType === "store") {
+      if (user.verificationStatus === "rejected") {
+        await logLoginAttempt(
+          phone,
+          userType,
+          false,
+          user._id,
+          req,
+          "Store owner account rejected"
+        );
+        return res
+          .status(401)
+          .json({
+            success: false,
+            message: "الحساب مرفوض",
+            verificationStatus: "rejected"
+          });
+      } else if (!user.isActive) {
+        await logLoginAttempt(
+          phone,
+          userType,
+          false,
+          user._id,
+          req,
+          "Account not active"
+        );
+        return res
+          .status(401)
+          .json({ success: false, message: "الحساب غير نشط" });
+      }
+    } else if (!user.isActive) {
       await logLoginAttempt(
         phone,
         userType,

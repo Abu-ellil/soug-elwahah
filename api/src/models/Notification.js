@@ -1,34 +1,13 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const notificationSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, refPath: "userType" },
-  userType: {
-    type: String,
-    enum: ["User", "StoreOwner", "Driver"],
-    required: true,
-  },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'StoreOwner', required: true },
   title: { type: String, required: true },
-  body: { type: String, required: true },
-  type: {
-    type: String,
-    enum: [
-      "order_new",
-      "order_accepted",
-      "order_confirmed",
-      "order_picked_up",
-      "order_on_way",
-      "order_delivered",
-      "order_cancelled",
-      "general",
-    ],
-    required: true,
-  },
-  data: { type: mongoose.Schema.Types.Mixed, default: {} }, // extra data like orderId
-  isRead: { type: Boolean, default: false },
-  sentAt: { type: Date, default: Date.now },
-  readAt: { type: Date, default: null },
+  message: { type: String, required: true },
+  type: { type: String, default: 'info', enum: ['info', 'success', 'warning', 'error'] },
+  read: { type: Boolean, default: false },
+  data: { type: mongoose.Schema.Types.Mixed }, // Additional data related to the notification
+  createdAt: { type: Date, default: Date.now },
 });
 
-notificationSchema.index({ userId: 1, isRead: 1, sentAt: -1 });
-
-module.exports = mongoose.model("Notification", notificationSchema);
+module.exports = mongoose.model('Notification', notificationSchema);

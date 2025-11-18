@@ -5,9 +5,11 @@ const Driver = require("../models/Driver");
 const SuperAdmin = require("../models/SuperAdmin");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
+const Notification = require("../models/Notification");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { logLoginAttempt } = require("../services/loginLog.service");
+const admin = require("../config/firebase");
 
 // Get all stores with pending coordinate updates
 const getStoresWithPendingCoordinates = async (req, res) => {
@@ -682,12 +684,25 @@ const getPendingStores = async (req, res) => {
       .skip(skip)
       .limit(parseInt(limit));
 
+    // Transform the stores data to match the expected frontend format
+    const transformedStores = stores.map(store => {
+      const storeObj = store.toObject();
+      // Flatten the populated owner data into ownerName and ownerPhone fields
+      if (storeObj.ownerId) {
+        storeObj.ownerName = storeObj.ownerId.name;
+        storeObj.ownerPhone = storeObj.ownerId.phone;
+        // Remove the original ownerId object to avoid conflicts
+        delete storeObj.ownerId;
+      }
+      return storeObj;
+    });
+
     const total = await Store.countDocuments(query);
 
     res.status(200).json({
       success: true,
       data: {
-        stores,
+        stores: transformedStores,
         total,
         page: parseInt(page),
         limit: parseInt(limit),
@@ -734,12 +749,25 @@ const getAllStores = async (req, res) => {
       .skip(skip)
       .limit(parseInt(limit));
 
+    // Transform the stores data to match the expected frontend format
+    const transformedStores = stores.map(store => {
+      const storeObj = store.toObject();
+      // Flatten the populated owner data into ownerName and ownerPhone fields
+      if (storeObj.ownerId) {
+        storeObj.ownerName = storeObj.ownerId.name;
+        storeObj.ownerPhone = storeObj.ownerId.phone;
+        // Remove the original ownerId object to avoid conflicts
+        delete storeObj.ownerId;
+      }
+      return storeObj;
+    });
+
     const total = await Store.countDocuments(query);
 
     res.status(200).json({
       success: true,
       data: {
-        stores,
+        stores: transformedStores,
         total,
         page: parseInt(page),
         limit: parseInt(limit),
@@ -767,9 +795,19 @@ const getStoreById = async (req, res) => {
         .json({ success: false, message: "المحل غير موجود" });
     }
 
+    // Transform the store data to match the expected frontend format
+    const storeObj = store.toObject();
+    // Flatten the populated owner data into ownerName and ownerPhone fields
+    if (storeObj.ownerId) {
+      storeObj.ownerName = storeObj.ownerId.name;
+      storeObj.ownerPhone = storeObj.ownerId.phone;
+      // Remove the original ownerId object to avoid conflicts
+      delete storeObj.ownerId;
+    }
+
     res.status(200).json({
       success: true,
-      data: { store },
+      data: { store: storeObj },
       message: "تم جلب المحل بنجاح",
     });
   } catch (error) {
@@ -802,9 +840,19 @@ const updateStore = async (req, res) => {
       .populate("categoryId", "name nameEn icon color")
       .populate("ownerId", "name phone");
 
+    // Transform the store data to match the expected frontend format
+    const storeObj = updatedStore.toObject();
+    // Flatten the populated owner data into ownerName and ownerPhone fields
+    if (storeObj.ownerId) {
+      storeObj.ownerName = storeObj.ownerId.name;
+      storeObj.ownerPhone = storeObj.ownerId.phone;
+      // Remove the original ownerId object to avoid conflicts
+      delete storeObj.ownerId;
+    }
+
     res.status(200).json({
       success: true,
-      data: { store: updatedStore },
+      data: { store: storeObj },
       message: "تم تحديث المحل بنجاح",
     });
   } catch (error) {
@@ -826,16 +874,70 @@ const approveStore = async (req, res) => {
     }
 
     store.verificationStatus = "approved";
+    store.isActive = true; // Activate the store
+    store.isOpen = true; // Allow the store to be open
     await store.save();
+
+    // Also activate the store owner
+    await StoreOwner.findByIdAndUpdate(store.ownerId, {
+      verificationStatus: "approved",
+      isActive: true // Activate the owner
+    });
+
+    // Create notification for the store owner
+    const notification = new Notification({
+      userId: store.ownerId,
+      title: "تم قبول متجرك",
+      message: `تم قبول متجر "${store.name}" وتفعيله بنجاح. يمكنك الآن بدء العمل في النظام.`,
+      type: "success",
+      data: {
+        storeId: store._id,
+        action: "store_approved"
+      }
+    });
+    await notification.save();
+    
+    // Send push notification to store owner if they have an FCM token
+    const storeOwner = await StoreOwner.findById(store.ownerId);
+    if (storeOwner && storeOwner.fcmToken) {
+      try {
+        const message = {
+          notification: {
+            title: "تم قبول متجرك",
+            body: `تم قبول متجر "${store.name}" وتفعيله بنجاح. يمكنك الآن تسجيل الدخول وإضافة منتجات.`,
+          },
+          data: {
+            type: "store_approved",
+            storeId: store._id.toString(),
+            action: "store_approved"
+          },
+          token: storeOwner.fcmToken,
+        };
+        
+        await admin.messaging().send(message);
+      } catch (error) {
+        console.error("Error sending push notification:", error);
+      }
+    }
 
     // Populate and return updated store
     const updatedStore = await Store.findById(id)
       .populate("categoryId", "name nameEn icon color")
       .populate("ownerId", "name phone");
 
+    // Transform the store data to match the expected frontend format
+    const storeObj = updatedStore.toObject();
+    // Flatten the populated owner data into ownerName and ownerPhone fields
+    if (storeObj.ownerId) {
+      storeObj.ownerName = storeObj.ownerId.name;
+      storeObj.ownerPhone = storeObj.ownerId.phone;
+      // Remove the original ownerId object to avoid conflicts
+      delete storeObj.ownerId;
+    }
+
     res.status(200).json({
       success: true,
-      data: { store: updatedStore },
+      data: { store: storeObj },
       message: "تم قبول المحل بنجاح",
     });
   } catch (error) {
@@ -858,17 +960,70 @@ const rejectStore = async (req, res) => {
     }
 
     store.verificationStatus = "rejected";
+    store.isActive = false; // Deactivate the store
     if (reason) store.rejectionReason = reason;
     await store.save();
+
+    // Also deactivate the store owner
+    await StoreOwner.findByIdAndUpdate(store.ownerId, {
+      verificationStatus: "rejected",
+      isActive: false // Deactivate the owner
+    });
+
+    // Create notification for the store owner
+    const notification = new Notification({
+      userId: store.ownerId,
+      title: "تم رفض متجرك",
+      message: reason ? `تم رفض متجر "${store.name}" لسبب: ${reason}` : `تم رفض متجر "${store.name}"`,
+      type: "error",
+      data: {
+        storeId: store._id,
+        action: "store_rejected"
+      }
+    });
+    await notification.save();
+    
+    // Send push notification to store owner if they have an FCM token
+    const storeOwner = await StoreOwner.findById(store.ownerId);
+    if (storeOwner && storeOwner.fcmToken) {
+      try {
+        const message = {
+          notification: {
+            title: "تم رفض متجرك",
+            body: reason ? `تم رفض متجر "${store.name}" لسبب: ${reason}` : `تم رفض متجر "${store.name}"`,
+          },
+          data: {
+            type: "store_rejected",
+            storeId: store._id.toString(),
+            action: "store_rejected"
+          },
+          token: storeOwner.fcmToken,
+        };
+        
+        await admin.messaging().send(message);
+      } catch (error) {
+        console.error("Error sending push notification:", error);
+      }
+    }
 
     // Populate and return updated store
     const updatedStore = await Store.findById(id)
       .populate("categoryId", "name nameEn icon color")
       .populate("ownerId", "name phone");
 
+    // Transform the store data to match the expected frontend format
+    const storeObj = updatedStore.toObject();
+    // Flatten the populated owner data into ownerName and ownerPhone fields
+    if (storeObj.ownerId) {
+      storeObj.ownerName = storeObj.ownerId.name;
+      storeObj.ownerPhone = storeObj.ownerId.phone;
+      // Remove the original ownerId object to avoid conflicts
+      delete storeObj.ownerId;
+    }
+
     res.status(200).json({
       success: true,
-      data: { store: updatedStore },
+      data: { store: storeObj },
       message: "تم رفض المحل بنجاح",
     });
   } catch (error) {
@@ -1274,6 +1429,56 @@ const getAllUsers = async (req, res) => {
   }
 };
 
+// Get all store owners with pagination and search
+const getAllStoreOwners = async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      status,
+      verificationStatus,
+    } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    const query = {};
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } },
+      ];
+    }
+    if (status) {
+      query.isActive = status === "active" ? true : false;
+    }
+    if (verificationStatus) {
+      query.verificationStatus = verificationStatus;
+    }
+
+    const storeOwners = await StoreOwner.find(query)
+      .populate("storeId", "name")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    const total = await StoreOwner.countDocuments(query);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        storeOwners,
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+      },
+      message: "تم جلب مالكي المتاجر بنجاح",
+    });
+  } catch (error) {
+    console.error("Get all store owners error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
 // Get user by ID
 const getUserById = async (req, res) => {
   try {
@@ -1388,7 +1593,6 @@ module.exports = {
   getOrderById,
   updateOrder,
   cancelOrder,
-  // Store management functions
   getPendingStores,
   getAllStores,
   getStoreById,
@@ -1396,7 +1600,6 @@ module.exports = {
   approveStore,
   rejectStore,
   deleteStore,
-  // Driver management functions
   getPendingDrivers,
   getAllDrivers,
   getDriverById,
@@ -1404,11 +1607,11 @@ module.exports = {
   approveDriver,
   rejectDriver,
   deleteDriver,
-  // Product management functions
   getAllUsers,
   getUserById,
   updateUser,
   deleteUser,
+  getAllStoreOwners, // Add the missing function
   getAllProducts,
   getProductById,
   updateProduct,
