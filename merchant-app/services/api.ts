@@ -133,7 +133,7 @@ class ApiService {
     return this.request("/store/auth/login", {
       method: "POST",
       body: JSON.stringify(credentials),
-    });
+    }, 3, true); // skipAuth: true
   }
 
   register(merchantData: {
@@ -144,7 +144,7 @@ class ApiService {
     return this.request("/store/auth/register", {
       method: "POST",
       body: JSON.stringify(merchantData),
-    });
+    }, 3, true); // skipAuth: true
   }
 
   // Get current user profile
@@ -157,14 +157,14 @@ class ApiService {
     return this.request("/store/auth/request-password-reset", {
       method: "POST",
       body: JSON.stringify({ phone }),
-    });
+    }, 3, true); // skipAuth: true
   }
 
   resetPassword(data: { phone: string; resetCode: string; newPassword: string }) {
     return this.request("/store/auth/reset-password", {
       method: "POST",
       body: JSON.stringify(data),
-    });
+    }, 3, true); // skipAuth: true
   }
 
   async logout() {

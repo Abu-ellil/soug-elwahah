@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuthStore } from '../../stores/authStore';
 import { useRouter } from 'expo-router';
 
 const { width, height } = Dimensions.get('window');
@@ -25,7 +25,7 @@ const LoginScreen = () => {
   const [isValidating, setIsValidating] = useState(false);
 
   const router = useRouter();
-  const { login, isLoading, currentUser } = useAuth();
+  const { login, isLoading, currentUser } = useAuthStore();
 
   const validateInputs = () => {
     if (!phone.trim()) {
@@ -140,7 +140,9 @@ const LoginScreen = () => {
   };
 
   const handlePhoneChange = (text: string) => {
+    console.log('Phone input change:', text);
     const formatted = formatPhoneNumber(text);
+    console.log('Formatted phone:', formatted);
     setPhone(formatted);
   };
 
@@ -188,12 +190,15 @@ const LoginScreen = () => {
                     value={phone}
                     onChangeText={handlePhoneChange}
                     placeholder="100 000 0000"
-                    keyboardType="phone-pad"
-                    maxLength={13} // 3 + 1 + 3 + 1 + 4 = 12 + space = 13
+                    keyboardType="numeric"
+                    maxLength={13}
                     className="flex-1 text-lg text-gray-900"
-                    style={{ textAlign: 'left' }}
+                    style={{ textAlign: 'left', minWidth: 100, minHeight: 24 }}
                     autoCapitalize="none"
                     autoCorrect={false}
+                    editable={true}
+                    selectTextOnFocus={true}
+                    returnKeyType="next"
                   />
                   <Ionicons name="call-outline" size={20} color="#6B7280" />
                 </View>

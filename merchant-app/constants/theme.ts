@@ -27,6 +27,58 @@ export const Colors = {
   },
 };
 
+// Login page theme colors and styles
+export const LoginTheme = {
+  // Background gradient colors
+  backgroundGradient: ['#667eea', '#764ba2'],
+
+  // Primary button gradient
+  primaryButtonGradient: ['#3B82F6', '#1D4ED8'],
+
+  // Disabled button gradient
+  disabledButtonGradient: ['#9CA3AF', '#6B7280'],
+
+  // Form container styles
+  formContainer: {
+    backgroundColor: 'white',
+    borderRadius: 24, // rounded-3xl
+    padding: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+
+  // Input container styles
+  inputContainer: {
+    borderRadius: 12, // rounded-xl
+    borderWidth: 2,
+    borderColor: '#E5E7EB', // border-gray-200
+    backgroundColor: '#F9FAFB', // bg-gray-50
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+
+  // Colors
+  colors: {
+    white: '#FFFFFF',
+    gray50: '#F9FAFB',
+    gray100: '#F3F4F6',
+    gray200: '#E5E7EB',
+    gray300: '#D1D5DB',
+    gray400: '#9CA3AF',
+    gray500: '#6B7280',
+    gray600: '#4B5563',
+    gray700: '#374151',
+    gray800: '#1F2937',
+    gray900: '#111827',
+    blue500: '#3B82F6',
+    blue600: '#2563EB',
+    blue700: '#1D4ED8',
+  },
+};
+
 export const Fonts = Platform.select({
   ios: {
     /** iOS `UIFontDescriptorSystemDesignDefault` */

@@ -47,6 +47,10 @@ const ProductFormScreen = () => {
       const response = await apiService.request('/categories');
       if (response.success) {
         setCategories(response.data.categories);
+        // Set default category to first one if available
+        if (response.data.categories.length > 0 && !isEditing) {
+          setCategoryId(response.data.categories[0]._id);
+        }
       }
     } catch (error: any) {
       console.error('Error fetching categories:', error);

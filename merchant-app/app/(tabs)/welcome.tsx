@@ -8,12 +8,12 @@ import {
 import React from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuthStore } from "../../stores/authStore";
 
 const { width } = Dimensions.get("window");
 
 const WelcomeScreen = () => {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout } = useAuthStore();
   const router = useRouter();
 
   const handleCreateStore = () => {

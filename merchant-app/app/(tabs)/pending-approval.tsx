@@ -7,13 +7,13 @@ import {
 } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuthStore } from '../../stores/authStore';
 import { useRouter } from 'expo-router';
 import apiService from '../../services/api';
 import Toast from 'react-native-toast-message';
 
 const PendingApprovalScreen = () => {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout } = useAuthStore();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);

@@ -10,12 +10,16 @@ import "../global.css";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useEffect } from "react";
-import { AuthProvider, useAuth } from "../contexts/AuthContext"; // Import AuthProvider and useAuth
+import { useAuthStore } from "../stores/authStore";
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  const { currentUser, isLoading } = useAuth(); // Use useAuth from AuthContext
+  const { currentUser, isLoading, loadUser } = useAuthStore();
   const pathname = usePathname();
+
+  useEffect(() => {
+    loadUser();
+  }, [loadUser]);
 
   useEffect(() => {
     if (!isLoading) {
@@ -72,10 +76,6 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  return (
-    <AuthProvider>
-      <RootLayoutNav />
-    </AuthProvider>
-  );
+  return <RootLayoutNav />;
 }
 

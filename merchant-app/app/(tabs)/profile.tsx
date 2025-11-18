@@ -9,7 +9,7 @@ import {
   Image,
 } from "react-native";
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuthStore } from "../../stores/authStore";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import apiService from "../../services/api";
@@ -18,7 +18,7 @@ import { CLOUDINARY_CLOUD_NAME } from "../../constants/api";
 import Toast from "react-native-toast-message";
 
 const ProfileScreen = () => {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout } = useAuthStore();
   const [storeName, setStoreName] = useState("");
   const [storeDescription, setStoreDescription] = useState("");
   const [storeImage, setStoreImage] = useState("");

@@ -1,14 +1,16 @@
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, RefreshControl } from 'react-native';
-import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, FlatList, TouchableOpacity, Alert, RefreshControl } from 'react-native';
+import React, { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../stores/authStore';
+import { LinearGradient } from 'expo-linear-gradient';
 import apiService from '../../services/api';
 import Toast from 'react-native-toast-message';
 
 // Define product type
 interface Product {
   _id: string;
+  id?: string;
   name: string;
   price: number;
   description: string;
@@ -26,17 +28,18 @@ const ProductsScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [hasApprovedStore, setHasApprovedStore] = useState(false);
 
-  // Check if user has approved stores
-  const checkApprovedStores = useCallback(() => {
-    return currentUser?.stores?.some(store => store.verificationStatus === 'approved') || false;
-  }, [currentUser]);
-
-  const fetchProducts = useCallback(async () => {
+  const fetchProducts = async () => {
     try {
-      const approved = checkApprovedStores();
-      setHasApprovedStore(approved);
+      setIsLoading(true);
 
-      if (!approved) {
+      // Check if user has approved stores
+      const hasApprovedStores = currentUser?.stores?.some((store: any) =>
+        typeof store === 'object' ? store.verificationStatus === 'approved' : true
+      );
+
+      setHasApprovedStore(!!hasApprovedStores);
+
+      if (!hasApprovedStores) {
         setProducts([]);
         return;
       }
@@ -45,41 +48,31 @@ const ProductsScreen = () => {
       if (response.success && response.data) {
         setProducts(response.data.products || []);
       } else {
-        // Handle API errors gracefully
-        if (response.message?.includes('معتمدة') || response.message?.includes('approved')) {
-          setHasApprovedStore(false);
-          setProducts([]);
-        } else {
-          Toast.show({
-            type: 'error',
-            text1: 'خطأ',
-            text2: response.message || 'فشل في تحميل المنتجات',
-          });
-        }
-      }
-    } catch (error: any) {
-      console.error('Error fetching products:', error);
-      // Handle network or other errors
-      if (error.message?.includes('معتمدة') || error.message?.includes('approved')) {
-        setHasApprovedStore(false);
-        setProducts([]);
-      } else {
         Toast.show({
           type: 'error',
           text1: 'خطأ',
-          text2: error.message || 'فشل في تحميل المنتجات',
+          text2: response.message || 'فشل في تحميل المنتجات',
         });
       }
+    } catch (error: any) {
+      console.error('Error fetching products:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'خطأ',
+        text2: error.message || 'فشل في تحميل المنتجات',
+      });
+    } finally {
+      setIsLoading(false);
+      setRefreshing(false);
     }
-  }, [checkApprovedStores]);
+  };
 
-  const handleRefresh = useCallback(async () => {
+  const handleRefresh = () => {
     setRefreshing(true);
-    await fetchProducts();
-    setRefreshing(false);
-  }, [fetchProducts]);
+    fetchProducts();
+  };
 
-  const handleDeleteProduct = useCallback(async (productId: string) => {
+  const handleDeleteProduct = async (productId: string) => {
     Alert.alert('حذف المنتج', 'هل أنت متأكد أنك تريد حذف هذا المنتج؟', [
       { text: 'إلغاء', style: 'cancel' },
       {
@@ -89,7 +82,7 @@ const ProductsScreen = () => {
           try {
             const response = await apiService.deleteProduct(productId);
             if (response.success) {
-              setProducts(prev => prev.filter(product => product._id !== productId));
+              setProducts(products.filter((product) => product._id !== productId));
               Toast.show({
                 type: 'success',
                 text1: 'تم',
@@ -113,13 +106,13 @@ const ProductsScreen = () => {
         },
       },
     ]);
-  }, []);
+  };
 
-  const handleToggleAvailability = useCallback(async (productId: string) => {
+  const handleToggleAvailability = async (productId: string) => {
     try {
       const response = await apiService.toggleProductAvailability(productId);
       if (response.success) {
-        setProducts(prev => prev.map(product =>
+        setProducts(products.map(product =>
           product._id === productId
             ? { ...product, isAvailable: !product.isAvailable }
             : product
@@ -144,41 +137,36 @@ const ProductsScreen = () => {
         text2: error.message || 'فشل في تحديث حالة المنتج',
       });
     }
-  }, []);
+  };
 
   useEffect(() => {
     if (currentUser) {
-      fetchProducts().finally(() => setIsLoading(false));
+      fetchProducts();
     }
-  }, [currentUser, fetchProducts]);
+  }, [currentUser]);
 
-  const renderProduct = useCallback(({ item }: { item: Product }) => (
-    <View style={styles.productCard}>
-      <View style={styles.productInfo}>
-        <Text style={styles.productName}>{item.name}</Text>
-        <Text style={styles.productDescription}>{item.description}</Text>
-        <Text style={styles.productPrice}>{item.price} ج.م</Text>
-        <Text style={styles.productStock}>المخزون: {item.stock}</Text>
-        <View style={[
-          styles.availabilityBadge,
-          item.isAvailable ? styles.availableBadge : styles.unavailableBadge
-        ]}>
-          <Text style={styles.availabilityText}>
+  const renderProduct = ({ item }: { item: Product }) => (
+    <View className="bg-white rounded-3xl p-6 mb-4 shadow-2xl">
+      <View className="flex-1 mb-4">
+        <Text className="text-lg font-bold text-gray-800 mb-2">{item.name}</Text>
+        <Text className="text-base text-gray-600 mb-3">{item.description}</Text>
+        <Text className="text-lg font-bold text-blue-600 mb-2">{item.price} ج.م</Text>
+        <Text className="text-base text-green-600 mb-3">المخزون: {item.stock}</Text>
+        <View className={`self-start px-3 py-1 rounded-xl ${item.isAvailable ? 'bg-green-100' : 'bg-yellow-100'}`}>
+          <Text className="text-sm font-medium text-gray-800">
             {item.isAvailable ? 'متوفر' : 'غير متوفر'}
           </Text>
         </View>
       </View>
-      <View style={styles.productActions}>
+      <View className="flex-row justify-between">
         <TouchableOpacity
-          style={styles.editButton}
-          onPress={() => router.push(`/product-form?id=${item._id}`)}
-        >
+          className="w-10 h-10 rounded-xl bg-yellow-500 items-center justify-center"
+          onPress={() => router.push(`/product-form?id=${item._id}`)}>
           <Ionicons name="create-outline" size={20} color="white" />
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.toggleButton}
-          onPress={() => handleToggleAvailability(item._id)}
-        >
+          className="w-10 h-10 rounded-xl bg-yellow-500 items-center justify-center"
+          onPress={() => handleToggleAvailability(item._id)}>
           <Ionicons
             name={item.isAvailable ? "eye-off-outline" : "eye-outline"}
             size={20}
@@ -186,56 +174,25 @@ const ProductsScreen = () => {
           />
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.deleteButton}
+          className="w-10 h-10 rounded-xl bg-red-500 items-center justify-center"
           onPress={() => handleDeleteProduct(item._id)}
         >
           <Ionicons name="trash-outline" size={20} color="white" />
         </TouchableOpacity>
       </View>
     </View>
-  ), [handleToggleAvailability, handleDeleteProduct, router]);
-
-  const renderEmptyComponent = useCallback(() => {
-    if (isLoading) {
-      return (
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>جاري تحميل المنتجات...</Text>
-        </View>
-      );
-    }
-
-    if (!hasApprovedStore) {
-      return (
-        <View style={styles.emptyContainer}>
-          <Ionicons name="storefront-outline" size={60} color="#D1D5DB" />
-          <Text style={styles.emptyText}>لا توجد متاجر معتمدة</Text>
-          <Text style={styles.emptySubtext}>يجب أن يكون متجرك معتمدًا من الإدارة أولاً</Text>
-          <TouchableOpacity
-            style={styles.createStoreButton}
-            onPress={() => router.push('/welcome')}
-          >
-            <Text style={styles.createStoreButtonText}>إنشاء متجر</Text>
-          </TouchableOpacity>
-        </View>
-      );
-    }
-
-    return (
-      <View style={styles.emptyContainer}>
-        <Ionicons name="cube-outline" size={60} color="#D1D5DB" />
-        <Text style={styles.emptyText}>لا توجد منتجات</Text>
-        <Text style={styles.emptySubtext}>اضغط على زر الإضافة لإضافة منتج جديد</Text>
-      </View>
-    );
-  }, [isLoading, hasApprovedStore, router]);
+  );
 
   return (
-    <View style={styles.container}>
+    <LinearGradient
+      colors={['#667eea', '#764ba2']}
+      className="flex-1"
+    >
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>المنتجات</Text>
+      <View className="flex-row justify-between items-center bg-white/10 px-6 py-4 mt-12 mx-6 rounded-3xl mb-6">
+        <Text className="text-2xl font-bold text-white">المنتجات</Text>
         <TouchableOpacity
-          style={styles.addButton}
+          className="w-12 h-12 rounded-2xl bg-white/20 items-center justify-center"
           onPress={() => router.push('/product-form')}
         >
           <Ionicons name="add" size={24} color="white" />
@@ -247,172 +204,39 @@ const ProductsScreen = () => {
         data={products}
         renderItem={renderProduct}
         keyExtractor={(item) => item._id}
-        contentContainerStyle={styles.listContainer}
+        contentContainerStyle={{ padding: 24, paddingBottom: 100 }}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
-        ListEmptyComponent={renderEmptyComponent}
+        ListEmptyComponent={
+          isLoading ? (
+            <View className="flex-1 items-center justify-center py-20">
+              <Text className="text-lg text-white">جاري تحميل المنتجات...</Text>
+            </View>
+          ) : !hasApprovedStore ? (
+            <View className="bg-white rounded-3xl p-8 mx-6 items-center shadow-2xl">
+              <Ionicons name="storefront-outline" size={60} color="#D1D5DB" />
+              <Text className="text-xl font-bold text-gray-800 mt-4">لا توجد متاجر معتمدة</Text>
+              <Text className="text-base text-gray-600 mt-2 text-center">يجب أن يكون متجرك معتمدًا من الإدارة أولاً</Text>
+              <TouchableOpacity
+                className="bg-blue-600 px-8 py-3 rounded-xl mt-6"
+                onPress={() => router.push('/welcome')}
+              >
+                <Text className="text-white font-bold text-lg">إنشاء متجر</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View className="bg-white rounded-3xl p-8 mx-6 items-center shadow-2xl">
+              <Ionicons name="cube-outline" size={60} color="#D1D5DB" />
+              <Text className="text-xl font-bold text-gray-800 mt-4">لا توجد منتجات</Text>
+              <Text className="text-base text-gray-600 mt-2 text-center">اضغط على زر الإضافة لإضافة منتج جديد</Text>
+            </View>
+          )
+        }
       />
-    </View>
+    </LinearGradient>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#3B82F6',
-    padding: 16,
-    paddingTop: 40,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  addButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#10B981',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  listContainer: {
-    padding: 16,
-  },
-  productCard: {
-    flexDirection: 'row',
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  productInfo: {
-    flex: 1,
-  },
-  productName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    marginBottom: 4,
-  },
-  productDescription: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 8,
-  },
-  productPrice: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#3B82F6',
-    marginBottom: 4,
-  },
-  productStock: {
-    fontSize: 14,
-    color: '#10B981',
-  },
-  productActions: {
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    marginLeft: 12,
-  },
-  editButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F59E0B',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  deleteButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#EF4444',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 60,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#6B7280',
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 60,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#6B7280',
-    marginTop: 16,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#9CA3AF',
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  availabilityBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginTop: 8,
-  },
-  availableBadge: {
-    backgroundColor: '#D1FAE5',
-  },
-  unavailableBadge: {
-    backgroundColor: '#FEF3C7',
-  },
-  availabilityText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#1F2937',
-  },
-  toggleButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#F59E0B',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  createStoreButton: {
-    backgroundColor: '#3B82F6',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginTop: 16,
-  },
-  createStoreButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-  },
-});
 
 export default ProductsScreen;
