@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const driverSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  phone: { type: String, required: true, unique: true },
+  phone: { type: String, required: true },
   password: { type: String, required: true }, // hashed
   avatar: { type: String, default: null },
   rating: { type: Number, default: 0, min: 0, max: 5 },

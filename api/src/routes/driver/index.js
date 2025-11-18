@@ -2,6 +2,9 @@ const express = require("express");
 const router = express.Router();
 const { isDriver } = require("../../middlewares/auth.middleware");
 
+// Auth routes - public
+router.use("/auth", require("./auth.routes"));
+
 router.use(isDriver);
 
 router.use("/profile", require("./profile.routes"));

@@ -1,4 +1,7 @@
-require("dotenv").config({ path: "./.env" });
+const path = require('path');
+require("dotenv").config({ path: path.resolve(__dirname, '.env') });
+
+console.log("MONGODB_URI from .env:", process.env.MONGODB_URI); // Add this line for debugging
 
 const express = require("express");
 const http = require("http");

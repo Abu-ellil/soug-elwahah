@@ -32,27 +32,29 @@ class ApiService {
   }
 
    // Generic API request method with retry logic
-   async request(endpoint: string, options: RequestInit = {}, maxRetries: number = 3) {
-     const url = `${this.baseUrl}${endpoint}`;
+    async request(endpoint: string, options: RequestInit = {}, maxRetries: number = 3, skipAuth: boolean = false) {
+      const url = `${this.baseUrl}${endpoint}`;
 
-     // Check if body is FormData to handle Content-Type appropriately
-     const isFormData = options.body instanceof FormData;
+      // Check if body is FormData to handle Content-Type appropriately
+      const isFormData = options.body instanceof FormData;
 
-     const config: RequestInit = {
-       headers: {
-         // Only set Content-Type to application/json if not using FormData
-         ...(isFormData ? {} : { "Content-Type": "application/json" }),
-         ...options.headers,
-       },
-       ...options,
-     };
+      const config: RequestInit = {
+        headers: {
+          // Only set Content-Type to application/json if not using FormData
+          ...(isFormData ? {} : { "Content-Type": "application/json" }),
+          ...options.headers,
+        },
+        ...options,
+      };
 
-     // Add authorization header if token exists
-     const token = await this.getToken();
-     if (token) {
-       (config.headers as Record<string, string>)["Authorization"] =
-         `Bearer ${token}`;
-     }
+      // Add authorization header if token exists and not skipping auth
+      if (!skipAuth) {
+        const token = await this.getToken();
+        if (token) {
+          (config.headers as Record<string, string>)["Authorization"] =
+            `Bearer ${token}`;
+        }
+      }
 
      let lastError: Error = new Error('Unknown error');
 
@@ -117,8 +119,8 @@ class ApiService {
    }
 
   // Authentication methods
-  login(credentials: { phone: string; password: string; role: string }) {
-    return this.request("/auth/login", {
+  login(credentials: { phone: string; password: string }) {
+    return this.request("/store/auth/login", {
       method: "POST",
       body: JSON.stringify(credentials),
     });
@@ -129,7 +131,7 @@ class ApiService {
     phone: string;
     password: string;
   }) {
-    return this.request("/auth/store/register", {
+    return this.request("/store/auth/register", {
       method: "POST",
       body: JSON.stringify(merchantData),
     });
@@ -137,7 +139,46 @@ class ApiService {
 
   // Get current user profile
   getProfile() {
-    return this.request("/auth/me");
+    return this.request("/store/auth/profile");
+  }
+
+  // Password reset methods
+  requestPasswordReset(phone: string) {
+    return this.request("/store/auth/request-password-reset", {
+      method: "POST",
+      body: JSON.stringify({ phone }),
+    });
+  }
+
+  resetPassword(data: { phone: string; resetCode: string; newPassword: string }) {
+    return this.request("/store/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async logout() {
+    try {
+      const url = `${this.baseUrl}/store/auth/logout`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (response.ok) {
+        return await response.json();
+      } else {
+        // Don't throw, just log
+        console.warn('Logout request failed, but proceeding with local logout');
+        return { success: true };
+      }
+    } catch (error: any) {
+      // Logout should not fail the client logout process
+      console.warn('Logout request failed, but proceeding with local logout:', error.message);
+      return { success: true };
+    }
   }
 
   updateProfile(profileData: any) {

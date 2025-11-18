@@ -5,19 +5,49 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  TextInput,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import apiService from "../../services/api";
+import Toast from "react-native-toast-message";
 
 const ProfileScreen = () => {
   const { currentUser, logout } = useAuth();
-  const [storeName, setStoreName] = useState(currentUser?.storeName || "");
-  const [storeDescription, setStoreDescription] = useState(
-    currentUser?.storeDescription || ""
-  );
-  const [storeImage, setStoreImage] = useState(currentUser?.storeImage || "");
+  const [storeName, setStoreName] = useState("");
+  const [storeDescription, setStoreDescription] = useState("");
+  const [storeImage, setStoreImage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [store, setStore] = useState<any>(null);
+
+  const fetchStore = async () => {
+    try {
+      setIsLoading(true);
+      // Get user's stores
+      const storesResponse = await apiService.request('/store/all');
+      if (storesResponse.success && storesResponse.data?.stores?.length > 0) {
+        const approvedStore = storesResponse.data.stores.find((s: any) => s.verificationStatus === 'approved');
+        if (approvedStore) {
+          setStore(approvedStore);
+          setStoreName(approvedStore.name || '');
+          setStoreDescription(approvedStore.description || '');
+          setStoreImage(approvedStore.image || '');
+        }
+      }
+    } catch (error: any) {
+      console.error('Error fetching store:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'خطأ',
+        text2: 'فشل في تحميل بيانات المتجر',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const pickImage = async () => {
     // Request permission to access media library
@@ -39,8 +69,53 @@ const ProfileScreen = () => {
     }
   };
 
-  const handleSaveChanges = () => {
-    Alert.alert("تم", "تم حفظ تغييرات المتجر بنجاح");
+  useEffect(() => {
+    if (currentUser) {
+      fetchStore();
+    }
+  }, [currentUser]);
+
+  const handleSaveChanges = async () => {
+    if (!store) {
+      Alert.alert("خطأ", "لا يوجد متجر لتحديثه");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const updateData: any = {};
+
+      if (storeName !== store.name) updateData.name = storeName;
+      if (storeDescription !== store.description) updateData.description = storeDescription;
+      if (storeImage !== store.image) updateData.image = storeImage;
+
+      if (Object.keys(updateData).length === 0) {
+        Alert.alert("تنبيه", "لا توجد تغييرات لحفظها");
+        return;
+      }
+
+      const response = await apiService.request(`/store/my-store`, {
+        method: 'PUT',
+        body: JSON.stringify(updateData),
+      });
+
+      if (response.success) {
+        Toast.show({
+          type: 'success',
+          text1: 'تم',
+          text2: 'تم حفظ تغييرات المتجر بنجاح',
+        });
+        setIsEditing(false);
+        fetchStore(); // Refresh store data
+      } else {
+        Alert.alert("خطأ", response.message || "فشل في حفظ التغييرات");
+      }
+    } catch (error: any) {
+      console.error('Error updating store:', error);
+      Alert.alert("خطأ", error.message || "فشل في حفظ التغييرات");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -85,8 +160,20 @@ const ProfileScreen = () => {
         <View style={styles.inputContainer}>
           <Text style={styles.label}>اسم المتجر</Text>
           <View style={styles.inputWrapper}>
-            <Text style={styles.input}>{storeName}</Text>
-            <Ionicons name="create-outline" size={20} color="#6B7280" />
+            {isEditing ? (
+              <TextInput
+                style={styles.input}
+                value={storeName}
+                onChangeText={setStoreName}
+                placeholder="أدخل اسم المتجر"
+                placeholderTextColor="#9CA3AF"
+              />
+            ) : (
+              <Text style={styles.input}>{storeName || 'لا يوجد متجر'}</Text>
+            )}
+            <TouchableOpacity onPress={() => setIsEditing(!isEditing)}>
+              <Ionicons name="create-outline" size={20} color="#6B7280" />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -94,8 +181,22 @@ const ProfileScreen = () => {
         <View style={styles.inputContainer}>
           <Text style={styles.label}>وصف المتجر</Text>
           <View style={[styles.inputWrapper, styles.textArea]}>
-            <Text style={styles.input}>{storeDescription}</Text>
-            <Ionicons name="create-outline" size={20} color="#6B7280" />
+            {isEditing ? (
+              <TextInput
+                style={[styles.input, styles.textAreaInput]}
+                value={storeDescription}
+                onChangeText={setStoreDescription}
+                placeholder="أدخل وصف المتجر"
+                placeholderTextColor="#9CA3AF"
+                multiline
+                numberOfLines={3}
+              />
+            ) : (
+              <Text style={styles.input}>{storeDescription || 'لا يوجد وصف'}</Text>
+            )}
+            <TouchableOpacity onPress={() => setIsEditing(!isEditing)}>
+              <Ionicons name="create-outline" size={20} color="#6B7280" />
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -127,13 +228,11 @@ const ProfileScreen = () => {
             <View
               style={[
                 styles.statusBadge,
-                currentUser?.approved
-                  ? styles.approvedBadge
-                  : styles.pendingBadge,
+                store ? styles.approvedBadge : styles.pendingBadge,
               ]}
             >
               <Text style={styles.statusText}>
-                {currentUser?.approved ? "موافق عليه" : "قيد المراجعة"}
+                {store ? "موافق عليه" : "قيد المراجعة"}
               </Text>
             </View>
           </View>
@@ -241,6 +340,9 @@ const styles = StyleSheet.create({
   textArea: {
     minHeight: 80,
     alignItems: "flex-start",
+  },
+  textAreaInput: {
+    textAlignVertical: 'top',
   },
   input: {
     flex: 1,

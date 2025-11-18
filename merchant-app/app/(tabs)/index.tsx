@@ -4,14 +4,17 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  RefreshControl,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { useAuthStore } from "../../stores/authStore";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import apiService from "../../services/api";
+import Toast from "react-native-toast-message";
 
 const HomeScreen = () => {
-  const { currentUser, isLoading } = useAuthStore();
+  const { currentUser, isLoading: authLoading } = useAuthStore();
   const router = useRouter();
   const [stats, setStats] = useState({
     totalProducts: 0,
@@ -19,19 +22,86 @@ const HomeScreen = () => {
     pendingOrders: 0,
     revenue: 0,
   });
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchDashboardData = async () => {
+    try {
+      setIsLoading(true);
+
+      // Fetch statistics
+      const statsResponse = await apiService.getStatistics();
+      if (statsResponse.success && statsResponse.data) {
+        setStats({
+          totalProducts: statsResponse.data.totalProducts || 0,
+          totalOrders: statsResponse.data.totalOrders || 0,
+          pendingOrders: statsResponse.data.pendingOrders || 0,
+          revenue: statsResponse.data.revenue || 0,
+        });
+      }
+
+      // Fetch recent orders (last 5)
+      const ordersResponse = await apiService.getOrders();
+      if (ordersResponse.success && ordersResponse.data) {
+        setRecentOrders(ordersResponse.data.orders?.slice(0, 5) || []);
+      }
+    } catch (error: any) {
+      console.error('Error fetching dashboard data:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'خطأ',
+        text2: error.message || 'فشل في تحميل بيانات لوحة التحكم',
+      });
+    } finally {
+      setIsLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchDashboardData();
+  };
 
   useEffect(() => {
-    // In a real app, this would fetch from an API
-    setStats({
-      totalProducts: 12,
-      totalOrders: 5,
-      pendingOrders: 2,
-      revenue: 2500,
-    });
-  }, []);
+    if (currentUser) {
+      // Check if user has approved stores before fetching dashboard data
+      const hasApprovedStores = currentUser.stores?.some((store: any) =>
+        typeof store === 'object' ? store.verificationStatus === 'approved' : true
+      );
+
+      if (hasApprovedStores) {
+        fetchDashboardData();
+      } else {
+        // User doesn't have approved stores, they should be redirected by layout
+        // but if they somehow get here, show empty state
+        setStats({
+          totalProducts: 0,
+          totalOrders: 0,
+          pendingOrders: 0,
+          revenue: 0,
+        });
+        setRecentOrders([]);
+        setIsLoading(false);
+      }
+    }
+  }, [currentUser]);
+
+  if (authLoading || isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>جاري تحميل البيانات...</Text>
+      </View>
+    );
+  }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+      }>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>مرحبًا، {currentUser?.name}</Text>
       </View>
@@ -112,27 +182,37 @@ const HomeScreen = () => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>الطلبات الحديثة</Text>
         <View style={styles.ordersContainer}>
-          <TouchableOpacity style={styles.orderCard}>
-            <View style={styles.orderInfo}>
-              <Text style={styles.orderId}>#ORD-01</Text>
-              <Text style={styles.orderDate}>اليوم</Text>
+          {recentOrders.length > 0 ? (
+            recentOrders.map((order) => (
+              <TouchableOpacity key={order._id} style={styles.orderCard}>
+                <View style={styles.orderInfo}>
+                  <Text style={styles.orderId}>#{order.orderNumber || order._id.slice(-6)}</Text>
+                  <Text style={styles.orderDate}>
+                    {new Date(order.createdAt).toLocaleDateString('ar-EG')}
+                  </Text>
+                </View>
+                <View style={styles.orderDetails}>
+                  <Text style={[
+                    styles.orderStatus,
+                    order.status === 'pending' && styles.pendingStatus,
+                    order.status === 'confirmed' && styles.confirmedStatus,
+                    order.status === 'completed' && styles.completedStatus,
+                    order.status === 'cancelled' && styles.cancelledStatus,
+                  ]}>
+                    {order.status === 'pending' ? 'معلق' :
+                     order.status === 'confirmed' ? 'مؤكد' :
+                     order.status === 'completed' ? 'مكتمل' :
+                     order.status === 'cancelled' ? 'ملغي' : order.status}
+                  </Text>
+                  <Text style={styles.orderTotal}>{order.totalAmount} ج.م</Text>
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View style={styles.emptyOrdersContainer}>
+              <Text style={styles.emptyOrdersText}>لا توجد طلبات حديثة</Text>
             </View>
-            <View style={styles.orderDetails}>
-              <Text style={styles.orderStatus}>معلق</Text>
-              <Text style={styles.orderTotal}>150 ج.م</Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.orderCard}>
-            <View style={styles.orderInfo}>
-              <Text style={styles.orderId}>#ORD-002</Text>
-              <Text style={styles.orderDate}>أمس</Text>
-            </View>
-            <View style={styles.orderDetails}>
-              <Text style={styles.orderStatus}>مكتمل</Text>
-              <Text style={styles.orderTotal}>200 ج.م</Text>
-            </View>
-          </TouchableOpacity>
+          )}
         </View>
       </View>
     </ScrollView>
@@ -279,6 +359,36 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#1F2937",
     marginTop: 4,
+  },
+  pendingStatus: {
+    color: "#F59E0B",
+  },
+  confirmedStatus: {
+    color: "#3B82F6",
+  },
+  completedStatus: {
+    color: "#10B981",
+  },
+  cancelledStatus: {
+    color: "#EF4444",
+  },
+  emptyOrdersContainer: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyOrdersText: {
+    fontSize: 16,
+    color: '#6B7280',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#6B7280',
   },
 });
 

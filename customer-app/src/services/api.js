@@ -92,7 +92,7 @@ const apiRequest = async (endpoint, options = {}) => {
 // Authentication API
 export const authAPI = {
   login: (credentials) =>
-    apiRequest('/auth/login', {
+    apiRequest('/auth/customer/login', {
       method: 'POST',
       body: credentials,
     }),

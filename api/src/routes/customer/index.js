@@ -2,6 +2,9 @@ const express = require("express");
 const router = express.Router();
 const { isCustomer } = require("../../middlewares/auth.middleware");
 
+// Auth routes - public
+router.use("/auth", require("./auth.routes"));
+
 // Public routes - no authentication required
 router.use("/stores", require("./stores.routes"));
 router.use("/products", require("./products.routes"));

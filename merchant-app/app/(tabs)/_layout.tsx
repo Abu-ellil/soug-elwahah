@@ -66,6 +66,22 @@ export default function TabLayout() {
           headerShown: true,
         }}
       />
+      <Tabs.Screen
+        name="welcome"
+        options={{
+          title: 'مرحباً',
+          tabBarButton: () => null, // This hides the tab from the bottom tab bar
+          headerShown: false,
+        }}
+      />
+      <Tabs.Screen
+        name="store-application"
+        options={{
+          title: 'طلب إنشاء متجر',
+          tabBarButton: () => null, // This hides the tab from the bottom tab bar
+          headerShown: false,
+        }}
+      />
     </Tabs>
   );
 }

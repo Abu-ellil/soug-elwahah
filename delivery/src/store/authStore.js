@@ -16,7 +16,7 @@ export const useAuthStore = create((set, get) => ({
     
     try {
       // Make real API call to login with role parameter
-      const response = await api.post('/auth/login', {
+      const response = await api.post('/auth/driver/login', {
         phone,
         password,
         role: 'driver'

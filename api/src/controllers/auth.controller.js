@@ -1,3 +1,4 @@
+
 const User = require("../models/User");
 const StoreOwner = require("../models/StoreOwner");
 const Driver = require("../models/Driver");
@@ -13,11 +14,13 @@ const registerCustomer = async (req, res) => {
     const { name, phone, password } = req.body;
 
     // Check if phone number is already used by any user type with timeout
-    const existingUserCheck = await User.findOne({ phone }).maxTimeMS(10000);
-    const existingOwner = await StoreOwner.findOne({ phone }).maxTimeMS(10000);
-    const existingDriver = await Driver.findOne({ phone }).maxTimeMS(10000);
+    const [existingUser, existingOwner, existingDriver] = await Promise.all([
+      User.findOne({ phone }).maxTimeMS(10000),
+      StoreOwner.findOne({ phone }).maxTimeMS(10000),
+      Driver.findOne({ phone }).maxTimeMS(10000),
+    ]);
 
-    if (existingUserCheck || existingOwner || existingDriver) {
+    if (existingUser || existingOwner || existingDriver) {
       return res
         .status(400)
         .json({ success: false, message: "رقم الهاتف مستخدم من قبل" });
@@ -67,9 +70,11 @@ const registerStoreOwner = async (req, res) => {
     const { name, phone, password } = req.body;
 
     // Check if phone number is already used by any user type with timeout
-    const existingUser = await User.findOne({ phone }).maxTimeMS(10000);
-    const existingOwner = await StoreOwner.findOne({ phone }).maxTimeMS(10000);
-    const existingDriver = await Driver.findOne({ phone }).maxTimeMS(10000);
+    const [existingUser, existingOwner, existingDriver] = await Promise.all([
+      User.findOne({ phone }).maxTimeMS(10000),
+      StoreOwner.findOne({ phone }).maxTimeMS(10000),
+      Driver.findOne({ phone }).maxTimeMS(10000),
+    ]);
 
     if (existingUser || existingOwner || existingDriver) {
       return res
@@ -122,11 +127,13 @@ const registerDriver = async (req, res) => {
     const { name, phone, password, vehicleType, vehicleNumber } = req.body;
 
     // Check if phone number is already used by any user type with timeout
-    const existingUser = await User.findOne({ phone }).maxTimeMS(10000);
-    const existingOwner = await StoreOwner.findOne({ phone }).maxTimeMS(10000);
-    const existingDriverCheck = await Driver.findOne({ phone }).maxTimeMS(10000);
+    const [existingUser, existingOwner, existingDriver] = await Promise.all([
+      User.findOne({ phone }).maxTimeMS(10000),
+      StoreOwner.findOne({ phone }).maxTimeMS(10000),
+      Driver.findOne({ phone }).maxTimeMS(10000),
+    ]);
 
-    if (existingUser || existingOwner || existingDriverCheck) {
+    if (existingUser || existingOwner || existingDriver) {
       return res
         .status(400)
         .json({ success: false, message: "رقم الهاتف مستخدم من قبل" });
@@ -170,6 +177,7 @@ const registerDriver = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { phone, password, role } = req.body;
+    console.log('Login attempt:', { phone, password: password ? '***' : null, role });
 
     if (!phone || !password || !role) {
       await logLoginAttempt(
@@ -209,6 +217,7 @@ const login = async (req, res) => {
     }
 
     if (!user) {
+      console.log(`Login failed for phone: ${phone}, role: ${role} - User not found.`);
       await logLoginAttempt(
         phone,
         userType || role,
@@ -219,7 +228,7 @@ const login = async (req, res) => {
       );
       return res
         .status(401)
-        .json({ success: false, message: "بيانات الدخول غير صحيحة" });
+        .json({ success: false, message: "Phone number or password is incorrect" });
     }
 
     // For store owners, allow login but check verification status for operations
@@ -258,6 +267,7 @@ const login = async (req, res) => {
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
+      console.log(`Login failed for phone: ${phone}, role: ${role} - Invalid password.`);
       await logLoginAttempt(
         phone,
         userType,
@@ -268,7 +278,7 @@ const login = async (req, res) => {
       );
       return res
         .status(401)
-        .json({ success: false, message: "بيانات الدخول غير صحيحة" });
+        .json({ success: false, message: "Phone number or password is incorrect" });
     }
 
     // Generate token

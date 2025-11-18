@@ -9,18 +9,14 @@ import "react-native-reanimated";
 import "../global.css";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useAuthStore } from "../stores/authStore";
 import { useEffect } from "react";
 import { router, usePathname } from "expo-router";
+import { AuthProvider, useAuth } from "../contexts/AuthContext"; // Import AuthProvider and useAuth
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  const { currentUser, isLoading, loadUser } = useAuthStore();
+  const { currentUser, isLoading } = useAuth(); // Use useAuth from AuthContext
   const pathname = usePathname();
-
-  useEffect(() => {
-    loadUser();
-  }, []);
 
   useEffect(() => {
     if (!isLoading) {
@@ -30,7 +26,18 @@ function RootLayoutNav() {
           router.replace("/(auth)/login");
         }
       } else {
-        // Check if store owner is pending approval
+        // Check if user has any stores
+        const hasStores = currentUser.stores && currentUser.stores.length > 0;
+
+        if (!hasStores) {
+          // User has no stores - redirect to onboarding/welcome screen
+          if (!pathname.includes('/(tabs)/welcome')) {
+            router.replace("/(tabs)/welcome");
+          }
+          return;
+        }
+
+        // User has stores - check verification status
         if (currentUser.verificationStatus === 'pending') {
           router.replace("/(tabs)/pending-approval");
         } else if (currentUser.verificationStatus === 'rejected') {
@@ -43,7 +50,7 @@ function RootLayoutNav() {
         }
       }
     }
-  }, [currentUser, isLoading, loadUser]);
+  }, [currentUser, isLoading]); // Removed loadUser from dependency array as it's not from useAuth
 
   if (isLoading) {
     return null; // Render nothing while loading
@@ -65,5 +72,9 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  return <RootLayoutNav />;
+  return (
+    <AuthProvider>
+      <RootLayoutNav />
+    </AuthProvider>
+  );
 }

@@ -3,6 +3,9 @@ const router = express.Router();
 const { isStoreOwner, isStoreOwnerWithApprovedStore } = require("../../middlewares/auth.middleware");
 const storeController = require("../../controllers/store/store.controller");
 
+// Auth routes - public
+router.use("/auth", require("./auth.routes"));
+
 // Public routes - no authentication required
 router.get("/", storeController.getAllStores); // Get all public store information
 

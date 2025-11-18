@@ -16,7 +16,7 @@ interface User {
   createdAt?: string;
   updatedAt?: string;
 }
-
+ 
 interface AuthState {
   currentUser: User | null;
   isLoading: boolean;
@@ -25,6 +25,8 @@ interface AuthState {
   register: (userData: { name: string; phone: string; password: string }) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   loadUser: () => Promise<void>;
+  requestPasswordReset: (phone: string) => Promise<{ success: boolean; error?: string }>;
+  resetPassword: (data: { phone: string; resetCode: string; newPassword: string }) => Promise<{ success: boolean; error?: string }>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -56,27 +58,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   login: async (phone: string, password: string) => {
     try {
       set({ isLoading: true });
-      const response = await apiService.login({ phone, password, role: 'store' });
+      const response = await apiService.login({ phone, password });
 
-      if (response && response.token) {
-        await apiService.setToken(response.token);
+      if (response && response.success) {
+        await apiService.setToken(response.data.token);
         const profile = await apiService.getProfile();
         if (profile) {
           set({ currentUser: profile, isAuthenticated: true });
           await AsyncStorage.setItem('user', JSON.stringify(profile));
         }
         return { success: true };
-      } else if (response && response.verificationStatus === 'pending') {
-        const profile = await apiService.getProfile();
-        if (profile) {
-          set({ currentUser: profile, isAuthenticated: true });
-          await AsyncStorage.setItem('user', JSON.stringify(profile));
-        }
-        return { success: true, verificationStatus: 'pending' };
-      } else if (response && response.verificationStatus === 'rejected') {
-        return { success: false, error: 'الحساب مرفوض من قبل الإدارة' };
       } else {
-        return { success: false, error: 'رقم الهاتف أو كلمة المرور غير صحيحة' };
+        return { success: false, error: response?.error || response?.message || 'حدث خطأ' };
       }
     } catch (error: any) {
       console.error('Login error:', error);
@@ -99,20 +92,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         password: userData.password
       });
 
-      if (response) {
+      if (response && response.success) {
         const loginResult = await get().login(userData.phone, userData.password);
         if (loginResult.success) {
           Toast.show({
             type: 'success',
             text1: 'تم',
-            text2: 'تم إنشاء حسابك بنجاح، يمكنك الآن التقدم بطلب إنشاء متجر',
+            text2: response.message || 'تم إنشاء حسابك بنجاح، يمكنك الآن التقدم بطلب إنشاء متجر',
           });
           return { success: true };
         } else {
           return { success: false, error: loginResult.error || 'حدث خطأ أثناء تسجيل الدخول' };
         }
       } else {
-        return { success: false, error: 'حدث خطأ أثناء التسجيل' };
+        return { success: false, error: response?.message || 'حدث خطأ أثناء التسجيل' };
       }
     } catch (error: any) {
       console.error('Registration error:', error);
@@ -128,11 +121,32 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: async () => {
     try {
+      await apiService.logout();
       set({ currentUser: null, isAuthenticated: false });
       await AsyncStorage.removeItem('user');
       await apiService.clearToken();
     } catch (error) {
       console.error('Logout error:', error);
+    }
+  },
+
+  requestPasswordReset: async (phone: string) => {
+    try {
+      const response = await apiService.requestPasswordReset(phone);
+      return { success: true };
+    } catch (error: any) {
+      console.error('Request password reset error:', error);
+      return { success: false, error: error.message || 'حدث خطأ أثناء طلب إعادة تعيين كلمة المرور' };
+    }
+  },
+
+  resetPassword: async (data: { phone: string; resetCode: string; newPassword: string }) => {
+    try {
+      const response = await apiService.resetPassword(data);
+      return { success: true };
+    } catch (error: any) {
+      console.error('Reset password error:', error);
+      return { success: false, error: error.message || 'حدث خطأ أثناء إعادة تعيين كلمة المرور' };
     }
   },
 }));
