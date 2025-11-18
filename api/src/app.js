@@ -22,7 +22,7 @@ const allowedOrigins = [
 ].filter((url) => url); // Remove empty strings
 
 app.use(
-  cors({
+  cors({   
     origin: allowedOrigins,
     credentials: true,
   })
@@ -76,6 +76,9 @@ app.use("/api/store", require("./routes/store"));
 app.use("/api/driver", require("./routes/driver"));
 app.use("/api/admin", require("./routes/admin"));
 app.use("/api/super-admin", require("./routes/superAdmin/superAdmin.routes"));
+
+// Real-time communication routes
+app.use("/api/realtime", require("./routes/realtime"));
 
 // 404 handler - This should be last
 app.use("*", (req, res) => {

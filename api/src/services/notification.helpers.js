@@ -2,6 +2,7 @@ const NotificationService = require("./notification.service");
 const User = require("../models/User");
 const StoreOwner = require("../models/StoreOwner");
 const Driver = require("../models/Driver");
+const webSocketService = require("./websocket.service");
 
 // Order Notifications
 async function notifyNewOrder(order) {
@@ -36,6 +37,37 @@ async function notifyNewOrder(order) {
         { orderId: order._id.toString(), orderNumber: order.orderNumber }
       );
     }
+
+    // Also broadcast to WebSocket clients for real-time updates
+    const driverIds = availableDrivers.map(d => d._id.toString());
+    if (webSocketService.io) {
+      driverIds.forEach(driverId => {
+        webSocketService.io.to(`driver_${driverId}`).emit('newOrderAvailable', {
+          order: {
+            _id: order._id.toString(),
+            orderNumber: order.orderNumber,
+            storeId: order.storeId.toString(),
+            total: order.total,
+            deliveryFee: order.deliveryFee,
+            createdAt: order.createdAt,
+          },
+          timestamp: new Date().toISOString()
+        });
+      });
+
+      // Also emit to the available drivers room
+      webSocketService.io.to('available_drivers').emit('newOrderAvailable', {
+        order: {
+          _id: order._id.toString(),
+          orderNumber: order.orderNumber,
+          storeId: order.storeId.toString(),
+          total: order.total,
+          deliveryFee: order.deliveryFee,
+          createdAt: order.createdAt,
+        },
+        timestamp: new Date().toISOString()
+      });
+    }
   } catch (error) {
     console.error("Notify new order error:", error);
   }
@@ -57,6 +89,16 @@ async function notifyOrderAccepted(order) {
         "order_accepted",
         { orderId: order._id.toString() }
       );
+    }
+
+    // Broadcast to WebSocket clients as well
+    if (webSocketService.io && order.userId) {
+      webSocketService.io.to(`user_${order.userId}`).emit('orderUpdate', {
+        orderId: order._id.toString(),
+        status: 'accepted',
+        message: `السائق ${order.driverId?.name || "جاري التخصيص"} قبل طلبك وفي الطريق للمحل`,
+        timestamp: new Date().toISOString()
+      });
     }
   } catch (error) {
     console.error("Notify order accepted error:", error);
@@ -92,6 +134,27 @@ async function notifyOrderConfirmed(order) {
         { orderId: order._id.toString() }
       );
     }
+
+    // Broadcast to WebSocket clients as well
+    if (webSocketService.io) {
+      if (order.userId) {
+        webSocketService.io.to(`user_${order.userId}`).emit('orderUpdate', {
+          orderId: order._id.toString(),
+          status: 'confirmed',
+          message: "المحل يحضر طلبك الآن",
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      if (order.driverId) {
+        webSocketService.io.to(`driver_${order.driverId}`).emit('orderUpdate', {
+          orderId: order._id.toString(),
+          status: 'confirmed',
+          message: "يمكنك الآن استلام الطلب من المحل",
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
   } catch (error) {
     console.error("Notify order confirmed error:", error);
   }
@@ -112,6 +175,16 @@ async function notifyOrderPickedUp(order) {
         { orderId: order._id.toString() }
       );
     }
+
+    // Broadcast to WebSocket clients as well
+    if (webSocketService.io && order.userId) {
+      webSocketService.io.to(`user_${order.userId}`).emit('orderUpdate', {
+        orderId: order._id.toString(),
+        status: 'picked_up',
+        message: `${order.driverId?.name || "السائق"} استلم طلبك وفي الطريق إليك`,
+        timestamp: new Date().toISOString()
+      });
+    }
   } catch (error) {
     console.error("Notify order picked up error:", error);
   }
@@ -131,6 +204,16 @@ async function notifyOrderOnWay(order) {
         "order_on_way",
         { orderId: order._id.toString() }
       );
+    }
+
+    // Broadcast to WebSocket clients as well
+    if (webSocketService.io && order.userId) {
+      webSocketService.io.to(`user_${order.userId}`).emit('orderUpdate', {
+        orderId: order._id.toString(),
+        status: 'on_way',
+        message: "طلبك سيصل خلال دقائق",
+        timestamp: new Date().toISOString()
+      });
     }
   } catch (error) {
     console.error("Notify order on way error:", error);
@@ -165,6 +248,30 @@ async function notifyOrderDelivered(order) {
         "order_delivered",
         { orderId: order._id.toString() }
       );
+    }
+
+    // Broadcast to WebSocket clients as well
+    if (webSocketService.io) {
+      if (order.userId) {
+        webSocketService.io.to(`user_${order.userId}`).emit('orderUpdate', {
+          orderId: order._id.toString(),
+          status: 'delivered',
+          message: "تم التوصيل بنجاح! 🎉 نتمنى أن تكون راضياً عن الخدمة",
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      if (order.storeId) {
+        const storeOwner = await StoreOwner.findOne({ storeId: order.storeId });
+        if (storeOwner) {
+          webSocketService.io.to(`user_${storeOwner._id}`).emit('orderUpdate', {
+            orderId: order._id.toString(),
+            status: 'delivered',
+            message: `تم توصيل طلب ${order.orderNumber} بنجاح`,
+            timestamp: new Date().toISOString()
+          });
+        }
+      }
     }
   } catch (error) {
     console.error("Notify order delivered error:", error);
@@ -201,6 +308,29 @@ async function notifyOrderCancelled(order) {
         "order_cancelled",
         { orderId: order._id.toString() }
       );
+    }
+
+    // Broadcast to WebSocket clients as well
+    if (webSocketService.io) {
+      if (order.userId) {
+        webSocketService.io.to(`user_${order.userId}`).emit('orderUpdate', {
+          orderId: order._id.toString(),
+          status: 'cancelled',
+          message: order.cancelReason
+            ? `الطلب تم إلغاؤه: ${order.cancelReason}`
+            : "تم إلغاء الطلب",
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      if (order.driverId) {
+        webSocketService.io.to(`driver_${order.driverId}`).emit('orderUpdate', {
+          orderId: order._id.toString(),
+          status: 'cancelled',
+          message: `طلب ${order.orderNumber} تم إلغاؤه`,
+          timestamp: new Date().toISOString()
+        });
+      }
     }
   } catch (error) {
     console.error("Notify order cancelled error:", error);

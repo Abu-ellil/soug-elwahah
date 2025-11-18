@@ -240,8 +240,8 @@ const registerDriver = async (req, res) => {
       name,
       phone,
       password: hashedPassword,
-      vehicleType,
-      vehicleNumber,
+      vehicleType: vehicleType || "unknown", // Provide a default value if not present
+      vehicleNumber: vehicleNumber || "N/A", // Provide a default value if not present
     });
 
     await driver.save();

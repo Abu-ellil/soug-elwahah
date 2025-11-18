@@ -7,9 +7,9 @@ import {
 } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { useRouter } from 'expo-router';
-import apiService from '../services/api';
+import apiService from '../../services/api';
 import Toast from 'react-native-toast-message';
 
 const PendingApprovalScreen = () => {

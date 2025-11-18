@@ -1,6 +1,8 @@
 const Order = require("../../models/Order");
 const Driver = require("../../models/Driver");
 const TrackingService = require("../../services/tracking.service");
+const webSocketService = require("../../services/websocket.service");
+const { addCustomerToOrderRoom } = require("../../utils/orderRooms");
 
 const getTrackingDetails = async (req, res) => {
   try {
@@ -40,6 +42,13 @@ const getTrackingDetails = async (req, res) => {
         trackingInfo.driver.currentLocation,
         trackingInfo.customer.location || trackingInfo.store.location
       );
+    }
+
+    // If WebSocket is available, add customer to order tracking room
+    if (webSocketService.io) {
+      // In a real implementation, we would need to access the socket ID from the request
+      // For now, we'll just document that this is where the customer would join the tracking room
+      console.log(`Customer ${req.userId} is tracking order ${orderId}`);
     }
 
     res.status(200).json({

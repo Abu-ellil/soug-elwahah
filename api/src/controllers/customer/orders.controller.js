@@ -3,6 +3,7 @@ const Store = require("../../models/Store");
 const Product = require("../../models/Product");
 const User = require("../../models/User");
 const NotificationService = require("../../services/notification.service");
+const webSocketService = require("../../services/websocket.service");
 const { notifyNewOrder } = require("../../services/notification.service");
 
 const createOrder = async (req, res) => {
@@ -82,6 +83,9 @@ const createOrder = async (req, res) => {
 
     // Notify store owner and available drivers
     await notifyNewOrder(populatedOrder);
+
+    // Broadcast new order via WebSocket to store and available drivers
+    webSocketService.broadcastNewOrder(populatedOrder, []); // Will be updated to include specific driver IDs
 
     res.status(201).json({
       success: true,
@@ -207,6 +211,12 @@ const cancelOrder = async (req, res) => {
       .populate("storeId", "name")
       .populate("items.productId", "name image")
       .populate("userId", "name phone");
+
+    // Broadcast order update via WebSocket
+    webSocketService.broadcastOrderUpdate(order._id, populatedOrder, [
+      populatedOrder.storeId.ownerId,  // Store owner
+      populatedOrder.driverId  // Driver if assigned
+    ]);
 
     res.status(200).json({
       success: true,

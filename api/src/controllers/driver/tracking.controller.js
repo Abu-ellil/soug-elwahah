@@ -1,6 +1,7 @@
 const Driver = require("../../models/Driver");
 const Order = require("../../models/Order");
 const TrackingService = require("../../services/tracking.service");
+const webSocketService = require("../../services/websocket.service");
 
 const updateLocation = async (req, res) => {
   try {
@@ -24,6 +25,13 @@ const updateLocation = async (req, res) => {
         .status(404)
         .json({ success: false, message: "السائق غير موجود" });
     }
+
+    // Broadcast location update via WebSocket
+    webSocketService.broadcastDriverLocation(req.userId, {
+      lat: parseFloat(lat),
+      lng: parseFloat(lng),
+      timestamp: new Date().toISOString()
+    });
 
     res.status(200).json({
       success: true,

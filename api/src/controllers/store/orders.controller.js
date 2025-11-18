@@ -1,6 +1,7 @@
 const Order = require("../../models/Order");
 const Store = require("../../models/Store");
 const NotificationService = require("../../services/notification.service");
+const webSocketService = require("../../services/websocket.service");
 const {
   notifyOrderConfirmed,
   notifyOrderCancelled,
@@ -145,6 +146,12 @@ const confirmOrder = async (req, res) => {
     // Notify customer and driver
     await notifyOrderConfirmed(populatedOrder);
 
+    // Broadcast order update via WebSocket
+    webSocketService.broadcastOrderUpdate(order._id, populatedOrder, [
+      populatedOrder.userId._id,  // Customer
+      populatedOrder.driverId  // Driver if assigned
+    ]);
+
     res.status(200).json({
       success: true,
       data: { order: populatedOrder },
@@ -211,6 +218,12 @@ const cancelOrder = async (req, res) => {
 
     // Notify customer and driver
     await notifyOrderCancelled(populatedOrder);
+
+    // Broadcast order update via WebSocket
+    webSocketService.broadcastOrderUpdate(order._id, populatedOrder, [
+      populatedOrder.userId._id,  // Customer
+      populatedOrder.driverId  // Driver if assigned
+    ]);
 
     res.status(200).json({
       success: true,

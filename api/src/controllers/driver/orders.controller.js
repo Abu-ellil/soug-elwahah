@@ -2,6 +2,7 @@ const Order = require("../../models/Order");
 const Store = require("../../models/Store");
 const Driver = require("../../models/Driver");
 const NotificationService = require("../../services/notification.service");
+const webSocketService = require("../../services/websocket.service");
 const {
   notifyOrderAccepted,
   notifyOrderPickedUp,
@@ -108,6 +109,12 @@ const acceptOrder = async (req, res) => {
 
     // Notify customer
     await notifyOrderAccepted(populatedOrder);
+
+    // Broadcast order update via WebSocket
+    webSocketService.broadcastOrderUpdate(order._id, populatedOrder, [
+      populatedOrder.userId._id,  // Customer
+      populatedOrder.storeId.ownerId  // Store owner
+    ]);
 
     res.status(200).json({
       success: true,
@@ -232,6 +239,12 @@ const updateOrderStatus = async (req, res) => {
         $inc: { totalEarnings: order.total },
       });
     }
+
+    // Broadcast order update via WebSocket
+    webSocketService.broadcastOrderUpdate(order._id, populatedOrder, [
+      populatedOrder.userId._id,  // Customer
+      populatedOrder.storeId.ownerId  // Store owner
+    ]);
 
     res.status(200).json({
       success: true,
