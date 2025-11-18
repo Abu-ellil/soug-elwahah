@@ -10,5 +10,7 @@ const storeOwnerSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
+// Create indexes for better query performance
+storeOwnerSchema.index({ phone: 1 });
 
 module.exports = mongoose.model("StoreOwner", storeOwnerSchema);

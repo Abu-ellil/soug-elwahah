@@ -12,11 +12,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Store, Search, Download, Plus } from 'lucide-react';
+import { Store, Search, Download, Plus, Edit, Check, X } from 'lucide-react';
 import { DataTable } from '@/components/tables/DataTable';
 import { Store as StoreType } from '@/types/store';
 import { storesAPI } from '@/lib/api/stores';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import { ActionDropdown } from '@/components/shared/ActionDropdown';
+import { ConfirmModal } from '@/components/modals/ConfirmModal';
+import { EditStoreModal } from '@/components/modals/EditStoreModal';
 
 
 export default function StoresPage() {
@@ -26,6 +29,74 @@ export default function StoresPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [verificationFilter, setVerificationFilter] = useState<string>('all');
   const [totalStores, setTotalStores] = useState(0);
+  const [selectedStore, setSelectedStore] = useState<StoreType | null>(null);
+  const [showApproveModal, setShowApproveModal] = useState(false);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  const handleApproveStore = async () => {
+    if (!selectedStore) return;
+    
+    try {
+      await storesAPI.approve(selectedStore.id);
+      // Refresh the stores list
+      const response = await storesAPI.getAll({
+        page: 1,
+        limit: 50,
+        search: searchTerm,
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        verificationStatus: verificationFilter !== 'all' ? verificationFilter : undefined
+      });
+      setStores(response.data.stores || []);
+      setTotalStores(response.data.total || 0);
+      setShowApproveModal(false);
+      setSelectedStore(null);
+    } catch (error) {
+      console.error('Error approving store:', error);
+    }
+  };
+
+  const handleRejectStore = async () => {
+    if (!selectedStore) return;
+    
+    try {
+      await storesAPI.reject(selectedStore.id, 'Rejected by admin');
+      // Refresh the stores list
+      const response = await storesAPI.getAll({
+        page: 1,
+        limit: 50,
+        search: searchTerm,
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        verificationStatus: verificationFilter !== 'all' ? verificationFilter : undefined
+      });
+      setStores(response.data.stores || []);
+      setTotalStores(response.data.total || 0);
+      setShowRejectModal(false);
+      setSelectedStore(null);
+    } catch (error) {
+      console.error('Error rejecting store:', error);
+    }
+  };
+
+  const handleUpdateStore = async (id: string, updates: Partial<StoreType>) => {
+    try {
+      await storesAPI.update(id, updates);
+      // Refresh the stores list
+      const response = await storesAPI.getAll({
+        page: 1,
+        limit: 50,
+        search: searchTerm,
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        verificationStatus: verificationFilter !== 'all' ? verificationFilter : undefined
+      });
+      setStores(response.data.stores || []);
+      setTotalStores(response.data.total || 0);
+      setShowEditModal(false);
+      setSelectedStore(null);
+    } catch (error) {
+      console.error('Error updating store:', error);
+    }
+  };
 
   useEffect(() => {
     const fetchStores = async () => {
@@ -121,14 +192,38 @@ export default function StoresPage() {
       accessorKey: 'id', // dummy key for actions column
       header: 'الإجراءات',
       cell: (row: StoreType) => (
-        <div className="flex space-x-2 space-x-reverse">
-          <Button variant="outline" size="sm">
-            عرض
-          </Button>
-          <Button variant="outline" size="sm">
-            تعديل
-          </Button>
-        </div>
+        <ActionDropdown
+          actions={[
+            {
+              label: 'عرض',
+              onClick: () => console.log('View store:', row.id),
+            },
+            {
+              label: 'تعديل',
+              onClick: () => {
+                setSelectedStore(row);
+                setShowEditModal(true);
+              },
+            },
+            ...(row.verificationStatus === 'pending' ? [
+              {
+                label: 'الموافقة',
+                onClick: () => {
+                  setSelectedStore(row);
+                  setShowApproveModal(true);
+                },
+              },
+              {
+                label: 'رفض',
+                onClick: () => {
+                  setSelectedStore(row);
+                  setShowRejectModal(true);
+                },
+                variant: 'destructive' as const,
+              }
+            ] : []),
+          ]}
+        />
       ),
     },
   ];
@@ -209,6 +304,47 @@ export default function StoresPage() {
           />
         </CardContent>
       </Card>
+
+      {/* Approval Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showApproveModal}
+        onClose={() => {
+          setShowApproveModal(false);
+          setSelectedStore(null);
+        }}
+        onConfirm={handleApproveStore}
+        title="الموافقة على المتجر"
+        description={`هل أنت متأكد أنك تريد الموافقة على المتجر "${selectedStore?.name}"؟`}
+        confirmText="الموافقة"
+        cancelText="إلغاء"
+        variant="info"
+      />
+
+      {/* Rejection Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showRejectModal}
+        onClose={() => {
+          setShowRejectModal(false);
+          setSelectedStore(null);
+        }}
+        onConfirm={handleRejectStore}
+        title="رفض المتجر"
+        description={`هل أنت متأكد أنك تريد رفض المتجر "${selectedStore?.name}"؟`}
+        confirmText="رفض"
+        cancelText="إلغاء"
+        variant="danger"
+      />
+
+      {/* Edit Store Modal */}
+      <EditStoreModal
+        isOpen={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedStore(null);
+        }}
+        store={selectedStore}
+        onSave={handleUpdateStore}
+      />
     </div>
   );
 }

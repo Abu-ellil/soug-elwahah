@@ -30,12 +30,17 @@ class ApiService {
     await AsyncStorage.removeItem("merchant_token");
   }
 
-  // Generic API request method
+   // Generic API request method
   async request(endpoint: string, options: RequestInit = {}) {
     const url = `${this.baseUrl}${endpoint}`;
+    
+    // Check if body is FormData to handle Content-Type appropriately
+    const isFormData = options.body instanceof FormData;
+    
     const config: RequestInit = {
       headers: {
-        "Content-Type": "application/json",
+        // Only set Content-Type to application/json if not using FormData
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...options.headers,
       },
       ...options,
@@ -98,14 +103,7 @@ class ApiService {
 
     // Add coordinates if provided
     if (merchantData.coordinates) {
-      formData.append(
-        "coordinates[lat]",
-        merchantData.coordinates.lat.toString()
-      );
-      formData.append(
-        "coordinates[lng]",
-        merchantData.coordinates.lng.toString()
-      );
+      formData.append("coordinates", JSON.stringify(merchantData.coordinates));
     }
 
     // Add image as file if it exists and is not just a URL
@@ -138,9 +136,9 @@ class ApiService {
     });
   }
 
-  // Store profile methods
+  // Get current user profile
   getProfile() {
-    return this.request("/store/profile");
+    return this.request("/auth/me");
   }
 
   updateProfile(profileData: any) {

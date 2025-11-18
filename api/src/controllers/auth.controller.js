@@ -12,8 +12,8 @@ const registerCustomer = async (req, res) => {
   try {
     const { name, phone, password } = req.body;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ phone });
+    // Check if user already exists with timeout
+    const existingUser = await User.findOne({ phone }).maxTimeMS(10000);
     if (existingUser) {
       return res
         .status(400)
@@ -72,8 +72,8 @@ const registerStoreOwner = async (req, res) => {
       coordinates,
     } = req.body;
 
-    // Check if store owner already exists
-    const existingOwner = await StoreOwner.findOne({ phone });
+    // Check if store owner already exists with timeout
+    const existingOwner = await StoreOwner.findOne({ phone }).maxTimeMS(10000);
     if (existingOwner) {
       return res
         .status(400)
@@ -92,8 +92,8 @@ const registerStoreOwner = async (req, res) => {
 
     await owner.save();
 
-    // Get a default category (using the first one available)
-    let defaultCategory = await Category.findOne();
+    // Get a default category (using the first one available) with timeout
+    let defaultCategory = await Category.findOne().maxTimeMS(1000);
     if (!defaultCategory) {
       // If no category exists, we might need to handle this case differently
       // For now, let's create a default category ID (this might need adjustment)
@@ -169,12 +169,12 @@ const registerStoreOwner = async (req, res) => {
       name: storeName,
       categoryId: defaultCategory._id,
       ownerId: owner._id,
-      image: storeImageUrl,
+      image: storeImageUrl || "https://via.placeholder.com/400x400.png", // Provide default image if none uploaded
       phone: phone, // Use the owner's phone as store phone
-      address: "", // Empty address initially, can be updated later
+      address: "العنوان غير محدد", // Provide default address instead of empty string
       description: storeDescription || "",
       coordinates: storeCoordinates,
-      villageId: "", // Empty initially, can be updated later
+      villageId: "village_not_set", // Provide default villageId instead of empty string
     });
 
     await store.save();
@@ -214,8 +214,8 @@ const registerDriver = async (req, res) => {
   try {
     const { name, phone, password, vehicleType, vehicleNumber } = req.body;
 
-    // Check if driver already exists
-    const existingDriver = await Driver.findOne({ phone });
+    // Check if driver already exists with timeout
+    const existingDriver = await Driver.findOne({ phone }).maxTimeMS(10000);
     if (existingDriver) {
       return res
         .status(400)
@@ -280,15 +280,15 @@ const login = async (req, res) => {
 
     switch (role) {
       case "customer":
-        user = await User.findOne({ phone });
+        user = await User.findOne({ phone }).maxTimeMS(10000);
         userType = "customer";
         break;
       case "store":
-        user = await StoreOwner.findOne({ phone });
+        user = await StoreOwner.findOne({ phone }).maxTimeMS(10000);
         userType = "store";
         break;
       case "driver":
-        user = await Driver.findOne({ phone });
+        user = await Driver.findOne({ phone }).maxTimeMS(10000);
         userType = "driver";
         break;
       default:

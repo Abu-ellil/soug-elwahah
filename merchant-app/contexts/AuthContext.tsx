@@ -7,13 +7,11 @@ interface User {
   _id: string;
   id?: string;
   name: string;
-  email: string;
+  email?: string;
   phone?: string;
-  storeName: string;
-  storeDescription?: string;
-  storeImage?: string;
-  role: string;
-  approved?: boolean;
+  avatar?: string;
+  storeId?: string;
+  isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
   // Add any other fields that might come from the API

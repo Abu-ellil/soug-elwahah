@@ -4,7 +4,12 @@ const connectDB = async () => {
   try {
     // Modern Mongoose connection options
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+      serverSelectionTimeoutMS: 30000, // Keep trying to send operations for 30 seconds
+      socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+      bufferCommands: false, // Disable mongoose buffering
+      // bufferMaxEntries: 0, // Disable mongoose buffering - removed as it's not supported
+      maxPoolSize: 10, // Maintain up to 10 socket connections
+      family: 4, // Use IPv4, skip trying IPv6
     });
 
     console.log(`MongoDB Connected: ${conn.connection.host}`);
