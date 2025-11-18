@@ -69,7 +69,9 @@ const LoginScreen = () => {
 
     try {
       console.log('🚀 Calling login API...');
-      const result = await login(phone.trim().replace(/\s/g, ''), password.trim());
+      const normalizedPhone = phone.trim().replace(/\s/g, '').replace(/^(\+20|0)/, '');
+      console.log('📱 Normalized phone:', normalizedPhone);
+      const result = await login(normalizedPhone, password.trim());
       console.log('📡 Login API response:', result);
 
       if (result.success) {
