@@ -68,7 +68,16 @@ class ApiService {
            }
          }
 
-         const response = await fetch(url, config);
+         // Add timeout to prevent hanging requests
+         const controller = new AbortController();
+         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+         const response = await fetch(url, {
+           ...config,
+           signal: controller.signal,
+         });
+
+         clearTimeout(timeoutId);
 
          // Handle different response status codes
          if (!response.ok) {
@@ -98,7 +107,8 @@ class ApiService {
          // Don't retry on client errors (4xx) except network errors
          if (error.message?.includes('Network request failed') ||
              error.message?.includes('اتصال') ||
-             error.name === 'TypeError') {
+             error.name === 'TypeError' ||
+             error.name === 'AbortError') {
 
            // Wait before retrying (exponential backoff)
            if (attempt < maxRetries) {

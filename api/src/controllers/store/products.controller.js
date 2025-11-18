@@ -14,12 +14,12 @@ const getMyProducts = async (req, res) => {
   try {
     const { categoryId, search, page = 1, limit = 20 } = req.query;
 
-    // Verify store exists and belongs to owner
-    const store = await Store.findOne({ ownerId: req.userId });
+    // Find an approved store for the owner
+    const store = await Store.findOne({ ownerId: req.userId, verificationStatus: 'approved' });
     if (!store) {
       return res
         .status(404)
-        .json({ success: false, message: "المحل غير موجود" });
+        .json({ success: false, message: "المحل غير موجود أو غير معتمد" });
     }
 
     let filter = {
@@ -68,12 +68,12 @@ const addProduct = async (req, res) => {
       return res.status(400).json({ success: false, message: "الصورة مطلوبة" });
     }
 
-    // Verify store exists and belongs to owner
-    const store = await Store.findOne({ ownerId: req.userId });
+    // Find an approved store for the owner
+    const store = await Store.findOne({ ownerId: req.userId, verificationStatus: 'approved' });
     if (!store) {
       return res
         .status(404)
-        .json({ success: false, message: "المحل غير موجود" });
+        .json({ success: false, message: "المحل غير موجود أو غير معتمد" });
     }
 
     let imageUrl = "";

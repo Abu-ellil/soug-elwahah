@@ -19,7 +19,7 @@ export const useLocation = () => {
 // مزود سياق الموقع - Location Context Provider Component
 export const LocationProvider = ({ children }) => {
   const [userLocation, setUserLocation] = useState(null); // موقع المستخدم الحالي - Current user's location
-  const [deliveryRadius, setDeliveryRadius] = useState(5); // نصف قطر التوصيل الافتراضي - Default delivery radius (5km)
+  const [deliveryRadius, setDeliveryRadius] = useState(40); // نصف قطر التوصيل الافتراضي - Default delivery radius (40km)
   const [availableStores, setAvailableStores] = useState([]); // المتاجر المتاحة ضمن النطاق - Available stores within radius
   const [loading, setLoading] = useState(true); // حالة التحميل - Loading state (start as true for initial GPS)
   const [error, setError] = useState(null); // حالة الخطأ - Error state

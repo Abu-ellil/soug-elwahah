@@ -20,7 +20,10 @@ cloudinary.config({
 const getMyStore = async (req, res) => {
   try {
     // For backward compatibility, return the first approved store
-    const store = await Store.findOne({ ownerId: req.userId, verificationStatus: 'approved' })
+    const store = await Store.findOne({
+      ownerId: req.userId,
+      verificationStatus: "approved",
+    })
       .populate("categoryId", "name nameEn icon color")
       .populate("ownerId", "name phone");
 
@@ -271,8 +274,8 @@ const updateStoreCoordinates = async (req, res) => {
       { ownerId: req.userId },
       {
         pendingCoordinates: {
-          lat: parseFloat(coordinates.lat),
-          lng: parseFloat(coordinates.lng),
+          type: 'Point',
+          coordinates: [parseFloat(coordinates.lng), parseFloat(coordinates.lat)],
         },
         updatedAt: Date.now(),
       },
@@ -307,7 +310,9 @@ const createStoreApplication = async (req, res) => {
     // Get default category if not provided
     let storeCategoryId = categoryId;
     if (!storeCategoryId) {
-      const defaultCategory = await require("../../models/Category").findOne().maxTimeMS(1000);
+      const defaultCategory = await require("../../models/Category")
+        .findOne()
+        .maxTimeMS(1000);
       if (!defaultCategory) {
         return res.status(400).json({
           success: false,
@@ -350,25 +355,25 @@ const createStoreApplication = async (req, res) => {
       }
     }
 
-    // Parse coordinates
-    let storeCoordinates = { lat: 0, lng: 0 };
+    // Parse coordinates to GeoJSON Point format [longitude, latitude]
+    let storeCoordinates = { type: 'Point', coordinates: [0, 0] };
     if (coordinates) {
+      let parsedLat = 0;
+      let parsedLng = 0;
+
       if (typeof coordinates === 'string') {
         try {
           const parsed = JSON.parse(coordinates);
-          storeCoordinates = {
-            lat: parseFloat(parsed.lat) || 0,
-            lng: parseFloat(parsed.lng) || 0,
-          };
+          parsedLat = parseFloat(parsed.lat) || 0;
+          parsedLng = parseFloat(parsed.lng) || 0;
         } catch (e) {
-          console.warn('Failed to parse coordinates:', coordinates);
+          console.warn('Failed to parse coordinates string:', coordinates);
         }
       } else {
-        storeCoordinates = {
-          lat: parseFloat(coordinates.lat) || 0,
-          lng: parseFloat(coordinates.lng) || 0,
-        };
+        parsedLat = parseFloat(coordinates.lat) || 0;
+        parsedLng = parseFloat(coordinates.lng) || 0;
       }
+      storeCoordinates.coordinates = [parsedLng, parsedLat];
     }
 
     // Create store
@@ -383,8 +388,8 @@ const createStoreApplication = async (req, res) => {
       coordinates: storeCoordinates,
       villageId: "village_not_set",
       workingHours: workingHours || {
-        from: '08:00',
-        to: '23:00'
+        from: "08:00",
+        to: "23:00",
       },
       deliveryFee: deliveryFee || 10,
       documents: documents || [], // Store document URLs
@@ -393,10 +398,9 @@ const createStoreApplication = async (req, res) => {
     await store.save();
 
     // Add store to owner's stores array
-    await require("../../models/StoreOwner").findByIdAndUpdate(
-      req.userId,
-      { $push: { stores: store._id } }
-    );
+    await require("../../models/StoreOwner").findByIdAndUpdate(req.userId, {
+      $push: { stores: store._id },
+    });
 
     res.status(201).json({
       success: true,

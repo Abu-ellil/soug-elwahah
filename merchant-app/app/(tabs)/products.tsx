@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, RefreshControl } from 'react-native';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../../stores/authStore';
@@ -9,7 +9,6 @@ import Toast from 'react-native-toast-message';
 // Define product type
 interface Product {
   _id: string;
-  id?: string;
   name: string;
   price: number;
   description: string;
@@ -27,18 +26,17 @@ const ProductsScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [hasApprovedStore, setHasApprovedStore] = useState(false);
 
-  const fetchProducts = async () => {
+  // Check if user has approved stores
+  const checkApprovedStores = useCallback(() => {
+    return currentUser?.stores?.some(store => store.verificationStatus === 'approved') || false;
+  }, [currentUser]);
+
+  const fetchProducts = useCallback(async () => {
     try {
-      setIsLoading(true);
+      const approved = checkApprovedStores();
+      setHasApprovedStore(approved);
 
-      // Check if user has approved stores
-      const hasApprovedStores = currentUser?.stores?.some((store: any) =>
-        typeof store === 'object' ? store.verificationStatus === 'approved' : true
-      );
-
-      setHasApprovedStore(!!hasApprovedStores);
-
-      if (!hasApprovedStores) {
+      if (!approved) {
         setProducts([]);
         return;
       }
@@ -47,31 +45,41 @@ const ProductsScreen = () => {
       if (response.success && response.data) {
         setProducts(response.data.products || []);
       } else {
-        Toast.show({
-          type: 'error',
-          text1: 'خطأ',
-          text2: response.message || 'فشل في تحميل المنتجات',
-        });
+        // Handle API errors gracefully
+        if (response.message?.includes('معتمدة') || response.message?.includes('approved')) {
+          setHasApprovedStore(false);
+          setProducts([]);
+        } else {
+          Toast.show({
+            type: 'error',
+            text1: 'خطأ',
+            text2: response.message || 'فشل في تحميل المنتجات',
+          });
+        }
       }
     } catch (error: any) {
       console.error('Error fetching products:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'خطأ',
-        text2: error.message || 'فشل في تحميل المنتجات',
-      });
-    } finally {
-      setIsLoading(false);
-      setRefreshing(false);
+      // Handle network or other errors
+      if (error.message?.includes('معتمدة') || error.message?.includes('approved')) {
+        setHasApprovedStore(false);
+        setProducts([]);
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'خطأ',
+          text2: error.message || 'فشل في تحميل المنتجات',
+        });
+      }
     }
-  };
+  }, [checkApprovedStores]);
 
-  const handleRefresh = () => {
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    fetchProducts();
-  };
+    await fetchProducts();
+    setRefreshing(false);
+  }, [fetchProducts]);
 
-  const handleDeleteProduct = async (productId: string) => {
+  const handleDeleteProduct = useCallback(async (productId: string) => {
     Alert.alert('حذف المنتج', 'هل أنت متأكد أنك تريد حذف هذا المنتج؟', [
       { text: 'إلغاء', style: 'cancel' },
       {
@@ -81,7 +89,7 @@ const ProductsScreen = () => {
           try {
             const response = await apiService.deleteProduct(productId);
             if (response.success) {
-              setProducts(products.filter((product) => product._id !== productId));
+              setProducts(prev => prev.filter(product => product._id !== productId));
               Toast.show({
                 type: 'success',
                 text1: 'تم',
@@ -105,13 +113,13 @@ const ProductsScreen = () => {
         },
       },
     ]);
-  };
+  }, []);
 
-  const handleToggleAvailability = async (productId: string) => {
+  const handleToggleAvailability = useCallback(async (productId: string) => {
     try {
       const response = await apiService.toggleProductAvailability(productId);
       if (response.success) {
-        setProducts(products.map(product =>
+        setProducts(prev => prev.map(product =>
           product._id === productId
             ? { ...product, isAvailable: !product.isAvailable }
             : product
@@ -136,22 +144,25 @@ const ProductsScreen = () => {
         text2: error.message || 'فشل في تحديث حالة المنتج',
       });
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (currentUser) {
-      fetchProducts();
+      fetchProducts().finally(() => setIsLoading(false));
     }
-  }, [currentUser]);
+  }, [currentUser, fetchProducts]);
 
-  const renderProduct = ({ item }: { item: Product }) => (
+  const renderProduct = useCallback(({ item }: { item: Product }) => (
     <View style={styles.productCard}>
       <View style={styles.productInfo}>
         <Text style={styles.productName}>{item.name}</Text>
         <Text style={styles.productDescription}>{item.description}</Text>
         <Text style={styles.productPrice}>{item.price} ج.م</Text>
         <Text style={styles.productStock}>المخزون: {item.stock}</Text>
-        <View style={[styles.availabilityBadge, item.isAvailable ? styles.availableBadge : styles.unavailableBadge]}>
+        <View style={[
+          styles.availabilityBadge,
+          item.isAvailable ? styles.availableBadge : styles.unavailableBadge
+        ]}>
           <Text style={styles.availabilityText}>
             {item.isAvailable ? 'متوفر' : 'غير متوفر'}
           </Text>
@@ -160,31 +171,73 @@ const ProductsScreen = () => {
       <View style={styles.productActions}>
         <TouchableOpacity
           style={styles.editButton}
-          onPress={() => router.push(`/product-form?id=${item._id}`)}>
+          onPress={() => router.push(`/product-form?id=${item._id}`)}
+        >
           <Ionicons name="create-outline" size={20} color="white" />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.toggleButton}
-          onPress={() => handleToggleAvailability(item._id)}>
+          onPress={() => handleToggleAvailability(item._id)}
+        >
           <Ionicons
             name={item.isAvailable ? "eye-off-outline" : "eye-outline"}
             size={20}
             color="white"
           />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteProduct(item._id)}>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => handleDeleteProduct(item._id)}
+        >
           <Ionicons name="trash-outline" size={20} color="white" />
         </TouchableOpacity>
       </View>
     </View>
-  );
+  ), [handleToggleAvailability, handleDeleteProduct, router]);
+
+  const renderEmptyComponent = useCallback(() => {
+    if (isLoading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>جاري تحميل المنتجات...</Text>
+        </View>
+      );
+    }
+
+    if (!hasApprovedStore) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="storefront-outline" size={60} color="#D1D5DB" />
+          <Text style={styles.emptyText}>لا توجد متاجر معتمدة</Text>
+          <Text style={styles.emptySubtext}>يجب أن يكون متجرك معتمدًا من الإدارة أولاً</Text>
+          <TouchableOpacity
+            style={styles.createStoreButton}
+            onPress={() => router.push('/welcome')}
+          >
+            <Text style={styles.createStoreButtonText}>إنشاء متجر</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.emptyContainer}>
+        <Ionicons name="cube-outline" size={60} color="#D1D5DB" />
+        <Text style={styles.emptyText}>لا توجد منتجات</Text>
+        <Text style={styles.emptySubtext}>اضغط على زر الإضافة لإضافة منتج جديد</Text>
+      </View>
+    );
+  }, [isLoading, hasApprovedStore, router]);
 
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>المنتجات</Text>
-        <TouchableOpacity style={styles.addButton} onPress={() => router.push('/product-form')}>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => router.push('/product-form')}
+        >
           <Ionicons name="add" size={24} color="white" />
         </TouchableOpacity>
       </View>
@@ -199,31 +252,7 @@ const ProductsScreen = () => {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
         }
-        ListEmptyComponent={
-          isLoading ? (
-            <View style={styles.loadingContainer}>
-              <Text style={styles.loadingText}>جاري تحميل المنتجات...</Text>
-            </View>
-          ) : !hasApprovedStore ? (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="storefront-outline" size={60} color="#D1D5DB" />
-              <Text style={styles.emptyText}>لا توجد متاجر معتمدة</Text>
-              <Text style={styles.emptySubtext}>يجب أن يكون متجرك معتمدًا من الإدارة أولاً</Text>
-              <TouchableOpacity
-                style={styles.createStoreButton}
-                onPress={() => router.push('/welcome')}
-              >
-                <Text style={styles.createStoreButtonText}>إنشاء متجر</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="cube-outline" size={60} color="#D1D5DB" />
-              <Text style={styles.emptyText}>لا توجد منتجات</Text>
-              <Text style={styles.emptySubtext}>اضغط على زر الإضافة لإضافة منتج جديد</Text>
-            </View>
-          )
-        }
+        ListEmptyComponent={renderEmptyComponent}
       />
     </View>
   );

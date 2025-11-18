@@ -172,8 +172,8 @@ const seedData = async (options = {}) => {
         address: "شارع المدرسة، قرية النور",
         description: "بقالية متكاملة تقدم جميع احتياجات المنزل",
         coordinates: {
-          lat: 31.2001,
-          lng: 29.9187,
+          type: 'Point',
+          coordinates: [29.9187, 31.2001], // [longitude, latitude]
         },
         villageId: "village1",
         deliveryTime: "20-30 دقيقة",
@@ -193,8 +193,8 @@ const seedData = async (options = {}) => {
         address: "شارع السوق، قرية النور",
         description: "فواكه و خضروات طازجة يومياً",
         coordinates: {
-          lat: 31.1998,
-          lng: 29.9192,
+          type: 'Point',
+          coordinates: [29.9192, 31.1998], // [longitude, latitude]
         },
         villageId: "village1",
         deliveryTime: "15-25 دقيقة",
@@ -214,8 +214,8 @@ const seedData = async (options = {}) => {
         address: "شارع المصنع، قرية النور",
         description: "مخبز طازج وحلويات متنوعة",
         coordinates: {
-          lat: 31.2005,
-          lng: 29.9182,
+          type: 'Point',
+          coordinates: [29.9182, 31.2005], // [longitude, latitude]
         },
         villageId: "village1",
         deliveryTime: "10-20 دقيقة",
@@ -243,8 +243,8 @@ const seedData = async (options = {}) => {
         address: "شارع الجلاء، المنيا",
         description: "بقالية متكاملة في قلب المنيا",
         coordinates: {
-          lat: 29.9360,
-          lng: 30.9295,
+          type: 'Point',
+          coordinates: [30.9295, 29.9360], // [longitude, latitude]
         },
         villageId: "village2",
         deliveryTime: "20-30 دقيقة",

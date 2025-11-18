@@ -4,6 +4,11 @@ import { getToken, removeToken } from '../utils/storage';
 
 // Create a base API request function with retry mechanism
 const apiRequest = async (endpoint, options = {}) => {
+  // Check network status before making a request
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    throw new Error('Network request failed: Device is offline.');
+  }
+
   const {
     method = 'GET',
     body,
@@ -69,13 +74,16 @@ const apiRequest = async (endpoint, options = {}) => {
       return data;
     } catch (error) {
       console.error(`API request error (attempt ${attempt + 1}/${retries + 1}):`, error);
-      lastError = error;
+      lastError = error; // Store the original error
 
       if (error.name === 'AbortError') {
-        lastError = new Error('Request timeout');
+        lastError = new Error(`Request timed out after ${timeout / 1000} seconds.`);
+      } else if (error.name === 'TypeError' && error.message === 'Network request failed') {
+        lastError = new Error('Network request failed. Please check your internet connection.');
       }
 
-      // If this was the last attempt, throw the error
+      // If this was the last attempt, or it's an error we don't want to retry, throw the error
+      // For now, we retry all network-related errors.
       if (attempt === retries) {
         break;
       }
@@ -120,7 +128,7 @@ export const storesAPI = {
     const queryParams = new URLSearchParams(params).toString();
     return apiRequest(`/customer/stores/nearby${queryParams ? `?${queryParams}` : ''}`, {
       method: 'GET',
-      timeout: 30000, // Specific timeout for location-based requests
+      timeout: 60000, // Specific timeout for location-based requests (increased to 60 seconds)
       retries: 3,
     });
   },

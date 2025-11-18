@@ -21,7 +21,7 @@ const getNearbyStores = async (req, res) => {
       coordinates: {
         $geoWithin: {
           $centerSphere: [
-            [parseFloat(lng), parseFloat(lat)],
+            [parseFloat(lng), parseFloat(lat)], // GeoJSON format: [longitude, latitude]
             radiusInMeters / 6378100, // Earth's radius in meters
           ],
         },

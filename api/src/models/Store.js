@@ -14,12 +14,12 @@ const storeSchema = new mongoose.Schema({
   deliveryTime: { type: String, default: '20-30 دقيقة' },
   deliveryFee: { type: Number, default: 10 },
   coordinates: {
-    lat: { type: Number, required: true },
-    lng: { type: Number, required: true }
+    type: { type: String, enum: ['Point'], default: 'Point' },
+    coordinates: { type: [Number], required: true } // [longitude, latitude]
   },
   pendingCoordinates: {
-    lat: { type: Number },
-    lng: { type: Number }
+    type: { type: String, enum: ['Point'] },
+    coordinates: { type: [Number] } // [longitude, latitude]
   },
   villageId: { type: String, required: true },
   workingHours: {
@@ -35,6 +35,6 @@ const storeSchema = new mongoose.Schema({
 });
 
 // Index للبحث الجغرافي
-storeSchema.index({ coordinates: '2dsphere' });
+storeSchema.index({ coordinates: '2dsphere' }); // Ensure 2dsphere index is applied
 
 module.exports = mongoose.model('Store', storeSchema);
