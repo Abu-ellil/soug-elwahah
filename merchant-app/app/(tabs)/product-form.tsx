@@ -4,8 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import apiService from '../../services/api';
-import { uploadImageToCloudinary } from '../../utils/cloudinary_upload';
-import { CLOUDINARY_CLOUD_NAME } from '../../constants/api';
 import Toast from 'react-native-toast-message';
 
 const ProductFormScreen = () => {
@@ -16,10 +14,12 @@ const ProductFormScreen = () => {
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('');
+  const [categoryId, setCategoryId] = useState('grocery');
   const [image, setImage] = useState<string | null>(null);
+  const [categories, setCategories] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingProduct, setIsLoadingProduct] = useState(isEditing);
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(true);
 
   const fetchProduct = async () => {
     if (!isEditing || !id) return;
@@ -38,6 +38,20 @@ const ProductFormScreen = () => {
       });
     } finally {
       setIsLoadingProduct(false);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      setIsLoadingCategories(true);
+      const response = await apiService.request('/categories');
+      if (response.success) {
+        setCategories(response.data.categories);
+      }
+    } catch (error: any) {
+      console.error('Error fetching categories:', error);
+    } finally {
+      setIsLoadingCategories(false);
     }
   };
 
@@ -63,12 +77,17 @@ const ProductFormScreen = () => {
 
   useEffect(() => {
     fetchProduct();
+    fetchCategories();
   }, [id]);
 
   const handleSaveProduct = async () => {
     // Validation
     if (!name.trim()) {
       Alert.alert('خطأ', 'يرجى إدخال اسم المنتج');
+      return;
+    }
+    if (!categoryId) {
+      Alert.alert('خطأ', 'يرجى اختيار الفئة');
       return;
     }
     if (!price.trim() || isNaN(parseFloat(price))) {
@@ -79,32 +98,21 @@ const ProductFormScreen = () => {
       Alert.alert('خطأ', 'يرجى إدخال كمية صحيحة');
       return;
     }
+    if (!image) {
+      Alert.alert('خطأ', 'يرجى اختيار صورة المنتج');
+      return;
+    }
 
     try {
       setIsLoading(true);
-
-      let imageUrl = image;
-
-      // If image is selected, upload it to Cloudinary first
-      if (image) {
-        setIsUploadingImage(true);
-        try {
-          imageUrl = await uploadImageToCloudinary(image, CLOUDINARY_CLOUD_NAME);
-        } catch (uploadError: any) {
-          console.error('Error uploading image to Cloudinary:', uploadError);
-          Alert.alert('خطأ', 'فشل في رفع الصورة إلى Cloudinary');
-          return;
-        } finally {
-          setIsUploadingImage(false);
-        }
-      }
 
       const productData = {
         name: name.trim(),
         description: description.trim(),
         price: parseFloat(price),
         stock: parseInt(stock),
-        ...(imageUrl && { image: imageUrl }),
+        categoryId,
+        ...(image && { image }),
       };
 
       let response;
@@ -149,16 +157,9 @@ const ProductFormScreen = () => {
       <View style={styles.formContainer}>
         {/* Product Image */}
         <View style={styles.imageContainer}>
-          <TouchableOpacity style={styles.imagePicker} onPress={pickImage} disabled={isUploadingImage}>
-            {isUploadingImage ? (
-              <View style={styles.imagePlaceholder}>
-                <ActivityIndicator size="large" color="#3B82F6" />
-                <Text style={styles.imagePlaceholderText}>جاري رفع الصورة...</Text>
-              </View>
-            ) : image ? (
-              <View style={styles.imageWrapper}>
-                <Ionicons name="image" size={40} color="#9CA3AF" />
-              </View>
+          <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+            {image ? (
+              <Image source={{ uri: image }} style={styles.selectedImage} />
             ) : (
               <View style={styles.imagePlaceholder}>
                 <Ionicons name="camera-outline" size={40} color="#9CA3AF" />
@@ -231,11 +232,11 @@ const ProductFormScreen = () => {
 
         {/* Save Button */}
         <TouchableOpacity
-          style={[styles.saveButton, (isLoading || isUploadingImage) && styles.saveButtonDisabled]}
+          style={[styles.saveButton, isLoading && styles.saveButtonDisabled]}
           onPress={handleSaveProduct}
-          disabled={isLoading || isUploadingImage}>
+          disabled={isLoading}>
           <Text style={styles.saveButtonText}>
-            {isUploadingImage ? 'جاري رفع الصورة...' : isLoading ? 'جاري الحفظ...' : 'حفظ المنتج'}
+            {isLoading ? 'جاري الحفظ...' : 'حفظ المنتج'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -349,6 +350,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: 'white',
+  },
+  selectedImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 12,
   },
 });
 

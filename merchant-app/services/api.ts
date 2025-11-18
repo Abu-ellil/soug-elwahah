@@ -195,8 +195,23 @@ class ApiService {
 
   addProduct(productData: any) {
     const formData = new FormData();
+
     Object.keys(productData).forEach((key) => {
-      formData.append(key, productData[key]);
+      if (key === 'image' && productData[key]) {
+        // Handle image as file URI
+        const imageUri = productData[key];
+        const fileName = imageUri.split("/").pop() || "image.jpg";
+        const fileExtension = fileName.split(".").pop()?.toLowerCase() || "jpg";
+        const fileType = `image/${fileExtension === "jpg" ? "jpeg" : fileExtension}`;
+
+        formData.append("image", {
+          uri: imageUri,
+          type: fileType,
+          name: fileName,
+        } as any);
+      } else {
+        formData.append(key, productData[key]);
+      }
     });
 
     return this.request("/store/products", {

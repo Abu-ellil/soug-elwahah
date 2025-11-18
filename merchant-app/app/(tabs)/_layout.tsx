@@ -1,5 +1,5 @@
-import { Tabs, Redirect, usePathname, useRouter } from 'expo-router';
-import React, { useEffect } from 'react';
+import { Tabs } from 'expo-router';
+import React from 'react';
 import { TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
@@ -7,18 +7,10 @@ import { useAuth } from '../../contexts/AuthContext';
 export default function TabLayout() {
   const { logout, currentUser } = useAuth();
   const hasStores = currentUser?.stores && currentUser.stores.length > 0;
-  const pathname = usePathname();
-  const router = useRouter();
 
   const handleLogout = async () => {
     await logout();
   };
-
-  useEffect(() => {
-    if (!hasStores && (pathname === '/products' || pathname === '/profile')) {
-      router.push('/'); // Attempting to redirect to the root
-    }
-  }, [hasStores, pathname, router]);
 
   return (
     <Tabs
@@ -49,28 +41,33 @@ export default function TabLayout() {
           ),
         }}
       />
-      {hasStores && (
-        <>
-          <Tabs.Screen
-            name="products"
-            options={{
-              title: 'المنتجات',
-              tabBarIcon: ({ color, focused }) => (
-                <Ionicons name={focused ? 'cube' : 'cube-outline'} size={24} color={color} />
-              ),
-            }}
-          />
-          <Tabs.Screen
-            name="profile"
-            options={{
-              title: 'الملف الشخصي',
-              tabBarIcon: ({ color, focused }) => (
-                <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
-              ),
-            }}
-          />
-        </>
-      )}
+      <Tabs.Screen
+        name="products"
+        options={{
+          title: 'المنتجات',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'cube' : 'cube-outline'} size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'الملف الشخصي',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="store-application"
+        options={{
+          title: 'طلب إنشاء متجر',
+          tabBarButton: () => null, // This hides the tab from the bottom tab bar
+          headerShown: false,
+        }}
+      />
+        
     </Tabs>
   );
 }

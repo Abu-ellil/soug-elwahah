@@ -3,6 +3,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 import apiService from '../services/api';
 
+interface Store {
+  _id: string;
+  name: string;
+  verificationStatus: string; // 'pending' | 'approved' | 'rejected'
+  isActive: boolean;
+  // Add other store properties as needed
+}
+
 interface User {
   _id: string;
   id?: string;
@@ -10,7 +18,7 @@ interface User {
   email?: string;
   phone?: string;
   avatar?: string;
-  stores?: string[]; // Array of store IDs
+  stores?: Store[]; // Array of store objects
   isActive: boolean;
   verificationStatus?: string;
   createdAt?: string;
