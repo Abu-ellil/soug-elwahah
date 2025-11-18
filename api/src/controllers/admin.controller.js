@@ -878,7 +878,7 @@ const approveStore = async (req, res) => {
     store.isOpen = true; // Allow the store to be open
     await store.save();
 
-    // Also activate the store owner
+    // Also activate the store owner if not already approved
     await StoreOwner.findByIdAndUpdate(store.ownerId, {
       verificationStatus: "approved",
       isActive: true // Activate the owner
@@ -896,7 +896,7 @@ const approveStore = async (req, res) => {
       }
     });
     await notification.save();
-    
+
     // Send push notification to store owner if they have an FCM token
     const storeOwner = await StoreOwner.findById(store.ownerId);
     if (storeOwner && storeOwner.fcmToken) {
@@ -913,7 +913,7 @@ const approveStore = async (req, res) => {
           },
           token: storeOwner.fcmToken,
         };
-        
+
         await admin.messaging().send(message);
       } catch (error) {
         console.error("Error sending push notification:", error);
@@ -964,11 +964,8 @@ const rejectStore = async (req, res) => {
     if (reason) store.rejectionReason = reason;
     await store.save();
 
-    // Also deactivate the store owner
-    await StoreOwner.findByIdAndUpdate(store.ownerId, {
-      verificationStatus: "rejected",
-      isActive: false // Deactivate the owner
-    });
+    // Note: Don't deactivate the store owner, as they might have other stores
+    // Only deactivate if all their stores are rejected
 
     // Create notification for the store owner
     const notification = new Notification({
@@ -982,7 +979,7 @@ const rejectStore = async (req, res) => {
       }
     });
     await notification.save();
-    
+
     // Send push notification to store owner if they have an FCM token
     const storeOwner = await StoreOwner.findById(store.ownerId);
     if (storeOwner && storeOwner.fcmToken) {
@@ -999,7 +996,7 @@ const rejectStore = async (req, res) => {
           },
           token: storeOwner.fcmToken,
         };
-        
+
         await admin.messaging().send(message);
       } catch (error) {
         console.error("Error sending push notification:", error);

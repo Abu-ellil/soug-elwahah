@@ -1,4 +1,4 @@
-require("dotenv").config({ path: "./api/.env" });
+require("dotenv").config({ path: "./.env" });
 
 const express = require("express");
 const http = require("http");
@@ -36,11 +36,11 @@ connectDB()
     });
 
     // Initialize WebSocket service
-    const webSocketService = require('./src/services/websocket.service');
+    const webSocketService = require("./src/services/websocket.service");
     webSocketService.init(io);
 
     // Initialize real-time order assignment service
-    const realTimeOrderAssignmentService = require('./src/services/realtime-order-assignment.service');
+    const realTimeOrderAssignmentService = require("./src/services/realtime-order-assignment.service");
     realTimeOrderAssignmentService.init(io);
 
     // Store connected clients with their user info
@@ -68,14 +68,16 @@ connectDB()
     });
 
     io.on("connection", (socket) => {
-      console.log(`User connected: ${socket.id} (User ID: ${socket.userId}, Role: ${socket.userRole})`);
+      console.log(
+        `User connected: ${socket.id} (User ID: ${socket.userId}, Role: ${socket.userRole})`
+      );
 
       // Store user info with socket connection
       connectedClients.set(socket.id, {
         userId: socket.userId,
         role: socket.userRole,
         phone: socket.userPhone,
-        socketId: socket.id
+        socketId: socket.id,
       });
 
       // Join specific rooms based on user role and ID
@@ -84,73 +86,89 @@ connectDB()
       console.log(`User authenticated: ${socket.userId} (${socket.userRole})`);
 
       // Handle driver availability status
-      if (socket.userRole === 'driver') {
-        socket.on('driverStatusUpdate', (status) => {
-          if (typeof status === 'object' && status.isAvailable !== undefined) {
+      if (socket.userRole === "driver") {
+        socket.on("driverStatusUpdate", (status) => {
+          if (typeof status === "object" && status.isAvailable !== undefined) {
             // Update driver availability in database
-            require('./src/models/Driver').findByIdAndUpdate(socket.userId, {
-              isAvailable: status.isAvailable
-            }).then(() => {
-              console.log(`Driver ${socket.userId} availability updated to ${status.isAvailable}`);
-              
-              // Join or leave the available drivers room based on status
-              if (status.isAvailable) {
-                socket.join('available_drivers');
-                console.log(`Driver ${socket.userId} joined available_drivers room`);
-              } else {
-                socket.leave('available_drivers');
-                console.log(`Driver ${socket.userId} left available_drivers room`);
-              }
-            }).catch(err => {
-              console.error('Error updating driver availability:', err);
-            });
+            require("./src/models/Driver")
+              .findByIdAndUpdate(socket.userId, {
+                isAvailable: status.isAvailable,
+              })
+              .then(() => {
+                console.log(
+                  `Driver ${socket.userId} availability updated to ${status.isAvailable}`
+                );
+
+                // Join or leave the available drivers room based on status
+                if (status.isAvailable) {
+                  socket.join("available_drivers");
+                  console.log(
+                    `Driver ${socket.userId} joined available_drivers room`
+                  );
+                } else {
+                  socket.leave("available_drivers");
+                  console.log(
+                    `Driver ${socket.userId} left available_drivers room`
+                  );
+                }
+              })
+              .catch((err) => {
+                console.error("Error updating driver availability:", err);
+              });
           }
         });
 
         // Handle order acceptance
-        socket.on('acceptOrder', async (orderId) => {
-          const realTimeOrderAssignmentService = require('./src/services/realtime-order-assignment.service');
-          const result = await realTimeOrderAssignmentService.handleOrderAcceptance(socket.userId, orderId);
-          
+        socket.on("acceptOrder", async (orderId) => {
+          const realTimeOrderAssignmentService = require("./src/services/realtime-order-assignment.service");
+          const result =
+            await realTimeOrderAssignmentService.handleOrderAcceptance(
+              socket.userId,
+              orderId
+            );
+
           if (result.success) {
             // Join driver to order-specific room for updates
             socket.join(`order_${orderId}`);
             socket.join(`driver_orders_${socket.userId}`);
-            
+
             // Notify the driver that order was accepted
-            socket.emit('orderAcceptanceSuccess', {
+            socket.emit("orderAcceptanceSuccess", {
               orderId: orderId,
               message: "تم قبول الطلب بنجاح",
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString(),
             });
           } else {
-            socket.emit('orderAcceptanceFailed', {
+            socket.emit("orderAcceptanceFailed", {
               orderId: orderId,
               message: result.message,
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString(),
             });
           }
         });
 
         // Handle location updates
-        socket.on('locationUpdate', (location) => {
+        socket.on("locationUpdate", (location) => {
           if (location && location.lat && location.lng) {
             // Update driver location in database
-            require('./src/models/Driver').findByIdAndUpdate(socket.userId, {
-              coordinates: { lat: location.lat, lng: location.lng },
-              lastLocationUpdate: new Date()
-            }).then(() => {
-              console.log(`Driver ${socket.userId} location updated`);
-              
-              // Broadcast location update to relevant parties
-              webSocketService.broadcastDriverLocation(socket.userId, {
-                lat: location.lat,
-                lng: location.lng,
-                timestamp: new Date().toISOString()
+            require("./src/models/Driver")
+              .findByIdAndUpdate(socket.userId, {
+                coordinates: { lat: location.lat, lng: location.lng },
+                lastLocationUpdate: new Date(),
+              })
+              .then(() => {
+                console.log(`Driver ${socket.userId} location updated`);
+
+                // Broadcast location update to relevant parties
+                webSocketService.broadcastDriverLocation(socket.userId, {
+                  lat: location.lat,
+                  lng: location.lng,
+                  timestamp: new Date().toISOString(),
+                });
+              })
+              .catch((err) => {
+                console.error("Error updating driver location:", err);
               });
-            }).catch(err => {
-              console.error('Error updating driver location:', err);
-            });
           }
         });
       }

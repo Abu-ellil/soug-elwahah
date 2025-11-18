@@ -4,7 +4,7 @@ const storeOwnerSchema = new mongoose.Schema({
   name: { type: String, required: true },
   phone: { type: String, required: true, unique: true },
   password: { type: String, required: true }, // hashed
-  storeId: { type: mongoose.Schema.Types.ObjectId, ref: "Store" },
+  stores: [{ type: mongoose.Schema.Types.ObjectId, ref: "Store" }], // Array of store IDs
   isActive: { type: Boolean, default: false }, // Default to false until approved
   verificationStatus: { type: String, default: 'pending', enum: ['pending', 'approved', 'rejected'] },
   rejectionReason: { type: String, default: null },

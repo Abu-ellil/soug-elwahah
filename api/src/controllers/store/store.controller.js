@@ -19,7 +19,8 @@ cloudinary.config({
 
 const getMyStore = async (req, res) => {
   try {
-    const store = await Store.findOne({ ownerId: req.userId })
+    // For backward compatibility, return the first approved store
+    const store = await Store.findOne({ ownerId: req.userId, verificationStatus: 'approved' })
       .populate("categoryId", "name nameEn icon color")
       .populate("ownerId", "name phone");
 
@@ -288,6 +289,143 @@ const updateStoreCoordinates = async (req, res) => {
   }
 };
 
+// Create store application
+const createStoreApplication = async (req, res) => {
+  try {
+    const {
+      name,
+      description,
+      categoryId,
+      address,
+      coordinates,
+      workingHours,
+      deliveryFee,
+      documents, // Array of document URLs
+    } = req.body;
+
+    // Get default category if not provided
+    let storeCategoryId = categoryId;
+    if (!storeCategoryId) {
+      const defaultCategory = await require("../../models/Category").findOne().maxTimeMS(1000);
+      if (!defaultCategory) {
+        return res.status(400).json({
+          success: false,
+          message: "لا توجد فئات متاحة، يرجى الاتصال بالمسؤول",
+        });
+      }
+      storeCategoryId = defaultCategory._id;
+    }
+
+    // Handle store image
+    let storeImageUrl = "";
+    if (req.file) {
+      if (req.file.buffer) {
+        // Upload to Firebase Storage
+        const admin = require("../../config/firebase");
+        if (admin && admin.storage) {
+          const bucket = admin.storage().bucket();
+          const fileName = `store-images/storeImage-${Date.now()}-${Math.round(
+            Math.random() * 1e9
+          )}-${req.file.originalname}`;
+          const file = bucket.file(fileName);
+
+          const stream = file.createWriteStream({
+            metadata: {
+              contentType: req.file.mimetype,
+            },
+          });
+
+          await new Promise((resolve, reject) => {
+            stream.on("error", reject);
+            stream.on("finish", resolve);
+            stream.end(req.file.buffer);
+          });
+
+          await file.makePublic();
+          storeImageUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+        }
+      } else if (req.file.path) {
+        storeImageUrl = req.file.path;
+      }
+    }
+
+    // Parse coordinates
+    let storeCoordinates = { lat: 0, lng: 0 };
+    if (coordinates) {
+      if (typeof coordinates === 'string') {
+        try {
+          const parsed = JSON.parse(coordinates);
+          storeCoordinates = {
+            lat: parseFloat(parsed.lat) || 0,
+            lng: parseFloat(parsed.lng) || 0,
+          };
+        } catch (e) {
+          console.warn('Failed to parse coordinates:', coordinates);
+        }
+      } else {
+        storeCoordinates = {
+          lat: parseFloat(coordinates.lat) || 0,
+          lng: parseFloat(coordinates.lng) || 0,
+        };
+      }
+    }
+
+    // Create store
+    const store = new Store({
+      name,
+      categoryId: storeCategoryId,
+      ownerId: req.userId,
+      image: storeImageUrl || "https://via.placeholder.com/400x400.png",
+      phone: req.userPhone, // From auth middleware
+      address: address || "العنوان غير محدد",
+      description: description || "",
+      coordinates: storeCoordinates,
+      villageId: "village_not_set",
+      workingHours: workingHours || {
+        from: '08:00',
+        to: '23:00'
+      },
+      deliveryFee: deliveryFee || 10,
+      documents: documents || [], // Store document URLs
+    });
+
+    await store.save();
+
+    // Add store to owner's stores array
+    await require("../../models/StoreOwner").findByIdAndUpdate(
+      req.userId,
+      { $push: { stores: store._id } }
+    );
+
+    res.status(201).json({
+      success: true,
+      data: { store },
+      message: "تم تقديم طلب إنشاء المتجر بنجاح، في انتظار موافقة الإدارة",
+    });
+  } catch (error) {
+    console.error("Create store application error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
+// Get all stores for the current owner
+const getMyStores = async (req, res) => {
+  try {
+    const stores = await Store.find({ ownerId: req.userId })
+      .populate("categoryId", "name nameEn icon color")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: { stores },
+      message: "تم جلب المتاجر بنجاح",
+    });
+  } catch (error) {
+    console.error("Get my stores error:", error);
+    res.status(500).json({ success: false, message: "خطأ في الخادم" });
+  }
+};
+
 module.exports = {
   getMyStore,
   updateStore,
@@ -295,4 +433,6 @@ module.exports = {
   toggleStoreStatus,
   getAllStores,
   updateStoreCoordinates,
+  createStoreApplication,
+  getMyStores,
 };

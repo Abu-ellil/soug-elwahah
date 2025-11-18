@@ -1,5 +1,6 @@
 import { BASE_URL } from "../constants/api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { testConnectivity, testApiConnectivity } from "../utils/network";
 
 // API Service for Merchant App
 class ApiService {
@@ -30,46 +31,90 @@ class ApiService {
     await AsyncStorage.removeItem("merchant_token");
   }
 
-   // Generic API request method
-  async request(endpoint: string, options: RequestInit = {}) {
-    const url = `${this.baseUrl}${endpoint}`;
-    
-    // Check if body is FormData to handle Content-Type appropriately
-    const isFormData = options.body instanceof FormData;
-    
-    const config: RequestInit = {
-      headers: {
-        // Only set Content-Type to application/json if not using FormData
-        ...(isFormData ? {} : { "Content-Type": "application/json" }),
-        ...options.headers,
-      },
-      ...options,
-    };
+   // Generic API request method with retry logic
+   async request(endpoint: string, options: RequestInit = {}, maxRetries: number = 3) {
+     const url = `${this.baseUrl}${endpoint}`;
 
-    // Add authorization header if token exists
-    const token = await this.getToken();
-    if (token) {
-      (config.headers as Record<string, string>)["Authorization"] =
-        `Bearer ${token}`;
-    }
+     // Check if body is FormData to handle Content-Type appropriately
+     const isFormData = options.body instanceof FormData;
 
-    try {
-      const response = await fetch(url, config);
+     const config: RequestInit = {
+       headers: {
+         // Only set Content-Type to application/json if not using FormData
+         ...(isFormData ? {} : { "Content-Type": "application/json" }),
+         ...options.headers,
+       },
+       ...options,
+     };
 
-      // Handle different response status codes
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.message || `HTTP error! status: ${response.status}`
-        );
-      }
+     // Add authorization header if token exists
+     const token = await this.getToken();
+     if (token) {
+       (config.headers as Record<string, string>)["Authorization"] =
+         `Bearer ${token}`;
+     }
 
-      return await response.json();
-    } catch (error) {
-      console.error(`API request failed for ${url}:`, error);
-      throw error;
-    }
-  }
+     let lastError: Error = new Error('Unknown error');
+
+     for (let attempt = 0; attempt <= maxRetries; attempt++) {
+       try {
+         // Check network connectivity before making request
+         if (attempt === 0) {
+           const isConnected = await testConnectivity();
+           if (!isConnected) {
+             throw new Error('لا يوجد اتصال بالإنترنت. يرجى التحقق من اتصالك بالشبكة.');
+           }
+         }
+
+         const response = await fetch(url, config);
+
+         // Handle different response status codes
+         if (!response.ok) {
+           const errorData = await response.json().catch(() => ({}));
+
+           // Handle specific error codes
+           if (response.status === 500) {
+             throw new Error('خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.');
+           } else if (response.status === 404) {
+             throw new Error('الخدمة غير متوفرة. يرجى التحقق من إعدادات التطبيق.');
+           } else if (response.status === 401) {
+             // Clear invalid token
+             await this.clearToken();
+             throw new Error('انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.');
+           } else if (response.status >= 400 && response.status < 500) {
+             throw new Error(errorData.message || `خطأ في الطلب: ${response.status}`);
+           } else {
+             throw new Error(errorData.message || `خطأ في الخادم: ${response.status}`);
+           }
+         }
+
+         return await response.json();
+       } catch (error: any) {
+         lastError = error;
+         console.error(`API request attempt ${attempt + 1} failed for ${url}:`, error);
+
+         // Don't retry on client errors (4xx) except network errors
+         if (error.message?.includes('Network request failed') ||
+             error.message?.includes('اتصال') ||
+             error.name === 'TypeError') {
+
+           // Wait before retrying (exponential backoff)
+           if (attempt < maxRetries) {
+             const delay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
+             console.log(`Retrying in ${delay}ms...`);
+             await new Promise(resolve => setTimeout(resolve, delay));
+             continue;
+           }
+         }
+
+         // For non-network errors, don't retry
+         break;
+       }
+     }
+
+     // If we get here, all retries failed
+     throw lastError || new Error('فشل في الاتصال بالخادم بعد عدة محاولات');
+   }
 
   // Authentication methods
   login(credentials: { phone: string; password: string; role: string }) {
@@ -80,59 +125,13 @@ class ApiService {
   }
 
   register(merchantData: {
-    email: string;
+    name: string;
     phone: string;
     password: string;
-    name: string;
-    storeName: string;
-    storeDescription?: string;
-    storeImage?: string;
-    coordinates?: { lat: number; lng: number };
   }) {
-    // Create FormData for file upload
-    const formData = new FormData();
-    formData.append("email", merchantData.email);
-    formData.append("phone", merchantData.phone);
-    formData.append("password", merchantData.password);
-    formData.append("name", merchantData.name);
-    formData.append("storeName", merchantData.storeName);
-
-    if (merchantData.storeDescription) {
-      formData.append("storeDescription", merchantData.storeDescription);
-    }
-
-    // Add coordinates if provided
-    if (merchantData.coordinates) {
-      formData.append("coordinates", JSON.stringify(merchantData.coordinates));
-    }
-
-    // Add image as file if it exists and is not just a URL
-    if (merchantData.storeImage) {
-      if (merchantData.storeImage.startsWith("http")) {
-        // If it's a URL, send as string
-        formData.append("storeImage", merchantData.storeImage);
-      } else {
-        // If it's a local file URI, add as a file
-        // Extract file name from URI or use default
-        const fileName =
-          merchantData.storeImage.split("/").pop() || "store_image.jpg";
-        const fileExtension = fileName.split(".").pop()?.toLowerCase() || "jpg";
-        const fileType = `image/${fileExtension === "jpg" ? "jpeg" : fileExtension}`;
-
-        formData.append("storeImage", {
-          uri: merchantData.storeImage,
-          type: fileType,
-          name: fileName,
-        } as any);
-      }
-    }
-
     return this.request("/auth/store/register", {
       method: "POST",
-      body: formData,
-      headers: {
-        // Don't set Content-Type header for FormData (it will be set automatically)
-      },
+      body: JSON.stringify(merchantData),
     });
   }
 
@@ -214,6 +213,45 @@ class ApiService {
     return this.request("/store/coordinates", {
       method: "PUT",
       body: JSON.stringify({ coordinates }),
+    });
+  }
+
+  // Create store application
+  createStoreApplication(storeData: {
+    name: string;
+    description?: string;
+    coordinates: { lat: number; lng: number };
+    documents?: string[];
+    image?: string;
+  }) {
+    const formData = new FormData();
+    formData.append("name", storeData.name);
+    if (storeData.description) {
+      formData.append("description", storeData.description);
+    }
+    formData.append("coordinates", JSON.stringify(storeData.coordinates));
+    if (storeData.documents) {
+      formData.append("documents", JSON.stringify(storeData.documents));
+    }
+
+    if (storeData.image) {
+      const fileName = storeData.image.split("/").pop() || "store_image.jpg";
+      const fileExtension = fileName.split(".").pop()?.toLowerCase() || "jpg";
+      const fileType = `image/${fileExtension === "jpg" ? "jpeg" : fileExtension}`;
+
+      formData.append("image", {
+        uri: storeData.image,
+        type: fileType,
+        name: fileName,
+      } as any);
+    }
+
+    return this.request("/store/application", {
+      method: "POST",
+      body: formData,
+      headers: {
+        // Don't set Content-Type header for FormData (it will be set automatically)
+      },
     });
   }
 }

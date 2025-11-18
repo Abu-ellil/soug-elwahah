@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 import apiService from '../services/api';
@@ -15,53 +15,33 @@ interface User {
   verificationStatus?: string;
   createdAt?: string;
   updatedAt?: string;
-  // Add any other fields that might come from the API
 }
 
-interface AuthContextType {
+interface AuthState {
   currentUser: User | null;
   isLoading: boolean;
+  isAuthenticated: boolean;
   login: (phone: string, password: string) => Promise<{ success: boolean; error?: string; verificationStatus?: string }>;
   register: (userData: { name: string; phone: string; password: string }) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
-  isAuthenticated: boolean;
+  loadUser: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const useAuthStore = create<AuthState>((set, get) => ({
+  currentUser: null,
+  isLoading: true,
+  isAuthenticated: false,
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    loadUser();
-  }, []);
-
-  const loadUser = async () => {
+  loadUser: async () => {
     try {
-      // Check if we have a token stored
       const token = await apiService.getToken();
       if (token) {
-        // Token exists, try to get user profile from API
         try {
           const profile = await apiService.getProfile();
           if (profile) {
-            setCurrentUser(profile);
+            set({ currentUser: profile, isAuthenticated: true });
           }
         } catch (error) {
-          // If getting profile fails, token might be invalid, so clear it
           await apiService.clearToken();
           console.error('Error getting user profile:', error);
         }
@@ -69,43 +49,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (error) {
       console.error('Error loading user:', error);
     } finally {
-      setIsLoading(false);
+      set({ isLoading: false });
     }
-  };
+  },
 
-  const login = async (
-    phone: string, // Using phone as identifier for login
-    password: string
-  ): Promise<{ success: boolean; error?: string; verificationStatus?: string }> => {
+  login: async (phone: string, password: string) => {
     try {
-      setIsLoading(true);
-      // Use the API service for login
+      set({ isLoading: true });
       const response = await apiService.login({ phone, password, role: 'store' });
-      
+
       if (response && response.token) {
-        // Store the token in the API service
         await apiService.setToken(response.token);
-        
-        // Get user profile after successful login
         const profile = await apiService.getProfile();
         if (profile) {
-          setCurrentUser(profile);
+          set({ currentUser: profile, isAuthenticated: true });
           await AsyncStorage.setItem('user', JSON.stringify(profile));
         }
         return { success: true };
       } else if (response && response.verificationStatus === 'pending') {
-        // If verification status is pending, we still want to set the user info
-        // so the app can show the pending approval screen
         const profile = await apiService.getProfile();
         if (profile) {
-          setCurrentUser(profile);
+          set({ currentUser: profile, isAuthenticated: true });
           await AsyncStorage.setItem('user', JSON.stringify(profile));
         }
         return { success: true, verificationStatus: 'pending' };
       } else if (response && response.verificationStatus === 'rejected') {
         return { success: false, error: 'الحساب مرفوض من قبل الإدارة' };
       } else {
-        return { success: false, error: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' };
+        return { success: false, error: 'رقم الهاتف أو كلمة المرور غير صحيحة' };
       }
     } catch (error: any) {
       console.error('Login error:', error);
@@ -115,14 +86,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       return { success: false, error: errorMessage };
     } finally {
-      setIsLoading(false);
+      set({ isLoading: false });
     }
-  };
+  },
 
-  const register = async (userData: { name: string; phone: string; password: string }): Promise<{ success: boolean; error?: string }> => {
+  register: async (userData: { name: string; phone: string; password: string }) => {
     try {
-      setIsLoading(true);
-      // Use the API service for registration
+      set({ isLoading: true });
       const response = await apiService.register({
         name: userData.name,
         phone: userData.phone,
@@ -130,8 +100,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       if (response) {
-        // Auto-login after successful registration
-        const loginResult = await login(userData.phone, userData.password);
+        const loginResult = await get().login(userData.phone, userData.password);
         if (loginResult.success) {
           Toast.show({
             type: 'success',
@@ -153,31 +122,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       return { success: false, error: errorMessage };
     } finally {
-      setIsLoading(false);
+      set({ isLoading: false });
     }
-  };
+  },
 
-  const logout = async () => {
+  logout: async () => {
     try {
-      setCurrentUser(null);
+      set({ currentUser: null, isAuthenticated: false });
       await AsyncStorage.removeItem('user');
-      // Also clear the API token
       await apiService.clearToken();
     } catch (error) {
       console.error('Logout error:', error);
     }
-  };
-
-  const isAuthenticated = !!currentUser;
-
-  const value = {
-    currentUser,
-    isLoading,
-    login,
-    register,
-    logout,
-    isAuthenticated,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
+  },
+}));

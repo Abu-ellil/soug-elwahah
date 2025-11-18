@@ -12,9 +12,12 @@ const registerCustomer = async (req, res) => {
   try {
     const { name, phone, password } = req.body;
 
-    // Check if user already exists with timeout
-    const existingUser = await User.findOne({ phone }).maxTimeMS(10000);
-    if (existingUser) {
+    // Check if phone number is already used by any user type with timeout
+    const existingUserCheck = await User.findOne({ phone }).maxTimeMS(10000);
+    const existingOwner = await StoreOwner.findOne({ phone }).maxTimeMS(10000);
+    const existingDriver = await Driver.findOne({ phone }).maxTimeMS(10000);
+
+    if (existingUserCheck || existingOwner || existingDriver) {
       return res
         .status(400)
         .json({ success: false, message: "رقم الهاتف مستخدم من قبل" });
@@ -61,30 +64,14 @@ const registerCustomer = async (req, res) => {
 
 const registerStoreOwner = async (req, res) => {
   try {
-    let {
-      name,
-      email,
-      phone,
-      password,
-      storeName,
-      storeDescription,
-      storeImage,
-    } = req.body;
-    
-    // Parse coordinates if they are sent as a JSON string in form data
-    let coordinates = req.body.coordinates;
-    if (coordinates && typeof coordinates === 'string') {
-      try {
-        coordinates = JSON.parse(coordinates);
-      } catch (e) {
-        console.warn('Failed to parse coordinates from form data:', coordinates);
-        coordinates = null;
-      }
-    }
+    const { name, phone, password } = req.body;
 
-    // Check if store owner already exists with timeout
+    // Check if phone number is already used by any user type with timeout
+    const existingUser = await User.findOne({ phone }).maxTimeMS(10000);
     const existingOwner = await StoreOwner.findOne({ phone }).maxTimeMS(10000);
-    if (existingOwner) {
+    const existingDriver = await Driver.findOne({ phone }).maxTimeMS(10000);
+
+    if (existingUser || existingOwner || existingDriver) {
       return res
         .status(400)
         .json({ success: false, message: "رقم الهاتف مستخدم من قبل" });
@@ -98,99 +85,9 @@ const registerStoreOwner = async (req, res) => {
       name,
       phone,
       password: hashedPassword,
+      stores: [], // Start with empty stores array
     });
 
-    await owner.save();
-
-    // Get a default category (using the first one available) with timeout
-    let defaultCategory = await Category.findOne().maxTimeMS(1000);
-    if (!defaultCategory) {
-      // If no category exists, we might need to handle this case differently
-      // For now, let's create a default category ID (this might need adjustment)
-      return res.status(400).json({
-        success: false,
-        message: "لا توجد فئات متاحة، يرجى الاتصال بالمسؤول",
-      });
-    }
-
-    // Handle store image - if file was uploaded, process it; otherwise use the URL provided
-    let storeImageUrl = "";
-    if (req.file) {
-      if (req.file.buffer) {
-        // File is in memory (serverless environment), upload to Firebase Storage
-        try {
-          // Check if Firebase is properly configured
-          if (admin && admin.storage) {
-            const bucket = admin.storage().bucket(); // Get the default bucket
-            const fileName = `store-images/storeImage-${Date.now()}-${Math.round(
-              Math.random() * 1e9
-            )}-${req.file.originalname}`;
-            const file = bucket.file(fileName);
-
-            const stream = file.createWriteStream({
-              metadata: {
-                contentType: req.file.mimetype,
-              },
-            });
-
-            await new Promise((resolve, reject) => {
-              stream.on("error", reject);
-              stream.on("finish", resolve);
-              stream.end(req.file.buffer);
-            });
-
-            // Make the file publicly readable
-            await file.makePublic();
-
-            // Get the public URL
-            storeImageUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
-          } else {
-            // Firebase not configured, log warning and continue without image
-            console.warn("Firebase not configured for image upload");
-            // Instead of returning an error, allow registration to continue without image
-            storeImageUrl = ""; // No image will be set
-          }
-        } catch (uploadError) {
-          console.error("Firebase Storage upload error:", uploadError);
-          // Instead of returning an error, allow registration to continue without image
-          storeImageUrl = ""; // No image will be set
-        }
-      } else if (req.file.path) {
-        // File was uploaded to disk (local environment), use its path
-        storeImageUrl = req.file.path;
-      }
-    } else if (storeImage && storeImage.startsWith("http")) {
-      // Image URL was provided directly
-      storeImageUrl = storeImage;
-    } else {
-      // No image provided, set to empty string
-      storeImageUrl = "";
-    }
-
-    // Use provided coordinates or default to 0,0 if not provided
-    const storeCoordinates = coordinates
-      ? {
-          lat: coordinates.lat ? parseFloat(coordinates.lat) : 0,
-          lng: coordinates.lng ? parseFloat(coordinates.lng) : 0,
-        }
-      : { lat: 0, lng: 0 };
-
-    const store = new Store({
-      name: storeName,
-      categoryId: defaultCategory._id,
-      ownerId: owner._id,
-      image: storeImageUrl || "https://via.placeholder.com/400x400.png", // Provide default image if none uploaded
-      phone: phone, // Use the owner's phone as store phone
-      address: "العنوان غير محدد", // Provide default address instead of empty string
-      description: storeDescription || "",
-      coordinates: storeCoordinates,
-      villageId: "village_not_set", // Provide default villageId instead of empty string
-    });
-
-    await store.save();
-
-    // Update the owner with the storeId
-    owner.storeId = store._id;
     await owner.save();
 
     // Generate token
@@ -212,7 +109,7 @@ const registerStoreOwner = async (req, res) => {
         },
         token,
       },
-      message: "تم إنشاء حساب التاجر ومتجره بنجاح، في انتظار موافقة الإدارة",
+      message: "تم إنشاء حساب التاجر بنجاح، يمكنك الآن التقدم بطلب إنشاء متجر",
     });
   } catch (error) {
     console.error("Register store owner error:", error);
@@ -224,9 +121,12 @@ const registerDriver = async (req, res) => {
   try {
     const { name, phone, password, vehicleType, vehicleNumber } = req.body;
 
-    // Check if driver already exists with timeout
-    const existingDriver = await Driver.findOne({ phone }).maxTimeMS(10000);
-    if (existingDriver) {
+    // Check if phone number is already used by any user type with timeout
+    const existingUser = await User.findOne({ phone }).maxTimeMS(10000);
+    const existingOwner = await StoreOwner.findOne({ phone }).maxTimeMS(10000);
+    const existingDriverCheck = await Driver.findOne({ phone }).maxTimeMS(10000);
+
+    if (existingUser || existingOwner || existingDriverCheck) {
       return res
         .status(400)
         .json({ success: false, message: "رقم الهاتف مستخدم من قبل" });
@@ -340,19 +240,8 @@ const login = async (req, res) => {
             message: "الحساب مرفوض",
             verificationStatus: "rejected"
           });
-      } else if (!user.isActive) {
-        await logLoginAttempt(
-          phone,
-          userType,
-          false,
-          user._id,
-          req,
-          "Account not active"
-        );
-        return res
-          .status(401)
-          .json({ success: false, message: "الحساب غير نشط" });
       }
+      // Note: Store owners can login even if isActive is false, as they might have pending stores
     } else if (!user.isActive) {
       await logLoginAttempt(
         phone,
@@ -405,7 +294,8 @@ const login = async (req, res) => {
         name: user.name,
         phone: user.phone,
         isActive: user.isActive,
-        storeId: user.storeId,
+        stores: user.stores,
+        verificationStatus: user.verificationStatus,
       };
     } else if (role === "driver") {
       userData = {
@@ -450,7 +340,7 @@ const getMe = async (req, res) => {
         user = await User.findById(userId);
         break;
       case "store":
-        user = await StoreOwner.findById(userId).populate("storeId");
+        user = await StoreOwner.findById(userId).populate("stores");
         break;
       case "driver":
         user = await Driver.findById(userId);

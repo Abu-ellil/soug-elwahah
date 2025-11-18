@@ -9,18 +9,26 @@ import "react-native-reanimated";
 import "../global.css";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { useAuth, AuthProvider } from "../contexts/AuthContext";
+import { useAuthStore } from "../stores/authStore";
 import { useEffect } from "react";
-import { router } from "expo-router";
+import { router, usePathname } from "expo-router";
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  const { currentUser, isLoading } = useAuth();
+  const { currentUser, isLoading, loadUser } = useAuthStore();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    loadUser();
+  }, []);
 
   useEffect(() => {
     if (!isLoading) {
       if (!currentUser) {
-        router.replace("/(auth)/login");
+        // Only redirect to login if not already on an auth screen
+        if (!pathname.includes('/(auth)/')) {
+          router.replace("/(auth)/login");
+        }
       } else {
         // Check if store owner is pending approval
         if (currentUser.verificationStatus === 'pending') {
@@ -35,7 +43,7 @@ function RootLayoutNav() {
         }
       }
     }
-  }, [currentUser, isLoading]);
+  }, [currentUser, isLoading, loadUser]);
 
   if (isLoading) {
     return null; // Render nothing while loading
@@ -57,9 +65,5 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  return (
-    <AuthProvider>
-      <RootLayoutNav />
-    </AuthProvider>
-  );
+  return <RootLayoutNav />;
 }

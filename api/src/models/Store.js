@@ -26,6 +26,7 @@ const storeSchema = new mongoose.Schema({
     from: { type: String, default: '08:00' },
     to: { type: String, default: '23:00' }
   },
+  documents: [{ type: String }], // Array of document URLs
   isActive: { type: Boolean, default: false }, // Default to false until approved
   verificationStatus: { type: String, default: 'pending', enum: ['pending', 'approved', 'rejected'] },
   rejectionReason: { type: String, default: null },

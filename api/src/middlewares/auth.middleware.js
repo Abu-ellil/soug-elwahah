@@ -59,15 +59,15 @@ const isStoreOwner = async (req, res, next) => {
         .json({ success: false, message: "غير مصرح لك بالوصول" });
     }
 
-    const owner = await StoreOwner.findById(req.userId).populate("storeId");
-    if (!owner || !owner.isActive) {
+    const owner = await StoreOwner.findById(req.userId).populate("stores");
+    if (!owner) {
       return res
         .status(403)
-        .json({ success: false, message: "الحساب غير نشط" });
+        .json({ success: false, message: "الحساب غير موجود" });
     }
 
     req.owner = owner;
-    req.storeId = owner.storeId;
+    req.userPhone = owner.phone; // Add phone for store creation
     next();
   });
 };
@@ -81,37 +81,27 @@ const isStoreOwnerWithApprovedStore = async (req, res, next) => {
         .json({ success: false, message: "غير مصرح لك بالوصول" });
     }
 
-    const owner = await StoreOwner.findById(req.userId).populate("storeId");
-    if (!owner || !owner.isActive) {
+    const owner = await StoreOwner.findById(req.userId).populate("stores");
+    if (!owner) {
       return res
         .status(403)
-        .json({ success: false, message: "الحساب غير نشط" });
+        .json({ success: false, message: "الحساب غير موجود" });
     }
 
-    // Check that the store owner has been approved before allowing access to store operations
-    if (owner.verificationStatus !== "approved") {
+    // Check that the store owner has at least one approved store
+    const approvedStores = owner.stores.filter(store => store.verificationStatus === "approved");
+    if (approvedStores.length === 0) {
       return res
         .status(403)
         .json({
           success: false,
-          message: "الحساب في انتظار الموافقة",
-          verificationStatus: owner.verificationStatus
-        });
-    }
-
-    // Also check if the associated store is approved
-    if (owner.storeId && owner.storeId.verificationStatus !== "approved") {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "المتجر في انتظار الموافقة",
-          verificationStatus: owner.storeId.verificationStatus
+          message: "لا توجد متاجر معتمدة",
+          verificationStatus: "no_approved_stores"
         });
     }
 
     req.owner = owner;
-    req.storeId = owner.storeId;
+    req.approvedStores = approvedStores;
     next();
   });
 };

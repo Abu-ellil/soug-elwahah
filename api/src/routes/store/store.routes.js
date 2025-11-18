@@ -1,11 +1,15 @@
 const express = require("express");
 const router = express.Router();
-const { isStoreOwnerWithApprovedStore } = require("../../middlewares/auth.middleware");
+const { isStoreOwner, isStoreOwnerWithApprovedStore } = require("../../middlewares/auth.middleware");
 const storeController = require("../../controllers/store/store.controller");
 const uploadMiddleware = require("../../middlewares/upload.middleware");
 
-// GET route is accessible to all store owners (even pending)
+// Store application - requires authenticated store owner
+router.post("/application", isStoreOwner, uploadMiddleware.single("image"), storeController.createStoreApplication);
+
+// GET routes accessible to all store owners (even pending)
 router.get("/", storeController.getMyStore);
+router.get("/all", storeController.getMyStores);
 
 // Other routes require an approved store
 router.put("/", isStoreOwnerWithApprovedStore, storeController.updateStore);

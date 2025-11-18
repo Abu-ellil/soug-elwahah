@@ -10,16 +10,15 @@ import {
 } from 'react-native';
 import React, { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuthStore } from '../../stores/authStore';
 import { useRouter } from 'expo-router';
-import Toast from 'react-native-toast-message';
+import apiService from '../../services/api';
 
 const LoginScreen = () => {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, isLoading } = useAuthStore();
 
   const handleLogin = async () => {
     if (!phone.trim() || !password.trim()) {
@@ -34,24 +33,33 @@ const LoginScreen = () => {
       return;
     }
 
-    setIsLoading(true);
-    try {
-      const result = await login(phone, password);
-      if (result.success) {
-        if (result.verificationStatus === 'pending') {
-          // Navigate to pending approval screen
+    const result = await login(phone, password);
+    if (result.success) {
+      // Check user's stores to determine navigation
+      const user = await apiService.getProfile();
+      if (user && user.data && user.data.user) {
+        const userData = user.data.user;
+        const stores = userData.stores || [];
+
+        // Check if user has approved stores
+        const approvedStores = stores.filter((store: any) => store.verificationStatus === 'approved');
+
+        if (approvedStores.length > 0) {
+          // Has approved stores - go to main app
+          router.replace('/');
+        } else if (stores.length > 0) {
+          // Has stores but none approved - go to pending approval
           router.replace('/pending-approval');
         } else {
-          // Navigate to the main dashboard
-          router.replace('/');
+          // No stores - go to store application
+          router.replace('/(tabs)/store-application');
         }
       } else {
-        Alert.alert('خطأ', result.error || 'رقم الهاتف أو كلمة المرور غير صحيحة');
+        // Fallback - go to store application
+        router.replace('/(tabs)/store-application');
       }
-    } catch (error) {
-      Alert.alert('خطأ', 'حدث خطأ أثناء تسجيل الدخول');
-    } finally {
-      setIsLoading(false);
+    } else {
+      Alert.alert('خطأ', result.error || 'رقم الهاتف أو كلمة المرور غير صحيحة');
     }
   };
 

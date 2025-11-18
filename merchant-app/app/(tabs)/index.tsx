@@ -6,12 +6,12 @@ import {
   TouchableOpacity,
 } from "react-native";
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuthStore } from "../../stores/authStore";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
 const HomeScreen = () => {
-  const { currentUser, isLoading } = useAuth();
+  const { currentUser, isLoading } = useAuthStore();
   const router = useRouter();
   const [stats, setStats] = useState({
     totalProducts: 0,
@@ -34,7 +34,6 @@ const HomeScreen = () => {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>مرحبًا، {currentUser?.name}</Text>
-        <Text style={styles.headerSubtitle}>{currentUser?.storeName}</Text>
       </View>
 
       {/* Stats Cards */}

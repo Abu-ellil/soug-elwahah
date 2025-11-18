@@ -7,38 +7,46 @@ import {
 } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuthStore } from '../../stores/authStore';
 import { useRouter } from 'expo-router';
 import apiService from '../../services/api';
 import Toast from 'react-native-toast-message';
 
 const PendingApprovalScreen = () => {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, logout } = useAuthStore();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [stores, setStores] = useState<any[]>([]);
 
   const checkApprovalStatus = async () => {
     try {
       setIsLoading(true);
-      // Get the latest user profile to check verification status
-      const profile = await apiService.getProfile();
-      
-      if (profile && profile.user) {
-        // If the store owner is approved, redirect to main dashboard
-        if (profile.user.verificationStatus === 'approved') {
+      // Get all stores for the user
+      const storesResponse = await apiService.request('/store/all');
+      if (storesResponse && storesResponse.data && storesResponse.data.stores) {
+        const userStores = storesResponse.data.stores;
+        setStores(userStores);
+
+        // Check if any store is approved
+        const approvedStores = userStores.filter((store: any) => store.verificationStatus === 'approved');
+        if (approvedStores.length > 0) {
           router.replace('/');
           Toast.show({
             type: 'success',
             text1: 'تم',
-            text2: 'تم قبول متجرك! يمكنك الآن إدارة منتجاتك.',
+            text2: 'تم قبول أحد متاجرك! يمكنك الآن إدارة منتجاتك.',
           });
-        } else if (profile.user.verificationStatus === 'rejected') {
-          // If rejected, show different message
+          return;
+        }
+
+        // Check if any store is rejected
+        const rejectedStores = userStores.filter((store: any) => store.verificationStatus === 'rejected');
+        if (rejectedStores.length > 0) {
           Toast.show({
             type: 'error',
             text1: 'تم الرفض',
-            text2: 'تم رفض متجرك، يرجى الاتصال بالدعم.',
+            text2: 'تم رفض أحد متاجرك، يرجى الاتصال بالدعم.',
           });
         }
       }
@@ -142,6 +150,15 @@ const PendingApprovalScreen = () => {
           className="items-center rounded-xl bg-blue-500 py-4">
           <Text className="text-lg font-bold text-white">
             {isLoading ? 'جاري التحقق...' : 'التحقق من الحالة'}
+          </Text>
+        </TouchableOpacity>
+
+        {/* Create New Store Button */}
+        <TouchableOpacity
+          onPress={() => router.push('/(tabs)/store-application')}
+          className="mt-4 items-center rounded-xl bg-green-500 py-4">
+          <Text className="text-lg font-bold text-white">
+            إنشاء متجر جديد
           </Text>
         </TouchableOpacity>
 
