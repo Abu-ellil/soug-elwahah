@@ -26,7 +26,11 @@ const LoginScreen = () => {
   const [isValidating, setIsValidating] = useState(false);
 
   const router = useRouter();
-  const { login, isLoading } = useAuthStore();
+  const { login, isLoading, loadUser } = useAuthStore();
+
+  useEffect(() => {
+    loadUser();
+  }, []);
 
   const validateInputs = () => {
     if (!phone.trim()) {

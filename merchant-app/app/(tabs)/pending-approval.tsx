@@ -23,7 +23,7 @@ const PendingApprovalScreen = () => {
     try {
       setIsLoading(true);
       // Get all stores for the user
-      const storesResponse = await apiService.request('/store/all');
+      const storesResponse = await apiService.getMyStores();
       if (storesResponse && storesResponse.data && storesResponse.data.stores) {
         const userStores = storesResponse.data.stores;
         setStores(userStores);
@@ -99,7 +99,7 @@ const PendingApprovalScreen = () => {
             </View>
             <Text className="text-lg font-semibold text-gray-800">حالة الحساب</Text>
           </View>
-          
+
           <View className="mb-4">
             <Text className="text-base text-gray-600">
               اسم التاجر: <Text className="font-medium">{currentUser?.name || 'غير محدد'}</Text>
@@ -111,11 +111,65 @@ const PendingApprovalScreen = () => {
               حالة الحساب: <Text className="font-medium text-yellow-600">في انتظار الموافقة</Text>
             </Text>
           </View>
-          
+
           <Text className="text-sm text-gray-500">
             سيتم مراجعة متجرك من قبل فريق الإدارة، وستتلقى إشعارًا فور قبول متجرك.
           </Text>
         </View>
+
+        {/* Store Applications */}
+        {stores.length > 0 && (
+          <View className="mb-6 rounded-xl bg-white p-6 shadow-sm">
+            <View className="mb-4 flex-row items-center">
+              <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-green-100">
+                <Ionicons name="storefront-outline" size={24} color="#10B981" />
+              </View>
+              <Text className="text-lg font-semibold text-gray-800">طلبات المتاجر</Text>
+            </View>
+
+            {stores.map((store: any) => (
+              <View key={store._id} className="mb-4 p-4 bg-gray-50 rounded-lg">
+                <View className="mb-2 flex-row justify-between items-center">
+                  <Text className="text-base font-semibold text-gray-800">{store.name}</Text>
+                  <View className={`px-3 py-1 rounded-full ${
+                    store.verificationStatus === 'pending' ? 'bg-yellow-100' :
+                    store.verificationStatus === 'approved' ? 'bg-green-100' :
+                    store.verificationStatus === 'rejected' ? 'bg-red-100' : 'bg-gray-100'
+                  }`}>
+                    <Text className={`text-sm font-medium ${
+                      store.verificationStatus === 'pending' ? 'text-yellow-800' :
+                      store.verificationStatus === 'approved' ? 'text-green-800' :
+                      store.verificationStatus === 'rejected' ? 'text-red-800' : 'text-gray-800'
+                    }`}>
+                      {store.verificationStatus === 'pending' ? 'قيد المراجعة' :
+                       store.verificationStatus === 'approved' ? 'مُعتمد' :
+                       store.verificationStatus === 'rejected' ? 'مرفوض' : store.verificationStatus}
+                    </Text>
+                  </View>
+                </View>
+
+                {store.description && (
+                  <Text className="text-sm text-gray-600 mb-2">{store.description}</Text>
+                )}
+
+                <View className="flex-row justify-between text-sm text-gray-500">
+                  <Text>تاريخ التقديم: {new Date(store.createdAt).toLocaleDateString('ar-EG')}</Text>
+                  {store.verificationStatus === 'pending' && (
+                    <Text>قيد المراجعة من قبل الإدارة</Text>
+                  )}
+                </View>
+
+                {store.verificationStatus === 'rejected' && store.rejectionReason && (
+                  <View className="mt-2 p-2 bg-red-50 rounded">
+                    <Text className="text-sm text-red-800">
+                      سبب الرفض: {store.rejectionReason}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            ))}
+          </View>
+        )}
 
         {/* What happens next */}
         <View className="mb-6 rounded-xl bg-white p-6 shadow-sm">

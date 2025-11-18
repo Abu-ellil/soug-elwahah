@@ -119,7 +119,7 @@ class ApiService {
    }
 
   // Authentication methods
-  login(credentials: { phone: string; password: string }) {
+  login(credentials: { phone: string; password: string; role?: string }) {
     return this.request("/store/auth/login", {
       method: "POST",
       body: JSON.stringify(credentials),
@@ -251,10 +251,15 @@ class ApiService {
 
   // Update store coordinates
   updateStoreCoordinates(coordinates: { lat: number; lng: number }) {
-    return this.request("/store/coordinates", {
+    return this.request("/store/my-store/coordinates", {
       method: "PUT",
       body: JSON.stringify({ coordinates }),
     });
+  }
+
+  // Get all stores for the current owner
+  getMyStores() {
+    return this.request("/store/my-store/all");
   }
 
   // Create store application
@@ -287,7 +292,7 @@ class ApiService {
       } as any);
     }
 
-    return this.request("/store/application", {
+    return this.request("/store/my-store/application", {
       method: "POST",
       body: formData,
       headers: {

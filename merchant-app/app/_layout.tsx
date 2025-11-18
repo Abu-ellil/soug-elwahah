@@ -3,14 +3,13 @@ import {
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { Stack } from "expo-router";
+import { Stack, usePathname, router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 import "../global.css";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useEffect } from "react";
-import { router, usePathname } from "expo-router";
 import { AuthProvider, useAuth } from "../contexts/AuthContext"; // Import AuthProvider and useAuth
 
 function RootLayoutNav() {
@@ -30,23 +29,24 @@ function RootLayoutNav() {
         const hasStores = currentUser.stores && currentUser.stores.length > 0;
 
         if (!hasStores) {
-          // User has no stores - redirect to onboarding/welcome screen
-          if (!pathname.includes('/(tabs)/welcome')) {
-            router.replace("/(tabs)/welcome");
+          // User has no stores - redirect to create store page
+          if (!pathname.includes('/(tabs)/store-application')) {
+            router.replace("/(tabs)/store-application");
           }
           return;
         }
 
-        // User has stores - check verification status
-        if (currentUser.verificationStatus === 'pending') {
-          router.replace("/(tabs)/pending-approval");
-        } else if (currentUser.verificationStatus === 'rejected') {
-          // If rejected, user might need to contact admin or update information
-          // For now, we can still show the pending approval screen with rejection message
-          router.replace("/(tabs)/pending-approval");
+        // User has stores - check if any store is approved
+        const hasApprovedStore = currentUser.stores?.some(store => store.verificationStatus === 'approved') || false;
+
+        if (hasApprovedStore) {
+          // User has approved store - allow access to main app (no redirect)
+          return;
         } else {
-          // If approved, ensure user is on main tabs
-          // This is optional and depends on the specific requirements
+          // User has stores but none approved - show pending approval screen
+          if (!pathname.includes('/(tabs)/pending-approval')) {
+            router.replace("/(tabs)/pending-approval");
+          }
         }
       }
     }
@@ -78,3 +78,4 @@ export default function RootLayout() {
     </AuthProvider>
   );
 }
+

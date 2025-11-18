@@ -5,7 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '../../stores/authStore';
 
 export default function TabLayout() {
-  const { logout } = useAuthStore();
+  const { logout, currentUser } = useAuthStore();
+  const hasStores = currentUser?.stores && currentUser.stores.length > 0;
 
   const handleLogout = async () => {
     await logout();
@@ -22,9 +23,9 @@ export default function TabLayout() {
         headerTitleStyle: {
           fontWeight: 'bold',
         },
-        tabBarStyle: {
+        tabBarStyle: hasStores ? {
           backgroundColor: 'white',
-        },
+        } : { display: 'none' },
       }}>
       <Tabs.Screen
         name="index"
