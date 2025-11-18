@@ -1,9 +1,11 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator, Image } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import apiService from '../../services/api';
+import { uploadImageToCloudinary } from '../../utils/cloudinary_upload';
+import { CLOUDINARY_CLOUD_NAME } from '../../constants/api';
 import Toast from 'react-native-toast-message';
 
 const ProductFormScreen = () => {
@@ -83,20 +85,14 @@ const ProductFormScreen = () => {
 
       let imageUrl = image;
 
-      // If image is selected, upload it first
+      // If image is selected, upload it to Cloudinary first
       if (image) {
         setIsUploadingImage(true);
         try {
-          const uploadResponse = await apiService.uploadImage(image);
-          if (uploadResponse.success) {
-            imageUrl = uploadResponse.data.imageUrl;
-          } else {
-            Alert.alert('خطأ', 'فشل في رفع الصورة');
-            return;
-          }
+          imageUrl = await uploadImageToCloudinary(image, CLOUDINARY_CLOUD_NAME);
         } catch (uploadError: any) {
-          console.error('Error uploading image:', uploadError);
-          Alert.alert('خطأ', 'فشل في رفع الصورة');
+          console.error('Error uploading image to Cloudinary:', uploadError);
+          Alert.alert('خطأ', 'فشل في رفع الصورة إلى Cloudinary');
           return;
         } finally {
           setIsUploadingImage(false);

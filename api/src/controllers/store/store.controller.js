@@ -43,7 +43,7 @@ const getMyStore = async (req, res) => {
 
 const updateStore = async (req, res) => {
   try {
-    const { name, description, phone, address, workingHours } = req.body;
+    const { name, description, phone, address, workingHours, image } = req.body;
 
     const store = await Store.findOne({ ownerId: req.userId });
 
@@ -62,6 +62,7 @@ const updateStore = async (req, res) => {
         ...(phone && { phone }),
         ...(address && { address }),
         ...(workingHours && { workingHours }),
+        ...(image && { image }),
         updatedAt: Date.now(),
       },
       { new: true }

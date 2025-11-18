@@ -6,12 +6,15 @@ import {
   TouchableOpacity,
   Alert,
   TextInput,
+  Image,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import apiService from "../../services/api";
+import { uploadImageToCloudinary } from "../../utils/cloudinary_upload";
+import { CLOUDINARY_CLOUD_NAME } from "../../constants/api";
 import Toast from "react-native-toast-message";
 
 const ProfileScreen = () => {
@@ -87,7 +90,22 @@ const ProfileScreen = () => {
 
       if (storeName !== store.name) updateData.name = storeName;
       if (storeDescription !== store.description) updateData.description = storeDescription;
-      if (storeImage !== store.image) updateData.image = storeImage;
+
+      // Handle image upload to Cloudinary if it's a local URI
+      if (storeImage !== store.image) {
+        if (storeImage && (storeImage.startsWith('file://') || storeImage.startsWith('content://'))) {
+          try {
+            const cloudinaryUrl = await uploadImageToCloudinary(storeImage, CLOUDINARY_CLOUD_NAME);
+            updateData.image = cloudinaryUrl;
+          } catch (uploadError: any) {
+            console.error('Error uploading image to Cloudinary:', uploadError);
+            Alert.alert("خطأ", "فشل في رفع الصورة إلى Cloudinary");
+            return;
+          }
+        } else {
+          updateData.image = storeImage;
+        }
+      }
 
       if (Object.keys(updateData).length === 0) {
         Alert.alert("تنبيه", "لا توجد تغييرات لحفظها");
@@ -145,9 +163,7 @@ const ProfileScreen = () => {
         {/* Store Image */}
         <TouchableOpacity style={styles.imageContainer} onPress={pickImage}>
           {storeImage ? (
-            <View style={styles.imageWrapper}>
-              <Ionicons name="image" size={40} color="#9CA3AF" />
-            </View>
+            <Image source={{ uri: storeImage }} style={styles.storeImage} />
           ) : (
             <View style={styles.imagePlaceholder}>
               <Ionicons name="camera-outline" size={40} color="#9CA3AF" />
@@ -309,6 +325,11 @@ const styles = StyleSheet.create({
     borderColor: "#D1D5DB",
     alignItems: "center",
     justifyContent: "center",
+  },
+  storeImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 12,
   },
   imagePlaceholderText: {
     fontSize: 12,
