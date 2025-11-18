@@ -16,6 +16,8 @@ const allowedOrigins = [
   "http://localhost:19000", // Alternative Expo port
   "http://localhost:3002", // Alternative port for admin app
   "http://localhost:19001", // Alternative Expo port
+  "http://192.168.1.4:8082", // Expo development server IP
+  "exp://192.168.1.4:8082", // Expo Go app
   process.env.ADMIN_URL || "", // Production admin URL from environment
   process.env.MERCHANT_URL || "", // Production merchant URL from environment
   "https://soug-elwahah.vercel.app", // Production deployment
