@@ -20,6 +20,7 @@ cloudinary.config({
 const getMyStore = async (req, res) => {
   try {
     // For backward compatibility, return the first approved store
+    console.log(`Looking for approved store for owner: ${req.userId}`);
     const store = await Store.findOne({
       ownerId: req.userId,
       verificationStatus: "approved",

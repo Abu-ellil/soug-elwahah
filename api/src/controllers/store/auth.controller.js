@@ -7,12 +7,22 @@ class StoreAuthController extends BaseAuthController {
   }
 
   formatUserResponse(user) {
+    // Format stores data properly
+    const formattedStores = user.stores && Array.isArray(user.stores)
+      ? user.stores.map(store => ({
+          _id: store._id,
+          name: store.name,
+          verificationStatus: store.verificationStatus || 'pending',
+          isActive: store.isActive || false,
+        }))
+      : [];
+
     return {
       _id: user._id,
       name: user.name,
       phone: user.phone,
       isActive: user.isActive,
-      stores: user.stores,
+      stores: formattedStores,
       verificationStatus: user.verificationStatus,
       createdAt: user.createdAt,
     };
@@ -103,6 +113,17 @@ class StoreAuthController extends BaseAuthController {
     try {
       const userId = req.userId;
       const user = await this.userModel.findById(userId).populate("stores");
+      
+      console.log(`Getting profile for user: ${userId}`);
+      console.log(`User found: ${user ? 'YES' : 'NO'}`);
+      if (user) {
+        console.log(`User has ${user.stores ? user.stores.length : 0} stores`);
+        if (user.stores) {
+          user.stores.forEach((store, index) => {
+            console.log(`  Store ${index + 1}: ${store.name || 'Unknown'} - Status: ${store.verificationStatus} - Active: ${store.isActive}`);
+          });
+        }
+      }
 
       if (!user) {
         return res.status(404).json({

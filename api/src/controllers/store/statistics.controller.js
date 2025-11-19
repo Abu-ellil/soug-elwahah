@@ -6,13 +6,21 @@ const getStoreStatistics = async (req, res) => {
   try {
     const { period = "today" } = req.query;
 
-    // Verify store exists and belongs to owner
-    const store = await Store.findOne({ ownerId: req.userId });
+    // Verify approved store exists and belongs to owner
+    const store = await Store.findOne({
+      ownerId: req.userId,
+      verificationStatus: "approved"
+    });
+    
     if (!store) {
       return res
         .status(404)
-        .json({ success: false, message: "المحل غير موجود" });
+        .json({ success: false, message: "لا توجد متاجر معتمدة" });
     }
+
+    console.log(`Found approved store for statistics: ${store.name} (${store._id})`);
+    console.log(`Store verification status: ${store.verificationStatus}`);
+    console.log(`Store isActive: ${store.isActive}`);
 
     // Calculate date range based on period
     const now = new Date();

@@ -2,9 +2,9 @@ import { View, Text, FlatList, TouchableOpacity, Alert, RefreshControl } from 'r
 import React, { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from '../../stores/authStore';
+import { useAuthStore } from '../../../stores/authStore';
 import { LinearGradient } from 'expo-linear-gradient';
-import apiService from '../../services/api';
+import apiService from '../../../services/api';
 import Toast from 'react-native-toast-message';
 
 // Define product type
@@ -161,7 +161,7 @@ const ProductsScreen = () => {
       <View className="flex-row justify-between">
         <TouchableOpacity
           className="w-10 h-10 rounded-xl bg-yellow-500 items-center justify-center"
-          onPress={() => router.push(`/product-form?id=${item._id}`)}>
+          onPress={() => router.push(`/products/product-form?id=${item._id}`)}>
           <Ionicons name="create-outline" size={20} color="white" />
         </TouchableOpacity>
         <TouchableOpacity
@@ -193,7 +193,7 @@ const ProductsScreen = () => {
         <Text className="text-2xl font-bold text-white">المنتجات</Text>
         <TouchableOpacity
           className="w-12 h-12 rounded-2xl bg-white/20 items-center justify-center"
-          onPress={() => router.push('/product-form')}
+          onPress={() => router.push('/products/product-form')}
         >
           <Ionicons name="add" size={24} color="white" />
         </TouchableOpacity>
@@ -221,7 +221,7 @@ const ProductsScreen = () => {
               <Text className="text-base text-gray-600 mt-2 text-center">يجب أن يكون متجرك معتمدًا من الإدارة أولاً</Text>
               <TouchableOpacity
                 className="bg-blue-600 px-8 py-3 rounded-xl mt-6"
-                onPress={() => router.push('/welcome')}
+                onPress={() => router.push('/(tabs)/setup/welcome')}
               >
                 <Text className="text-white font-bold text-lg">إنشاء متجر</Text>
               </TouchableOpacity>

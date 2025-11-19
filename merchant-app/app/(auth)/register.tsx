@@ -55,7 +55,7 @@ const RegisterScreen = () => {
 
     const result = await register({ name: name.trim(), phone: phone.trim(), password });
     if (result.success) {
-      router.replace("/(tabs)/store-application");
+      router.replace("/(tabs)/setup/store-application");
     } else {
       Alert.alert("خطأ", result.error || "حدث خطأ أثناء التسجيل");
     }

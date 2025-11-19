@@ -23,9 +23,9 @@ export default function TabLayout() {
         headerTitleStyle: {
           fontWeight: 'bold',
         },
-        tabBarStyle: hasStores ? {
+        tabBarStyle: {
           backgroundColor: 'white',
-        } : { display: 'none' },
+        },
       }}>
       <Tabs.Screen
         name="index"
@@ -41,6 +41,7 @@ export default function TabLayout() {
           ),
         }}
       />
+      
       <Tabs.Screen
         name="products"
         options={{
@@ -60,7 +61,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="store-application"
+        name="setup/store-application"
         options={{
           title: 'طلب إنشاء متجر',
           tabBarButton: () => null, // This hides the tab from the bottom tab bar

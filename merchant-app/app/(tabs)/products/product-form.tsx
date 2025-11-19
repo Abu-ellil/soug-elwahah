@@ -1,9 +1,9 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, ActivityIndicator, Image, Modal, FlatList } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import apiService from '../../services/api';
+import apiService from '../../../services/api';
 import Toast from 'react-native-toast-message';
 
 const ProductFormScreen = () => {
@@ -14,18 +14,17 @@ const ProductFormScreen = () => {
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('');
   const [stock, setStock] = useState('');
-  const [categoryId, setCategoryId] = useState('grocery');
+  const [categoryId, setCategoryId] = useState<string | null>(null);
   const [image, setImage] = useState<string | null>(null);
-  const [categories, setCategories] = useState([]);
+  const [categories, setCategories] = useState<{ _id: string, name: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingProduct, setIsLoadingProduct] = useState(isEditing);
   const [isLoadingCategories, setIsLoadingCategories] = useState(true);
+  const [isCategoryPickerVisible, setCategoryPickerVisible] = useState(false);
 
   const fetchProduct = async () => {
     if (!isEditing || !id) return;
 
     try {
-      setIsLoadingProduct(true);
       // Note: API doesn't have get single product endpoint, so we'll skip for now
       // In a real implementation, you'd fetch the product data here
       console.log('Fetching product:', id);
@@ -36,8 +35,6 @@ const ProductFormScreen = () => {
         text1: 'خطأ',
         text2: 'فشل في تحميل بيانات المنتج',
       });
-    } finally {
-      setIsLoadingProduct(false);
     }
   };
 
@@ -203,6 +200,23 @@ const ProductFormScreen = () => {
           </View>
         </View>
 
+        {/* Category */}
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>الفئة</Text>
+          {isLoadingCategories ? (
+            <ActivityIndicator />
+          ) : (
+            <TouchableOpacity
+              style={styles.inputWrapper}
+              onPress={() => setCategoryPickerVisible(true)}
+            >
+              <Text style={styles.input}>
+                {categories.find(c => c._id === categoryId)?.name || 'اختر الفئة'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         {/* Price and Stock */}
         <View style={styles.rowContainer}>
           <View style={[styles.inputContainer, { flex: 1, marginRight: 8 }]}>
@@ -244,6 +258,34 @@ const ProductFormScreen = () => {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Category Picker Modal */}
+      <Modal
+        visible={isCategoryPickerVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setCategoryPickerVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <FlatList
+              data={categories}
+              keyExtractor={(item) => item._id}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.categoryItem}
+                  onPress={() => {
+                    setCategoryId(item._id);
+                    setCategoryPickerVisible(false);
+                  }}
+                >
+                  <Text>{item.name}</Text>
+                </TouchableOpacity>
+              )}
+            />
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 };
@@ -321,12 +363,13 @@ const styles = StyleSheet.create({
     borderColor: '#D1D5DB',
     borderRadius: 8,
     backgroundColor: 'white',
+    justifyContent: 'center',
+    minHeight: 50,
   },
   textAreaWrapper: {
     alignItems: 'flex-start',
   },
   input: {
-    flex: 1,
     paddingHorizontal: 12,
     paddingVertical: 12,
     textAlign: 'right',
@@ -359,6 +402,23 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 12,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 16,
+    maxHeight: '50%',
+  },
+  categoryItem: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
 });
 

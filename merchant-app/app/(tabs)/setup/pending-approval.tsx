@@ -7,9 +7,9 @@ import {
 } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuthStore } from '../../stores/authStore';
+import { useAuthStore } from '../../../stores/authStore';
 import { useRouter } from 'expo-router';
-import apiService from '../../services/api';
+import apiService from '../../../services/api';
 import Toast from 'react-native-toast-message';
 
 const PendingApprovalScreen = () => {
@@ -209,7 +209,7 @@ const PendingApprovalScreen = () => {
 
         {/* Create New Store Button */}
         <TouchableOpacity
-          onPress={() => router.push('/(tabs)/store-application')}
+          onPress={() => router.push('/(tabs)/setup/store-application')}
           className="mt-4 items-center rounded-xl bg-green-500 py-4">
           <Text className="text-lg font-bold text-white">
             إنشاء متجر جديد

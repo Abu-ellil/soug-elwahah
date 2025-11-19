@@ -4,7 +4,8 @@ import { getToken, removeToken } from '../utils/storage';
 
 // Create a base API request function with retry mechanism
 const apiRequest = async (endpoint, options = {}) => {
-  // Check network status before making a request
+  // For Expo apps, we'll rely on the browser's built-in connectivity detection
+  // and catch network errors gracefully
   if (typeof navigator !== 'undefined' && !navigator.onLine) {
     throw new Error('Network request failed: Device is offline.');
   }
@@ -16,7 +17,7 @@ const apiRequest = async (endpoint, options = {}) => {
     timeout = 30000,
     retries = 3,
     ...restOptions
-  } = options; // Increased timeout from 1000 to 30000, added retries
+  } = options;
 
   const config = {
     method,
@@ -62,7 +63,7 @@ const apiRequest = async (endpoint, options = {}) => {
           ) {
             // Remove the invalid token from storage
             await removeToken();
-            // Re-throw the error so the calling function can handle it
+            // Re-throw the error so the calling function can handle the error
             throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
           }
         }
@@ -78,12 +79,14 @@ const apiRequest = async (endpoint, options = {}) => {
 
       if (error.name === 'AbortError') {
         lastError = new Error(`Request timed out after ${timeout / 1000} seconds.`);
-      } else if (error.name === 'TypeError' && error.message === 'Network request failed') {
+      } else if (
+        error.name === 'TypeError' &&
+        (error.message === 'Network request failed' || error.message.includes('fetch'))
+      ) {
         lastError = new Error('Network request failed. Please check your internet connection.');
       }
 
       // If this was the last attempt, or it's an error we don't want to retry, throw the error
-      // For now, we retry all network-related errors.
       if (attempt === retries) {
         break;
       }
@@ -129,6 +132,14 @@ export const storesAPI = {
     return apiRequest(`/customer/stores/nearby${queryParams ? `?${queryParams}` : ''}`, {
       method: 'GET',
       timeout: 60000, // Specific timeout for location-based requests (increased to 60 seconds)
+      retries: 3,
+    });
+  },
+
+  getAllStores: () => {
+    return apiRequest('/customer/stores', {
+      method: 'GET',
+      timeout: 60000,
       retries: 3,
     });
   },

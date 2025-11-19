@@ -33,7 +33,7 @@ const CheckoutScreen = ({ navigation }) => {
   const { isAuthenticated, currentUser } = useAuth();
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  const { userLocation, deliveryRadius, getCurrentLocation } = useLocation();
+  const { userLocation, getCurrentLocation } = useLocation();
 
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
@@ -334,13 +334,6 @@ const CheckoutScreen = ({ navigation }) => {
             <Text style={styles.summaryLabel}>رسوم التوصيل</Text>
             <Text style={styles.summaryValue}>
               {userLocation ? formatPrice(deliveryFee) : 'غير محدد'}
-            </Text>
-          </View>
-
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>نطاق التوصيل</Text>
-            <Text style={styles.summaryValue}>
-              {userLocation ? `${deliveryRadius} كم` : 'غير محدد'}
             </Text>
           </View>
 

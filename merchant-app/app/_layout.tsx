@@ -25,7 +25,7 @@ function RootLayoutNav() {
     if (!isLoading) {
       if (!currentUser) {
         // Only redirect to login if not already on an auth screen
-        if (!pathname.includes('/(auth)/')) {
+        if (!pathname.includes("/(auth)/")) {
           router.replace("/(auth)/login");
         }
       } else {
@@ -34,22 +34,25 @@ function RootLayoutNav() {
 
         if (!hasStores) {
           // User has no stores - redirect to create store page
-          if (!pathname.includes('/(tabs)/store-application')) {
-            router.replace("/(tabs)/store-application");
+          if (!pathname.includes("/(tabs)/setup/store-application")) {
+            router.replace("/(tabs)/setup/store-application");
           }
           return;
         }
 
         // User has stores - check if any store is approved
-        const hasApprovedStore = currentUser.stores?.some(store => store.verificationStatus === 'approved') || false;
+        const hasApprovedStore =
+          currentUser.stores?.some(
+            (store) => store.verificationStatus === "approved"
+          ) || false;
 
         if (hasApprovedStore) {
           // User has approved store - allow access to main app (no redirect)
           return;
         } else {
           // User has stores but none approved - show pending approval screen
-          if (!pathname.includes('/(tabs)/pending-approval')) {
-            router.replace("/(tabs)/pending-approval");
+          if (!pathname.includes("/(tabs)/setup/pending-approval")) {
+            router.replace("/(tabs)/setup/pending-approval");
           }
         }
       }
@@ -65,10 +68,6 @@ function RootLayoutNav() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="(auth)" />
-        <Stack.Screen
-          name="modal"
-          options={{ presentation: "modal", title: "Modal" }}
-        />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
@@ -78,4 +77,3 @@ function RootLayoutNav() {
 export default function RootLayout() {
   return <RootLayoutNav />;
 }
-

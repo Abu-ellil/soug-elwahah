@@ -1,17 +1,1 @@
-{
-  "mcpServers": {
-    "context7": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@upstash/context7-mcp"
-      ],
-      "env": {
-        "DEFAULT_MINIMUM_TOKENS": ""
-      }
-    },
-    "vercel": {
-      "url": "https://mcp.vercel.com"
-    }
-  }
-}
+{"mcpServers":{"context7":{"command":"npx","args":["-y","@upstash/context7-mcp"],"env":{"DEFAULT_MINIMUM_TOKENS":""}}}}

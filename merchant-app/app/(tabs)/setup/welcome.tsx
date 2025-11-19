@@ -8,7 +8,7 @@ import {
 import React from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useAuthStore } from "../../stores/authStore";
+import { useAuthStore } from "../../../stores/authStore";
 
 const { width } = Dimensions.get("window");
 
@@ -17,7 +17,7 @@ const WelcomeScreen = () => {
   const router = useRouter();
 
   const handleCreateStore = () => {
-    router.push("/(tabs)/store-application");
+    router.push("/(tabs)/setup/store-application");
   };
 
   const handleContactSupport = () => {

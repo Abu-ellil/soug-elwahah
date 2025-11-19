@@ -1,18 +1,5 @@
-import { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
-import { PlatformPressable } from '@react-navigation/elements';
-import * as Haptics from 'expo-haptics';
-
-export function HapticTab(props: BottomTabBarButtonProps) {
-  return (
-    <PlatformPressable
-      {...props}
-      onPressIn={(ev) => {
-        if (process.env.EXPO_OS === 'ios') {
-          // Add a soft haptic feedback when pressing down on the tabs.
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        }
-        props.onPressIn?.(ev);
-      }}
-    />
-  );
+// This component is not used in the Expo Router setup
+// Keeping it for reference or future use with React Navigation
+export function HapticTab() {
+  return null;
 }

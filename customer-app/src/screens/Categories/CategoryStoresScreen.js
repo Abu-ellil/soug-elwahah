@@ -6,15 +6,13 @@ import { useLocation } from '../../context/LocationProvider';
 import StoreCard from '../../components/StoreCard';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
-import RangeSelector from '../../components/RangeSelector';
 import COLORS from '../../constants/colors';
 import { calculateDistance } from '../../utils/distance';
 import { API } from '../../services/api';
 
 const CategoryStoresScreen = ({ route }) => {
   const navigation = useNavigation();
-  const { userLocation, deliveryRadius, availableStores, gpsEnabled, updateDeliveryRadius } =
-    useLocation();
+  const { userLocation, availableStores, gpsEnabled } = useLocation();
   const { categoryId } = route.params;
 
   const [refreshing, setRefreshing] = useState(false);
@@ -88,20 +86,6 @@ const CategoryStoresScreen = ({ route }) => {
           </View>
         </View>
       )}
-
-      {gpsEnabled && (
-        <View style={styles.radiusContainer}>
-          <RangeSelector
-            value={deliveryRadius}
-            onValueChange={updateDeliveryRadius}
-            min={20}
-            max={200}
-            step={5}
-            unit="كم"
-            title="نطاق التوصيل"
-          />
-        </View>
-      )}
     </View>
   );
 
@@ -115,7 +99,7 @@ const CategoryStoresScreen = ({ route }) => {
       title="لا توجد متاجر"
       message={
         gpsEnabled
-          ? `لا توجد متاجر متاحة في فئة ${category?.name || ''} ضمن نطاق ${deliveryRadius} كم`
+          ? `لا توجد متاجر متاحة في فئة ${category?.name || ''}`
           : `لا توجد متاجر متاحة في فئة ${category?.name || ''}. GPS غير متاح`
       }
     />
@@ -218,11 +202,6 @@ const styles = StyleSheet.create({
   },
   emptyListContainer: {
     flex: 1,
-  },
-  radiusContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: COLORS.card,
   },
   errorText: {
     fontSize: 18,

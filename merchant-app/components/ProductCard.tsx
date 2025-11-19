@@ -35,7 +35,7 @@ export const ProductCard = memo<ProductCardProps>(({ product, onToggleAvailabili
         <ActionButton
           icon="create-outline"
           color="#F59E0B"
-          onPress={() => router.push(`/product-form?id=${product._id}`)}
+          onPress={() => router.push(`/products/product-form?id=${product._id}`)}
         />
         <ActionButton
           icon={product.isAvailable ? "eye-off-outline" : "eye-outline"}

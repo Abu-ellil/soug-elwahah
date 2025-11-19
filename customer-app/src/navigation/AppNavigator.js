@@ -1,5 +1,4 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 import AuthNavigator from './AuthNavigator';
@@ -16,12 +15,10 @@ const AppNavigator = () => {
   }
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false, statusBarStyle: 'dark' }}>
-        <Stack.Screen name="Main" component={MainTabNavigator} />
-        <Stack.Screen name="Auth" component={AuthNavigator} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <Stack.Navigator screenOptions={{ headerShown: false, statusBarStyle: 'dark' }}>
+      <Stack.Screen name="Main" component={MainTabNavigator} />
+      <Stack.Screen name="Auth" component={AuthNavigator} />
+    </Stack.Navigator>
   );
 };
 

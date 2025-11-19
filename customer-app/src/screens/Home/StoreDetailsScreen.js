@@ -27,7 +27,7 @@ import { useCart } from '../../context/CartContext';
 const StoreDetailsScreen = ({ navigation, route }) => {
   const { storeId } = route.params;
   const { getCartItemsCount, addToCart } = useCart();
-  const { userLocation, deliveryRadius, gpsEnabled } = useLocation();
+  const { userLocation, gpsEnabled } = useLocation();
 
   const [store, setStore] = useState(null);
   const [storeProducts, setStoreProducts] = useState([]);
@@ -306,11 +306,7 @@ const StoreDetailsScreen = ({ navigation, route }) => {
           {storeDistance !== null && (
             <Text style={styles.storeInfoText}>
               المسافة: {storeDistance.toFixed(1)} كم
-              {storeDistance <= deliveryRadius ? ' (داخل نطاق التوصيل)' : ' (خارج نطاق التوصيل)'}
             </Text>
-          )}
-          {gpsEnabled && (
-            <Text style={styles.storeInfoText}>نطاق التوصيل الحالي: {deliveryRadius} كم</Text>
           )}
         </TouchableOpacity>
       </ScrollView>

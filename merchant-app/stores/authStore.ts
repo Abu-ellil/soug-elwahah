@@ -48,8 +48,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (token) {
         try {
           const profile = await apiService.getProfile();
-          if (profile) {
-            set({ currentUser: profile, isAuthenticated: true });
+          console.log('LoadUser profile response:', profile);
+          if (profile && profile.success && profile.data && profile.data.user) {
+            console.log('Setting user from profile data:', profile.data.user);
+            // Debug: Check stores data
+            if (profile.data.user.stores) {
+              console.log('User stores:', profile.data.user.stores);
+              profile.data.user.stores.forEach((store: any, index: number) => {
+                console.log(`Store ${index + 1}: ${store.name} - Status: ${store.verificationStatus} - Active: ${store.isActive}`);
+              });
+            }
+            set({ currentUser: profile.data.user, isAuthenticated: true });
+            await AsyncStorage.setItem('user', JSON.stringify(profile.data.user));
+          } else if (profile && profile.data) {
+            console.log('Setting user from direct data:', profile.data);
+            // Handle case where response.data is the user directly
+            set({ currentUser: profile.data, isAuthenticated: true });
+            await AsyncStorage.setItem('user', JSON.stringify(profile.data));
           }
         } catch (error) {
           await apiService.clearToken();
@@ -66,31 +81,30 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   login: async (phone: string, password: string) => {
     try {
       set({ isLoading: true });
+      
+      console.log('Attempting login for:', phone);
+      
       // Use the API service for login
       const response = await apiService.login({ phone, password, role: 'store' });
+      
+      console.log('Login response:', response);
 
-      if (response && response.data && response.data.token) {
+      // Check for successful login response
+      if (response && response.success && response.data && response.data.token && response.data.user) {
         // Store the token in the API service
         await apiService.setToken(response.data.token);
 
-        // Get user profile after successful login
-        const profile = await apiService.getProfile();
-        if (profile && profile.data && profile.data.user) {
-          set({ currentUser: profile.data.user, isAuthenticated: true });
-          await AsyncStorage.setItem('user', JSON.stringify(profile.data.user));
-        }
+        // Set user data directly from login response
+        const userData = response.data.user;
+        console.log('Setting user from login:', userData);
+        set({ currentUser: userData, isAuthenticated: true });
+        await AsyncStorage.setItem('user', JSON.stringify(userData));
+        
         return { success: true };
-      } else if (response && response.verificationStatus === 'pending') {
-        // If verification status is pending, we still want to set the user info
-        // so the app can show the pending approval screen
-        const profile = await apiService.getProfile();
-        if (profile && profile.data && profile.data.user) {
-          set({ currentUser: profile.data.user, isAuthenticated: true });
-          await AsyncStorage.setItem('user', JSON.stringify(profile.data.user));
-        }
-        return { success: true, verificationStatus: 'pending' };
-      } else if (response && response.verificationStatus === 'rejected') {
-        return { success: false, error: 'الحساب مرفوض من قبل الإدارة' };
+      } else if (response && !response.success) {
+        // Handle API error responses
+        const errorMessage = response.error || response.message || 'خطأ في تسجيل الدخول';
+        return { success: false, error: errorMessage };
       } else {
         return { success: false, error: 'رقم الهاتف أو كلمة المرور غير صحيحة' };
       }
@@ -109,6 +123,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   register: async (userData: { name: string; phone: string; password: string }) => {
     try {
       set({ isLoading: true });
+      
+      console.log('Attempting registration for:', userData.phone);
+      
       // Use the API service for registration
       const response = await apiService.register({
         name: userData.name,
@@ -116,21 +133,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         password: userData.password
       });
 
-      if (response) {
+      console.log('Registration response:', response);
+
+      if (response && response.success) {
         // Auto-login after successful registration
         const loginResult = await get().login(userData.phone, userData.password);
         if (loginResult.success) {
           Toast.show({
             type: 'success',
             text1: 'تم',
-            text2: 'تم إنشاء حسابك بنجاح، يمكنك الآن التقدم بطلب إنشاء متجر',
+            text2: 'تم إنشاء حسابك بنجاح',
           });
           return { success: true };
         } else {
           return { success: false, error: loginResult.error || 'حدث خطأ أثناء تسجيل الدخول' };
         }
       } else {
-        return { success: false, error: 'حدث خطأ أثناء التسجيل' };
+        const errorMessage = response?.error || response?.message || 'حدث خطأ أثناء التسجيل';
+        return { success: false, error: errorMessage };
       }
     } catch (error: any) {
       console.error('Registration error:', error);

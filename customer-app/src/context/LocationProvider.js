@@ -95,19 +95,15 @@ export const LocationProvider = ({ children }) => {
     }
 
     try {
-      console.log('Updating available stores for location:', userLocation, 'with radius:', deliveryRadius);
-      const response = await API.storesAPI.getNearbyStores({
-        lat: userLocation.lat,
-        lng: userLocation.lng,
-        radius: deliveryRadius,
-      });
+      console.log('Loading all available stores...');
+      const response = await API.storesAPI.getAllStores();
 
-      console.log('Nearby stores API response:', response);
+      console.log('All stores API response:', response);
       if (response.success) {
         setAvailableStores(response.data.stores);
         console.log('Set', response.data.stores.length, 'stores as available');
       } else {
-        console.error('Failed to get nearby stores:', response.message);
+        console.error('Failed to get all stores:', response.message);
         setAvailableStores([]);
       }
     } catch (error) {

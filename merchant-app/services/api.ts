@@ -31,120 +31,143 @@ class ApiService {
     await AsyncStorage.removeItem("merchant_token");
   }
 
-   // Generic API request method with retry logic
-    async request(endpoint: string, options: RequestInit = {}, maxRetries: number = 3, skipAuth: boolean = false) {
-      const url = `${this.baseUrl}${endpoint}`;
+  // Generic API request method with retry logic
+  async request(
+    endpoint: string,
+    options: RequestInit = {},
+    maxRetries: number = 3,
+    skipAuth: boolean = false
+  ) {
+    const url = `${this.baseUrl}${endpoint}`;
 
-      // Check if body is FormData to handle Content-Type appropriately
-      const isFormData = options.body instanceof FormData;
+    // Check if body is FormData to handle Content-Type appropriately
+    const isFormData = options.body instanceof FormData;
 
-      const config: RequestInit = {
-        headers: {
-          // Only set Content-Type to application/json if not using FormData
-          ...(isFormData ? {} : { "Content-Type": "application/json" }),
-          ...options.headers,
-        },
-        ...options,
-      };
+    const config: RequestInit = {
+      headers: {
+        // Only set Content-Type to application/json if not using FormData
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
+        ...options.headers,
+      },
+      ...options,
+    };
 
-      // Add authorization header if token exists and not skipping auth
-      if (!skipAuth) {
-        const token = await this.getToken();
-        if (token) {
-          (config.headers as Record<string, string>)["Authorization"] =
-            `Bearer ${token}`;
-        }
+    // Add authorization header if token exists and not skipping auth
+    if (!skipAuth) {
+      const token = await this.getToken();
+      if (token) {
+        (config.headers as Record<string, string>)["Authorization"] =
+          `Bearer ${token}`;
       }
+    }
 
-     let lastError: Error = new Error('Unknown error');
+    let lastError: Error = new Error("Unknown error");
 
-     for (let attempt = 0; attempt <= maxRetries; attempt++) {
-       try {
-         // Check network connectivity before making request
-         if (attempt === 0) {
-           const isConnected = await testConnectivity();
-           if (!isConnected) {
-             throw new Error('لا يوجد اتصال بالإنترنت. يرجى التحقق من اتصالك بالشبكة.');
-           }
-         }
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        // Check network connectivity before making request
+        if (attempt === 0) {
+          const isConnected = await testConnectivity();
+          if (!isConnected) {
+            throw new Error(
+              "لا يوجد اتصال بالإنترنت. يرجى التحقق من اتصالك بالشبكة."
+            );
+          }
+        }
 
-         // Add timeout to prevent hanging requests
-         const controller = new AbortController();
-         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        // Add timeout to prevent hanging requests
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-         const response = await fetch(url, {
-           ...config,
-           signal: controller.signal,
-         });
+        const response = await fetch(url, {
+          ...config,
+          signal: controller.signal,
+        });
 
-         clearTimeout(timeoutId);
+        clearTimeout(timeoutId);
 
-         // Handle different response status codes
-         if (!response.ok) {
-           const errorData = await response.json().catch(() => ({}));
+        // Handle different response status codes
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
 
-           // Handle specific error codes
-           if (response.status === 500) {
-             throw new Error('خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.');
-           } else if (response.status === 404) {
-             throw new Error('الخدمة غير متوفرة. يرجى التحقق من إعدادات التطبيق.');
-           } else if (response.status === 401) {
-             // Clear invalid token
-             await this.clearToken();
-             throw new Error('انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.');
-           } else if (response.status >= 400 && response.status < 500) {
-             throw new Error(errorData.message || `خطأ في الطلب: ${response.status}`);
-           } else {
-             throw new Error(errorData.message || `خطأ في الخادم: ${response.status}`);
-           }
-         }
+          // Handle specific error codes
+          if (response.status === 500) {
+            throw new Error("خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.");
+          } else if (response.status === 404) {
+            throw new Error(
+              "الخدمة غير متوفرة. يرجى التحقق من إعدادات التطبيق."
+            );
+          } else if (response.status === 401) {
+            // Clear invalid token
+            await this.clearToken();
+            throw new Error("انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.");
+          } else if (response.status >= 400 && response.status < 500) {
+            throw new Error(
+              errorData.message || `خطأ في الطلب: ${response.status}`
+            );
+          } else {
+            throw new Error(
+              errorData.message || `خطأ في الخادم: ${response.status}`
+            );
+          }
+        }
 
-         return await response.json();
-       } catch (error: any) {
-         lastError = error;
-         console.error(`API request attempt ${attempt + 1} failed for ${url}:`, error);
+        return await response.json();
+      } catch (error: any) {
+        lastError = error;
+        console.error(
+          `API request attempt ${attempt + 1} failed for ${url}:`,
+          error
+        );
 
-         // Don't retry on client errors (4xx) except network errors
-         if (error.message?.includes('Network request failed') ||
-             error.message?.includes('اتصال') ||
-             error.name === 'TypeError' ||
-             error.name === 'AbortError') {
+        // Don't retry on client errors (4xx) except network errors
+        if (
+          error.message?.includes("Network request failed") ||
+          error.message?.includes("اتصال") ||
+          error.name === "TypeError" ||
+          error.name === "AbortError"
+        ) {
+          // Wait before retrying (exponential backoff)
+          if (attempt < maxRetries) {
+            const delay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
+            console.log(`Retrying in ${delay}ms...`);
+            await new Promise((resolve) => setTimeout(resolve, delay));
+            continue;
+          }
+        }
 
-           // Wait before retrying (exponential backoff)
-           if (attempt < maxRetries) {
-             const delay = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
-             console.log(`Retrying in ${delay}ms...`);
-             await new Promise(resolve => setTimeout(resolve, delay));
-             continue;
-           }
-         }
+        // For non-network errors, don't retry
+        break;
+      }
+    }
 
-         // For non-network errors, don't retry
-         break;
-       }
-     }
-
-     // If we get here, all retries failed
-     throw lastError || new Error('فشل في الاتصال بالخادم بعد عدة محاولات');
-   }
+    // If we get here, all retries failed
+    throw lastError || new Error("فشل في الاتصال بالخادم بعد عدة محاولات");
+  }
 
   // Authentication methods
   login(credentials: { phone: string; password: string; role?: string }) {
-    return this.request("/store/auth/login", {
-      method: "POST",
-      body: JSON.stringify(credentials),
-    }, 3, true); // skipAuth: true
+    return this.request(
+      "/store/auth/login",
+      {
+        method: "POST",
+        body: JSON.stringify(credentials),
+      },
+      3,
+      true
+    ); // skipAuth: true
   }
 
-  register(merchantData: {
-    name: string;
-    phone: string;
-    password: string;
-  }) {
-    return this.request("/store/auth/register", {
-      method: "POST",
-      body: JSON.stringify(merchantData),
-    }, 3, true); // skipAuth: true
+  register(merchantData: { name: string; phone: string; password: string }) {
+    return this.request(
+      "/store/auth/register",
+      {
+        method: "POST",
+        body: JSON.stringify(merchantData),
+      },
+      3,
+      true
+    ); // skipAuth: true
   }
 
   // Get current user profile
@@ -154,17 +177,31 @@ class ApiService {
 
   // Password reset methods
   requestPasswordReset(phone: string) {
-    return this.request("/store/auth/request-password-reset", {
-      method: "POST",
-      body: JSON.stringify({ phone }),
-    }, 3, true); // skipAuth: true
+    return this.request(
+      "/store/auth/request-password-reset",
+      {
+        method: "POST",
+        body: JSON.stringify({ phone }),
+      },
+      3,
+      true
+    ); // skipAuth: true
   }
 
-  resetPassword(data: { phone: string; resetCode: string; newPassword: string }) {
-    return this.request("/store/auth/reset-password", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }, 3, true); // skipAuth: true
+  resetPassword(data: {
+    phone: string;
+    resetCode: string;
+    newPassword: string;
+  }) {
+    return this.request(
+      "/store/auth/reset-password",
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      },
+      3,
+      true
+    ); // skipAuth: true
   }
 
   async logout() {
@@ -181,12 +218,15 @@ class ApiService {
         return await response.json();
       } else {
         // Don't throw, just log
-        console.warn('Logout request failed, but proceeding with local logout');
+        console.warn("Logout request failed, but proceeding with local logout");
         return { success: true };
       }
     } catch (error: any) {
       // Logout should not fail the client logout process
-      console.warn('Logout request failed, but proceeding with local logout:', error.message);
+      console.warn(
+        "Logout request failed, but proceeding with local logout:",
+        error.message
+      );
       return { success: true };
     }
   }
@@ -207,7 +247,7 @@ class ApiService {
     const formData = new FormData();
 
     Object.keys(productData).forEach((key) => {
-      if (key === 'image' && productData[key]) {
+      if (key === "image" && productData[key]) {
         // Handle image as file URI
         const imageUri = productData[key];
         const fileName = imageUri.split("/").pop() || "image.jpg";
@@ -271,6 +311,7 @@ class ApiService {
 
   // Statistics methods
   getStatistics() {
+    console.log("Fetching store statistics...");
     return this.request("/store/statistics");
   }
 
@@ -313,6 +354,7 @@ class ApiService {
     coordinates: { lat: number; lng: number };
     documents?: string[];
     image?: string;
+    categoryId?: string;
   }) {
     const formData = new FormData();
     formData.append("name", storeData.name);
@@ -336,6 +378,11 @@ class ApiService {
       } as any);
     }
 
+    // Add categoryId if provided
+    if (storeData.categoryId) {
+      formData.append("categoryId", storeData.categoryId);
+    }
+
     return this.request("/store/my-store/application", {
       method: "POST",
       body: formData,
@@ -343,6 +390,11 @@ class ApiService {
         // Don't set Content-Type header for FormData (it will be set automatically)
       },
     });
+  }
+
+  // Get all categories
+  getCategories() {
+    return this.request("/categories", {}, 3, true); // skipAuth: true
   }
 }
 

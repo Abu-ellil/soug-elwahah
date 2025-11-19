@@ -1,6 +1,7 @@
 import 'react-native-get-random-values';
 import { StatusBar } from 'expo-status-bar';
 import Toast from 'react-native-toast-message';
+import { NavigationContainer } from '@react-navigation/native';
 
 import './global.css';
 import React from 'react';
@@ -13,18 +14,20 @@ import { AnalyticsProvider } from './src/context/AnalyticsContext';
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AnalyticsProvider>
-        <CartProvider>
-          <LocationProvider>
-            <LocalizationProvider>
-              <AppNavigator />
-              <StatusBar style="auto" />
-              <Toast />
-            </LocalizationProvider>
-          </LocationProvider>
-        </CartProvider>
-      </AnalyticsProvider>
-    </AuthProvider>
+    <NavigationContainer>
+      <AuthProvider>
+        <AnalyticsProvider>
+          <CartProvider>
+            <LocationProvider>
+              <LocalizationProvider>
+                <AppNavigator />
+                <StatusBar style="auto" />
+                <Toast />
+              </LocalizationProvider>
+            </LocationProvider>
+          </CartProvider>
+        </AnalyticsProvider>
+      </AuthProvider>
+    </NavigationContainer>
   );
 }

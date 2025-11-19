@@ -79,7 +79,7 @@ const LoginScreen = () => {
 
         if (result.verificationStatus === 'pending') {
           console.log('⏳ Navigating to pending approval');
-          router.replace('/pending-approval');
+          router.replace('/(tabs)/setup/pending-approval');
         } else {
           // Check stores from currentUser
           const stores = currentUser?.stores || [];
@@ -95,10 +95,10 @@ const LoginScreen = () => {
             router.replace('/');
           } else if (stores.length > 0) {
             console.log('⏳ Navigating to pending approval (has stores but not approved)');
-            router.replace('/pending-approval');
+            router.replace('/(tabs)/setup/pending-approval');
           } else {
             console.log('📝 Navigating to store application (no stores)');
-            router.replace('/(tabs)/store-application');
+            router.replace('/(tabs)/setup/store-application');
           }
         }
       } else {

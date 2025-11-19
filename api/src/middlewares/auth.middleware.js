@@ -89,14 +89,35 @@ const isStoreOwnerWithApprovedStore = async (req, res, next) => {
     }
 
     // Check that the store owner has at least one approved store
-    const approvedStores = owner.stores.filter(store => store.verificationStatus === "approved");
+    console.log(`StoreOwner ${owner._id} has ${owner.stores.length} stores:`);
+    owner.stores.forEach((store, index) => {
+      console.log(`  Store ${index + 1}: ${store.name || 'Unknown'} - Status: ${store.verificationStatus} - Active: ${store.isActive}`);
+    });
+    
+    const approvedStores = owner.stores.filter(store => {
+      const isApproved = store.verificationStatus === "approved";
+      console.log(`    Checking store ${store.name}: verificationStatus="${store.verificationStatus}" -> ${isApproved ? 'APPROVED' : 'NOT APPROVED'}`);
+      return isApproved;
+    });
+    
+    console.log(`Found ${approvedStores.length} approved stores for owner ${owner._id}`);
+    
     if (approvedStores.length === 0) {
       return res
         .status(403)
         .json({
           success: false,
           message: "لا توجد متاجر معتمدة",
-          verificationStatus: "no_approved_stores"
+          verificationStatus: "no_approved_stores",
+          debug: {
+            totalStores: owner.stores.length,
+            ownerVerificationStatus: owner.verificationStatus,
+            storesDetails: owner.stores.map(s => ({
+              name: s.name,
+              verificationStatus: s.verificationStatus,
+              isActive: s.isActive
+            }))
+          }
         });
     }
 

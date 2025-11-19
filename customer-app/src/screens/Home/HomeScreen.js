@@ -19,20 +19,18 @@ import CategoryCard from '../../components/CategoryCard';
 import ProductCard from '../../components/ProductCard';
 import SearchBar from '../../components/SearchBar';
 import EmptyState from '../../components/EmptyState';
-import RangeSelector from '../../components/RangeSelector';
 import COLORS from '../../constants/colors';
 import SIZES from '../../constants/sizes';
 import HomeScreenSkeleton from '../../components/HomeScreenSkeleton';
+
 const HomeScreen = ({ navigation }) => {
   const {
     userLocation,
-    deliveryRadius,
     availableStores,
     loading,
     error,
     gpsEnabled,
     getCurrentLocation,
-    updateDeliveryRadius,
     getVillageNameFromCoordinates,
   } = useLocation();
   const { addToCart } = useCart();
@@ -217,21 +215,6 @@ const HomeScreen = ({ navigation }) => {
         />
       </View>
 
-      {/* Delivery Radius Selector */}
-      {gpsEnabled && (
-        <View style={styles.radiusContainer}>
-          <RangeSelector
-            value={deliveryRadius}
-            onValueChange={updateDeliveryRadius}
-            min={20}
-            max={200}
-            step={5}
-            unit="كم"
-            title="نطاق التوصيل"
-          />
-        </View>
-      )}
-
       <FlatList
         style={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -239,9 +222,7 @@ const HomeScreen = ({ navigation }) => {
         data={[{ key: 'content' }]}
         renderItem={() => (
           <View>
-           
-            
-            {/* Categories */}    
+            {/* Categories */}
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>الفئات</Text>
               <FlatList
@@ -265,7 +246,7 @@ const HomeScreen = ({ navigation }) => {
               <Text style={styles.sectionTitle}>
                 {selectedCategory
                   ? `${selectedCategory.name} في منطقتك`
-                  : `المتاجر المتاحة ${gpsEnabled ? `(داخل ${deliveryRadius} كم)` : ''}`}
+                  : 'جميع المتاجر المتاحة'}
               </Text>
               <Text style={styles.storesCountText}>{filteredStores.length} متجر</Text>
             </View>
@@ -315,16 +296,12 @@ const HomeScreen = ({ navigation }) => {
                 title="لا توجد متاجر"
                 message={
                   gpsEnabled
-                    ? `لا توجد متاجر متاحة في نطاق ${deliveryRadius} كم من موقعك`
+                    ? 'لا توجد متاجر متاحة حالياً'
                     : 'GPS غير متاح. يرجى تفعيل GPS لعرض المتاجر المتاحة'
                 }
-                actionText={gpsEnabled ? 'زيادة نطاق التوصيل' : 'تفعيل GPS'}
+                actionText={gpsEnabled ? 'إعادة المحاولة' : 'تفعيل GPS'}
                 onActionPress={() => {
-                  if (gpsEnabled) {
-                    updateDeliveryRadius(Math.min(deliveryRadius + 5, 20));
-                  } else {
-                    getCurrentLocation();
-                  }
+                  getCurrentLocation();
                 }}
               />
             )}
@@ -414,11 +391,6 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     padding: SIZES.padding,
-    backgroundColor: COLORS.card,
-  },
-  radiusContainer: {
-    paddingHorizontal: SIZES.padding,
-    paddingVertical: SIZES.base,
     backgroundColor: COLORS.card,
   },
   content: {
