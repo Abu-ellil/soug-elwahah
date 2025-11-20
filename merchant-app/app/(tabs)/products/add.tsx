@@ -6,35 +6,28 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
+import * as ImagePicker from "expo-image-picker";
 import apiService from "../../../services/api";
 import Toast from "react-native-toast-message";
-
-interface Product {
-  _id?: string;
-  name: string;
-  price: number;
-  description: string;
-  stock: number;
-  image?: string;
-  isAvailable: boolean;
-  category?: string;
-}
+import { Product } from "../../../types/product";
 
 const ProductFormScreen = () => {
   const router = useRouter();
   const { id } = useLocalSearchParams(); // Get product ID from URL params if editing
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [product, setProduct] = useState<Product>({
+  const [product, setProduct] = useState<Partial<Product>>({
     name: "",
     price: 0,
     description: "",
     stock: 0,
+    image: undefined,
     isAvailable: true,
     category: "",
   });
@@ -58,6 +51,7 @@ const ProductFormScreen = () => {
           price: response.data.price || 0,
           description: response.data.description || "",
           stock: response.data.stock || 0,
+          image: response.data.image || undefined,
           isAvailable: response.data.isAvailable ?? true,
           category: response.data.category || "",
         });
@@ -84,9 +78,93 @@ const ProductFormScreen = () => {
     setProduct({ ...product, [name]: value });
   };
 
+  // Image picker functions
+  const pickImage = async () => {
+    try {
+      // Request permission
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission required',
+          'Permission to access camera roll is required to select images.'
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled) {
+        const imageUri = result.assets[0].uri;
+        setProduct({ ...product, image: imageUri || undefined });
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'خطأ',
+        text2: 'فشل في اختيار الصورة',
+      });
+    }
+  };
+
+  const takePhoto = async () => {
+    try {
+      // Request camera permission
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission required',
+          'Permission to access camera is required to take photos.'
+        );
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled) {
+        const imageUri = result.assets[0].uri;
+        setProduct({ ...product, image: imageUri || undefined });
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'خطأ',
+        text2: 'فشل في التقاط الصورة',
+      });
+    }
+  };
+
+  const showImageOptions = () => {
+    Alert.alert(
+      'اختر صورة',
+      'من أين تريد اختيار صورة المنتج؟',
+      [
+        { text: 'إلغاء', style: 'cancel' },
+        { text: 'معرض الصور', onPress: pickImage },
+        { text: 'الكاميرا', onPress: takePhoto },
+      ]
+    );
+  };
+
   const handleSubmit = async () => {
-    if (!product.name.trim() || product.price <= 0 || product.stock < 0) {
+    if (!product.name?.trim() || !product.price || product.price <= 0 || !product.stock || product.stock < 0) {
       Alert.alert("خطأ", "يرجى ملء جميع الحقول المطلوبة بشكل صحيح");
+      return;
+    }
+
+    // For new products, require image. For editing existing products, image is optional
+    if (!isEditing && !product.image) {
+      Alert.alert("خطأ", "يرجى إضافة صورة للمنتج");
       return;
     }
 
@@ -143,7 +221,7 @@ const ProductFormScreen = () => {
   return (
     <LinearGradient colors={["#667eea", "#764ba2"]} className="flex-1">
       <ScrollView className="flex-1 p-4 pt-16">
-        <View className="bg-white rounded-2xl p-6 shadow-sm">
+        <View className="bg-white rounded-2xl p-6 shadow-sm mb-20">
           <Text className="text-xl font-bold text-gray-800 mb-6">
             {isEditing ? "تعديل المنتج" : "إضافة منتج جديد"}
           </Text>
@@ -167,7 +245,7 @@ const ProductFormScreen = () => {
               السعر *
             </Text>
             <TextInput
-              value={product.price.toString()}
+              value={product.price?.toString() || "0"}
               onChangeText={(text) =>
                 handleChange("price", parseFloat(text) || 0)
               }
@@ -183,7 +261,7 @@ const ProductFormScreen = () => {
               الكمية في المخزون *
             </Text>
             <TextInput
-              value={product.stock.toString()}
+              value={product.stock?.toString() || "0"}
               onChangeText={(text) =>
                 handleChange("stock", parseInt(text) || 0)
               }
@@ -204,6 +282,43 @@ const ProductFormScreen = () => {
               placeholder="التصنيف"
               className="border border-gray-300 rounded-xl px-4 py-3 text-base"
             />
+          </View>
+
+          {/* Product Image */}
+          <View className="mb-5">
+            <Text className="text-sm font-medium text-gray-700 mb-2">
+              صورة المنتج *
+            </Text>
+            <TouchableOpacity
+              className="border-2 border-dashed border-gray-300 rounded-xl p-4 items-center justify-center min-h-[120px] bg-gray-50"
+              onPress={showImageOptions}
+            >
+              {product.image ? (
+                <View className="relative">
+                  <Image
+                    source={{ uri: product.image }}
+                    className="w-24 h-24 rounded-xl"
+                    resizeMode="cover"
+                  />
+                  <TouchableOpacity
+                    className="absolute -top-2 -right-2 bg-red-500 rounded-full w-6 h-6 items-center justify-center"
+                    onPress={() => {
+                      const newProduct = { ...product, image: undefined };
+                      setProduct(newProduct);
+                    }}
+                  >
+                    <Ionicons name="close" size={14} color="white" />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View className="items-center">
+                  <Ionicons name="camera-outline" size={40} color="#6B7280" />
+                  <Text className="text-gray-500 text-center mt-2">
+                    اضغط لإضافة صورة
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
           </View>
 
           {/* Description */}

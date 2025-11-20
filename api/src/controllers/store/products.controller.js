@@ -62,7 +62,7 @@ const getMyProducts = async (req, res) => {
 
 const addProduct = async (req, res) => {
   try {
-    const { name, price, categoryId, description, isAvailable } = req.body;
+    const { name, price, stock, categoryId, category, description, isAvailable } = req.body;
 
     if (!req.file) {
       return res.status(400).json({ success: false, message: "الصورة مطلوبة" });
@@ -124,8 +124,9 @@ const addProduct = async (req, res) => {
       storeId: store._id,
       name,
       price: parseFloat(price),
+      stock: parseInt(stock) || 0,
       image: imageUrl,
-      categoryId,
+      categoryId: categoryId || category || null,
       description,
       isAvailable: isAvailable === "true" || isAvailable === true,
       isActive: true,
@@ -147,7 +148,7 @@ const addProduct = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const { productId } = req.params;
-    const { name, price, categoryId, description, isAvailable } = req.body;
+    const { name, price, stock, categoryId, category, description, isAvailable } = req.body;
 
     // Verify product exists and belongs to store
     const product = await Product.findOne({
@@ -166,7 +167,8 @@ const updateProduct = async (req, res) => {
       {
         ...(name && { name }),
         ...(price && { price: parseFloat(price) }),
-        ...(categoryId && { categoryId }),
+        ...(stock !== undefined && { stock: parseInt(stock) }),
+        ...((categoryId || category) && { categoryId: categoryId || category }),
         ...(description && { description }),
         ...(isAvailable !== undefined && {
           isAvailable: isAvailable === "true" || isAvailable === true,

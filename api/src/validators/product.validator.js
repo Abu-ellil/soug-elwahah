@@ -10,10 +10,13 @@ const addProductSchema = Joi.object({
     "number.positive": "السعر يجب أن يكون أكبر من 0",
     "any.required": "السعر مطلوب",
   }),
-  categoryId: Joi.string().required().messages({
-    "string.empty": "تصنيف المنتج مطلوب",
-    "any.required": "تصنيف المنتج مطلوب",
+  stock: Joi.number().integer().min(0).required().messages({
+    "number.integer": "الكمية يجب أن تكون رقم صحيح",
+    "number.min": "الكمية لا يمكن أن تكون أقل من 0",
+    "any.required": "الكمية مطلوبة",
   }),
+  category: Joi.string().allow('').optional(),
+  categoryId: Joi.string().allow('').optional(),
   description: Joi.string().max(500).optional().messages({
     "string.max": "الوصف يجب أن لا يزيد عن 500 حرف",
   }),
@@ -28,9 +31,12 @@ const updateProductSchema = Joi.object({
   price: Joi.number().positive().optional().messages({
     "number.positive": "السعر يجب أن يكون أكبر من 0",
   }),
-  categoryId: Joi.string().optional().messages({
-    "string.empty": "تصنيف المنتج لا يمكن أن يكون فارغًا",
+  stock: Joi.number().integer().min(0).optional().messages({
+    "number.integer": "الكمية يجب أن تكون رقم صحيح",
+    "number.min": "الكمية لا يمكن أن تكون أقل من 0",
   }),
+  category: Joi.string().allow('').optional(),
+  categoryId: Joi.string().allow('').optional(),
   description: Joi.string().max(500).optional().messages({
     "string.max": "الوصف يجب أن لا يزيد عن 500 حرف",
   }),

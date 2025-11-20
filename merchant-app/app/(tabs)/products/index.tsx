@@ -16,6 +16,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useProductsStore } from '../../../stores/productsStore';
 import { useAuthStore } from '../../../stores/authStore';
+import { StoreStatusChecker } from '../../../components/StoreStatusChecker';
 
 export default function ProductsIndex() {
   const router = useRouter();
@@ -206,6 +207,9 @@ export default function ProductsIndex() {
             {filteredProducts.length} من {products.length} منتج
           </Text>
         </View>
+
+        {/* Store Status Checker */}
+        <StoreStatusChecker />
 
         {/* Search and Filter */}
         <View className="px-4 mb-4">
