@@ -293,6 +293,10 @@ class ApiService {
     });
   }
 
+  getProductById(productId: string) {
+    return this.request(`/store/products/${productId}`);
+  }
+
   // Orders methods
   getOrders() {
     return this.request("/store/orders");

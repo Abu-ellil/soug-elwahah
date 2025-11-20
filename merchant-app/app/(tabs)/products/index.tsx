@@ -1,242 +1,301 @@
-import { View, Text, FlatList, TouchableOpacity, Alert, RefreshControl } from 'react-native';
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { 
+  View, 
+  Text, 
+  ScrollView, 
+  TouchableOpacity, 
+  ActivityIndicator, 
+  RefreshControl,
+  Alert,
+  Image,
+  FlatList,
+  TextInput
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useAuthStore } from '../../../stores/authStore';
 import { LinearGradient } from 'expo-linear-gradient';
-import apiService from '../../../services/api';
-import Toast from 'react-native-toast-message';
+import { useRouter } from 'expo-router';
+import { useProductsStore } from '../../../stores/productsStore';
+import { useAuthStore } from '../../../stores/authStore';
 
-// Define product type
-interface Product {
-  _id: string;
-  id?: string;
-  name: string;
-  price: number;
-  description: string;
-  stock: number;
-  image?: string;
-  isAvailable: boolean;
-  category?: string;
-}
-
-const ProductsScreen = () => {
+export default function ProductsIndex() {
   const router = useRouter();
   const { currentUser } = useAuthStore();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [hasApprovedStore, setHasApprovedStore] = useState(false);
-
-  const fetchProducts = async () => {
-    try {
-      setIsLoading(true);
-
-      // Check if user has approved stores
-      const hasApprovedStores = currentUser?.stores?.some((store: any) =>
-        typeof store === 'object' ? store.verificationStatus === 'approved' : true
-      );
-
-      setHasApprovedStore(!!hasApprovedStores);
-
-      if (!hasApprovedStores) {
-        setProducts([]);
-        return;
-      }
-
-      const response = await apiService.getProducts();
-      if (response.success && response.data) {
-        setProducts(response.data.products || []);
-      } else {
-        Toast.show({
-          type: 'error',
-          text1: 'خطأ',
-          text2: response.message || 'فشل في تحميل المنتجات',
-        });
-      }
-    } catch (error: any) {
-      console.error('Error fetching products:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'خطأ',
-        text2: error.message || 'فشل في تحميل المنتجات',
-      });
-    } finally {
-      setIsLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    fetchProducts();
-  };
-
-  const handleDeleteProduct = async (productId: string) => {
-    Alert.alert('حذف المنتج', 'هل أنت متأكد أنك تريد حذف هذا المنتج؟', [
-      { text: 'إلغاء', style: 'cancel' },
-      {
-        text: 'حذف',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            const response = await apiService.deleteProduct(productId);
-            if (response.success) {
-              setProducts(products.filter((product) => product._id !== productId));
-              Toast.show({
-                type: 'success',
-                text1: 'تم',
-                text2: 'تم حذف المنتج بنجاح',
-              });
-            } else {
-              Toast.show({
-                type: 'error',
-                text1: 'خطأ',
-                text2: response.message || 'فشل في حذف المنتج',
-              });
-            }
-          } catch (error: any) {
-            console.error('Error deleting product:', error);
-            Toast.show({
-              type: 'error',
-              text1: 'خطأ',
-              text2: error.message || 'فشل في حذف المنتج',
-            });
-          }
-        },
-      },
-    ]);
-  };
-
-  const handleToggleAvailability = async (productId: string) => {
-    try {
-      const response = await apiService.toggleProductAvailability(productId);
-      if (response.success) {
-        setProducts(products.map(product =>
-          product._id === productId
-            ? { ...product, isAvailable: !product.isAvailable }
-            : product
-        ));
-        Toast.show({
-          type: 'success',
-          text1: 'تم',
-          text2: 'تم تحديث حالة المنتج',
-        });
-      } else {
-        Toast.show({
-          type: 'error',
-          text1: 'خطأ',
-          text2: response.message || 'فشل في تحديث حالة المنتج',
-        });
-      }
-    } catch (error: any) {
-      console.error('Error toggling product availability:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'خطأ',
-        text2: error.message || 'فشل في تحديث حالة المنتج',
-      });
-    }
-  };
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filter, setFilter] = useState<'all' | 'available' | 'unavailable'>('all');
+  
+  const { 
+    products, 
+    isLoading, 
+    refreshing, 
+    hasApprovedStore, 
+    fetchProducts, 
+    handleRefresh,
+    deleteProduct,
+    toggleAvailability 
+  } = useProductsStore();
 
   useEffect(() => {
     if (currentUser) {
       fetchProducts();
     }
-  }, [currentUser]);
+  }, [currentUser, fetchProducts]);
 
-  const renderProduct = ({ item }: { item: Product }) => (
-    <View className="bg-white rounded-3xl p-6 mb-4 shadow-2xl">
-      <View className="flex-1 mb-4">
-        <Text className="text-lg font-bold text-gray-800 mb-2">{item.name}</Text>
-        <Text className="text-base text-gray-600 mb-3">{item.description}</Text>
-        <Text className="text-lg font-bold text-blue-600 mb-2">{item.price} ج.م</Text>
-        <Text className="text-base text-green-600 mb-3">المخزون: {item.stock}</Text>
-        <View className={`self-start px-3 py-1 rounded-xl ${item.isAvailable ? 'bg-green-100' : 'bg-yellow-100'}`}>
-          <Text className="text-sm font-medium text-gray-800">
-            {item.isAvailable ? 'متوفر' : 'غير متوفر'}
+  const handleDeleteProduct = (productId: string, productName: string) => {
+    Alert.alert(
+      'تأكيد الحذف',
+      `هل أنت متأكد من حذف "${productName}"؟`,
+      [
+        { text: 'إلغاء', style: 'cancel' },
+        { 
+          text: 'حذف', 
+          style: 'destructive',
+          onPress: () => deleteProduct(productId)
+        }
+      ]
+    );
+  };
+
+  const handleEditProduct = (productId: string) => {
+    router.push({
+      pathname: '/(tabs)/products/add',
+      params: { id: productId }
+    });
+  };
+
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         product.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = filter === 'all' || 
+                         (filter === 'available' && product.isAvailable) ||
+                         (filter === 'unavailable' && !product.isAvailable);
+    return matchesSearch && matchesFilter;
+  });
+
+  const renderProductCard = ({ item: product }: { item: any }) => (
+    <View className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-gray-100">
+      <View className="flex-row">
+        {/* Product Image */}
+        <View className="w-16 h-16 bg-gray-100 rounded-lg mr-4 justify-center items-center overflow-hidden">
+          {product.image ? (
+            <Image 
+              source={{ uri: product.image }} 
+              className="w-full h-full"
+              resizeMode="cover"
+            />
+          ) : (
+            <Ionicons name="cube-outline" size={24} color="#9CA3AF" />
+          )}
+        </View>
+
+        {/* Product Info */}
+        <View className="flex-1">
+          <View className="flex-row justify-between items-start mb-1">
+            <Text className="text-lg font-semibold text-gray-900 flex-1 mr-2">
+              {product.name}
+            </Text>
+            <View className={`px-2 py-1 rounded-full ${
+              product.isAvailable ? 'bg-green-100' : 'bg-red-100'
+            }`}>
+              <Text className={`text-xs font-medium ${
+                product.isAvailable ? 'text-green-800' : 'text-red-800'
+              }`}>
+                {product.isAvailable ? 'متوفر' : 'غير متوفر'}
+              </Text>
+            </View>
+          </View>
+          
+          <Text className="text-xl font-bold text-blue-600 mb-1">
+            ${product.price}
+          </Text>
+          
+          {product.description && (
+            <Text className="text-sm text-gray-600 mb-2" numberOfLines={2}>
+              {product.description}
+            </Text>
+          )}
+          
+          <Text className="text-sm text-gray-500">
+            المخزون: {product.stock} قطعة
           </Text>
         </View>
       </View>
-      <View className="flex-row justify-between">
+
+      {/* Action Buttons */}
+      <View className="flex-row justify-between mt-4 pt-4 border-t border-gray-100">
         <TouchableOpacity
-          className="w-10 h-10 rounded-xl bg-yellow-500 items-center justify-center"
-          onPress={() => router.push(`/products/product-form?id=${item._id}`)}>
-          <Ionicons name="create-outline" size={20} color="white" />
-        </TouchableOpacity>
-        <TouchableOpacity
-          className="w-10 h-10 rounded-xl bg-yellow-500 items-center justify-center"
-          onPress={() => handleToggleAvailability(item._id)}>
-          <Ionicons
-            name={item.isAvailable ? "eye-off-outline" : "eye-outline"}
-            size={20}
-            color="white"
-          />
-        </TouchableOpacity>
-        <TouchableOpacity
-          className="w-10 h-10 rounded-xl bg-red-500 items-center justify-center"
-          onPress={() => handleDeleteProduct(item._id)}
+          className="flex-1 bg-blue-50 px-4 py-2 rounded-lg mr-2"
+          onPress={() => handleEditProduct(product._id)}
         >
-          <Ionicons name="trash-outline" size={20} color="white" />
+          <View className="flex-row items-center justify-center">
+            <Ionicons name="create-outline" size={16} color="#3B82F6" />
+            <Text className="text-blue-600 font-medium ml-2">تعديل</Text>
+          </View>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          className={`flex-1 px-4 py-2 rounded-lg mr-2 ${
+            product.isAvailable ? 'bg-orange-50' : 'bg-green-50'
+          }`}
+          onPress={() => toggleAvailability(product._id)}
+        >
+          <View className="flex-row items-center justify-center">
+            <Ionicons 
+              name={product.isAvailable ? 'eye-off-outline' : 'eye-outline'} 
+              size={16} 
+              color={product.isAvailable ? "#F59E0B" : "#10B981"} 
+            />
+            <Text className={`font-medium ml-2 ${
+              product.isAvailable ? 'text-orange-600' : 'text-green-600'
+            }`}>
+              {product.isAvailable ? 'إخفاء' : 'إظهار'}
+            </Text>
+          </View>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          className="flex-1 bg-red-50 px-4 py-2 rounded-lg"
+          onPress={() => handleDeleteProduct(product._id, product.name)}
+        >
+          <View className="flex-row items-center justify-center">
+            <Ionicons name="trash-outline" size={16} color="#EF4444" />
+            <Text className="text-red-600 font-medium ml-2">حذف</Text>
+          </View>
         </TouchableOpacity>
       </View>
     </View>
   );
 
-  return (
-    <LinearGradient
-      colors={['#667eea', '#764ba2']}
-      className="flex-1"
-    >
-      {/* Header */}
-      <View className="flex-row justify-between items-center bg-white/10 px-6 py-4 mt-12 mx-6 rounded-3xl mb-6">
-        <Text className="text-2xl font-bold text-white">المنتجات</Text>
-        <TouchableOpacity
-          className="w-12 h-12 rounded-2xl bg-white/20 items-center justify-center"
-          onPress={() => router.push('/products/product-form')}
-        >
-          <Ionicons name="add" size={24} color="white" />
-        </TouchableOpacity>
-      </View>
+  if (isLoading) {
+    return (
+      <LinearGradient colors={["#667eea", "#764ba2"]} className="flex-1 items-center justify-center">
+        <ActivityIndicator size="large" color="white" />
+        <Text className="text-white text-lg mt-4">جاري تحميل المنتجات...</Text>
+      </LinearGradient>
+    );
+  }
 
-      {/* Products List */}
-      <FlatList
-        data={products}
-        renderItem={renderProduct}
-        keyExtractor={(item) => item._id}
-        contentContainerStyle={{ padding: 24, paddingBottom: 100 }}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
-        ListEmptyComponent={
-          isLoading ? (
-            <View className="flex-1 items-center justify-center py-20">
-              <Text className="text-lg text-white">جاري تحميل المنتجات...</Text>
+  if (!hasApprovedStore) {
+    return (
+      <LinearGradient colors={["#667eea", "#764ba2"]} className="flex-1 items-center justify-center p-8">
+        <View className="bg-white rounded-2xl p-8 items-center">
+          <Ionicons name="storefront-outline" size={64} color="#9CA3AF" />
+          <Text className="text-xl font-semibold text-gray-700 mt-4 text-center">
+            تحتاج إلى متجر معتمد
+          </Text>
+          <Text className="text-gray-500 text-center mt-2">
+            لإدارة المنتجات، يجب أن يكون لديك متجر معتمد
+          </Text>
+          <TouchableOpacity
+            className="bg-blue-500 px-6 py-3 rounded-lg mt-6"
+            onPress={() => router.push('/(tabs)/setup/store-application')}
+          >
+            <Text className="text-white font-medium">طلب إنشاء متجر</Text>
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
+    );
+  }
+
+  return (
+    <LinearGradient colors={["#667eea", "#764ba2"]} className="flex-1">
+      <View className="flex-1 pt-16">
+        {/* Header */}
+        <View className="px-4 pb-4">
+          <Text className="text-3xl font-bold text-white mb-2">إدارة المنتجات</Text>
+          <Text className="text-white/80">
+            {filteredProducts.length} من {products.length} منتج
+          </Text>
+        </View>
+
+        {/* Search and Filter */}
+        <View className="px-4 mb-4">
+          <View className="bg-white rounded-xl p-3 mb-3">
+            <View className="flex-row items-center">
+              <Ionicons name="search" size={20} color="#9CA3AF" />
+              <TextInput
+                className="flex-1 mr-3 text-base"
+                placeholder="البحث في المنتجات..."
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholderTextColor="#9CA3AF"
+              />
             </View>
-          ) : !hasApprovedStore ? (
-            <View className="bg-white rounded-3xl p-8 mx-6 items-center shadow-2xl">
-              <Ionicons name="storefront-outline" size={60} color="#D1D5DB" />
-              <Text className="text-xl font-bold text-gray-800 mt-4">لا توجد متاجر معتمدة</Text>
-              <Text className="text-base text-gray-600 mt-2 text-center">يجب أن يكون متجرك معتمدًا من الإدارة أولاً</Text>
+          </View>
+
+          {/* Filter Buttons */}
+          <View className="flex-row">
+            {[
+              { key: 'all', label: 'الكل', count: products.length },
+              { key: 'available', label: 'متوفر', count: products.filter(p => p.isAvailable).length },
+              { key: 'unavailable', label: 'غير متوفر', count: products.filter(p => !p.isAvailable).length }
+            ].map(({ key, label, count }) => (
               <TouchableOpacity
-                className="bg-blue-600 px-8 py-3 rounded-xl mt-6"
-                onPress={() => router.push('/(tabs)/setup/welcome')}
+                key={key}
+                className={`flex-1 px-3 py-2 rounded-lg mr-2 ${
+                  filter === key ? 'bg-white' : 'bg-white/20'
+                }`}
+                onPress={() => setFilter(key as any)}
               >
-                <Text className="text-white font-bold text-lg">إنشاء متجر</Text>
+                <Text className={`text-center text-sm font-medium ${
+                  filter === key ? 'text-purple-700' : 'text-white'
+                }`}>
+                  {label} ({count})
+                </Text>
               </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Products List */}
+        <View className="flex-1 px-4">
+          {filteredProducts.length === 0 ? (
+            <View className="flex-1 items-center justify-center py-16">
+              <Ionicons name="cube-outline" size={64} color="rgba(255,255,255,0.5)" />
+              <Text className="text-white text-xl font-bold mt-4 mb-2">لا توجد منتجات</Text>
+              <Text className="text-white/70 text-center px-8 mb-6">
+                {searchQuery || filter !== 'all' 
+                  ? 'لم يتم العثور على منتجات تطابق البحث'
+                  : 'لم تقم بإضافة أي منتجات بعد'
+                }
+              </Text>
+              {!searchQuery && filter === 'all' && (
+                <TouchableOpacity
+                  className="bg-white/20 px-6 py-3 rounded-lg"
+                  onPress={() => router.push('/(tabs)/products/add')}
+                >
+                  <Text className="text-white font-medium">إضافة منتج جديد</Text>
+                </TouchableOpacity>
+              )}
             </View>
           ) : (
-            <View className="bg-white rounded-3xl p-8 mx-6 items-center shadow-2xl">
-              <Ionicons name="cube-outline" size={60} color="#D1D5DB" />
-              <Text className="text-xl font-bold text-gray-800 mt-4">لا توجد منتجات</Text>
-              <Text className="text-base text-gray-600 mt-2 text-center">اضغط على زر الإضافة لإضافة منتج جديد</Text>
-            </View>
-          )
-        }
-      />
+            <FlatList
+              data={filteredProducts}
+              renderItem={renderProductCard}
+              keyExtractor={(item) => item._id}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={handleRefresh}
+                  tintColor="#fff"
+                  colors={['#fff']}
+                />
+              }
+            />
+          )}
+        </View>
+      </View>
+
+      {/* Add Product FAB */}
+      {hasApprovedStore && (
+        <TouchableOpacity
+          className="absolute bottom-8 right-8 bg-white w-14 h-14 rounded-full shadow-lg justify-center items-center"
+          onPress={() => router.push('/(tabs)/products/add')}
+        >
+          <Ionicons name="add" size={24} color="#667eea" />
+        </TouchableOpacity>
+      )}
     </LinearGradient>
   );
-};
+}
 
-export default ProductsScreen;

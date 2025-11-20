@@ -1,8 +1,9 @@
+import { useAuthStore } from '@/stores/authStore';
+import { Product } from '@/types/product';
 import { useState, useEffect, useCallback } from 'react';
-import { useAuthStore } from '../../stores/authStore';
-import apiService from '../../services/api';
 import Toast from 'react-native-toast-message';
-import { Product } from '../../types/product';
+import apiService from '@/services/api';
+
 
 export const useProducts = () => {
   const { currentUser } = useAuthStore();
@@ -17,22 +18,46 @@ export const useProducts = () => {
 
   const fetchProducts = useCallback(async () => {
     try {
+      setIsLoading(true);
       const approved = checkApprovedStores();
       setHasApprovedStore(approved);
 
       if (!approved) {
         setProducts([]);
+        setIsLoading(false);
         return;
       }
 
-      const response = await apiService.getProducts();
-      if (response.success && response.data) {
-        setProducts(response.data.products || []);
-      } else {
-        handleApiError(response.message);
+      // Add timeout to prevent infinite loading
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+
+      try {
+        const response = await apiService.getProducts();
+        clearTimeout(timeoutId);
+        
+        if (response.success && response.data) {
+          setProducts(response.data.products || []);
+        } else {
+          handleApiError(response.message);
+        }
+      } catch (fetchError: any) {
+        clearTimeout(timeoutId);
+        
+        if (fetchError.name === 'AbortError') {
+          Toast.show({
+            type: 'error',
+            text1: 'انتهت المهلة',
+            text2: 'استغرق تحميل المنتجات وقتاً أطول من المتوقع',
+          });
+        } else {
+          handleApiError(fetchError.message);
+        }
       }
     } catch (error: any) {
       handleApiError(error.message);
+    } finally {
+      setIsLoading(false);
     }
   }, [checkApprovedStores]);
 
