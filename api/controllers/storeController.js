@@ -776,11 +776,12 @@ module.exports = {
   updateDeliveryZones,
   getStoreProducts,
   addProduct,
- updateProduct,
-  deleteProduct,
+  updateProduct,
+ deleteProduct,
   updateProductStock,
   getStoreOrders,
   updateOrderStatus,
   getStoreAnalytics,
   getStoreReviews,
   getNearbyCustomers
+};

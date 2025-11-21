@@ -1,569 +1,569 @@
-const Order = require('../models/Order');
 const User = require('../models/User');
 const Store = require('../models/Store');
-const Delivery = require('../models/Delivery');
+const Order = require('../models/Order');
+const Product = require('../models/Product');
+const Notification = require('../models/Notification');
 const asyncHandler = require('../utils/asyncHandler');
+const AppError = require('../utils/appError');
+const ApiResponse = require('../utils/apiResponse');
 
-/**
- * Get dashboard metrics
- */
-const getDashboardMetrics = asyncHandler(async (req, res, next) => {
-  // Get basic counts
-  const totalOrders = await Order.countDocuments();
-  const totalUsers = await User.countDocuments();
- const totalStores = await Store.countDocuments();
-  const totalDrivers = await User.countDocuments({ role: 'driver' });
-  
-  // Get recent orders
-  let recentOrders = [];
-  try {
-    recentOrders = await Order.find()
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .populate('user', 'name email')
-      .populate('store', 'name');
-  } catch (error) {
-    console.error('Error fetching recent orders:', error);
-    // If populate fails, fetch without populate
-    recentOrders = await Order.find()
-      .sort({ createdAt: -1 })
-      .limit(5);
+// @desc    Get all users
+// @route   GET /api/admin/users
+// @access  Private (Admin only)
+const getAllUsers = asyncHandler(async (req, res) => {
+  const { role, status, search, sortBy = 'createdAt', limit = 20, page = 1 } = req.query;
+  const skip = (page - 1) * limit;
+
+  let query = {};
+
+  if (role) {
+    query.roles = { $in: [role] };
   }
-  
-  // Get revenue data
- const revenueData = await Order.aggregate([
-    {
-      $match: {
-        status: { $in: ['completed', 'delivered'] }
-      }
-    },
-    {
-      $group: {
-        _id: null,
-        totalRevenue: { $sum: '$total' },
-        averageOrderValue: { $avg: '$total' }
-      }
-    }
-  ]);
-  
-  const totalRevenue = revenueData[0] ? revenueData[0].totalRevenue : 0;
-  const averageOrderValue = revenueData[0] ? revenueData[0].averageOrderValue : 0;
 
-  res.status(200).json({
-    success: true,
-    data: {
-      totalOrders,
-      totalUsers,
-      totalStores,
-      totalDrivers,
-      totalRevenue,
-      averageOrderValue,
-      recentOrders
+  if (status) {
+    if (status === 'active') {
+      query.isActive = true;
+      query.isVerified = true;
+    } else if (status === 'inactive') {
+      query.isActive = false;
+    } else if (status === 'pending') {
+      query.isVerified = false;
     }
-  });
-});
-
-/**
- * Get recent activity
- */
-const getRecentActivity = asyncHandler(async (req, res, next) => {
-  const { limit = 10 } = req.query;
-  
-  // Mock recent activity data - in a real app, you'd have an activity log model
-  let recentOrders = [];
-  try {
-    recentOrders = await Order.find()
-      .sort({ createdAt: -1 })
-      .limit(parseInt(limit))
-      .populate('user', 'name email')
-      .populate('store', 'name')
-      .select('orderNumber status total createdAt');
-  } catch (error) {
-    console.error('Error fetching recent orders for activity:', error);
-    // If populate fails, fetch without populate
-    recentOrders = await Order.find()
-      .sort({ createdAt: -1 })
-      .limit(parseInt(limit))
-      .select('orderNumber status total createdAt');
   }
-  
-  // Format as activity items
-  const activity = recentOrders.map(order => ({
-    id: order._id,
-    type: 'order',
-    title: `Order #${order.orderNumber}`,
-    description: `Order status changed to ${order.status}`,
-    user: order.user ? { name: order.user.name, email: order.user.email } : null,
-    store: order.store ? { name: order.store.name } : null,
-    timestamp: order.createdAt,
-    status: order.status
-  }));
 
-  res.status(200).json({
-    success: true,
-    data: activity
-  });
-});
+  if (search) {
+    query.$or = [
+      { name: { $regex: search, $options: 'i' } },
+      { email: { $regex: search, $options: 'i' } },
+      { phone: { $regex: search, $options: 'i' } }
+    ];
+  }
 
-/**
- * Get revenue trends
- */
-const getRevenueTrends = asyncHandler(async (req, res, next) => {
-  const { period = 'month' } = req.query;
-  
-  let dateFilter = {};
-  
-  switch (period) {
-    case 'week':
-      dateFilter = { createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 1000) } };
+  let sort = {};
+  switch (sortBy) {
+    case 'name':
+      sort = { name: 1 };
       break;
-    case 'month':
-      dateFilter = { createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 1000) } };
+    case 'email':
+      sort = { email: 1 };
       break;
-    case 'year':
-      dateFilter = { createdAt: { $gte: new Date(Date.now() - 365 * 24 * 60 * 1000) } };
+    case 'newest':
+      sort = { createdAt: -1 };
+      break;
+    case 'oldest':
+      sort = { createdAt: 1 };
+      break;
+    case 'last-active':
+      sort = { lastActive: -1 };
       break;
     default:
-      dateFilter = { createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 1000) } };
+      sort = { createdAt: -1 };
+      break;
   }
 
- // Group orders by date period and calculate revenue
- const revenueData = await Order.aggregate([
-    {
-      $match: {
-        ...dateFilter,
-        status: { $in: ['completed', 'delivered'] }
-      }
-    },
-    {
-      $group: {
-        _id: {
-          $dateToString: {
-            format: period === 'year' ? '%Y-%m' : '%Y-%m-%d',
-            date: '$createdAt'
-          }
-        },
-        revenue: { $sum: '$total' },
-        orders: { $sum: 1 }
-      }
-    },
-    {
-      $sort: { _id: 1 }
-    }
-  ]);
+  const users = await User.find(query)
+    .select('-password -refreshToken')
+    .sort(sort)
+    .skip(skip)
+    .limit(parseInt(limit));
 
-  // Format the data for charting
-  const formattedData = revenueData.map(item => ({
-    period: item._id,
-    revenue: item.revenue,
-    orders: item.orders
-  }));
+  const total = await User.countDocuments(query);
 
-  res.status(200).json({
-    success: true,
-    data: formattedData
-  });
-});
-
-/**
- * Get order trends
- */
-const getOrderTrends = asyncHandler(async (req, res, next) => {
-  const { period = 'month' } = req.query;
-  
-  let dateFilter = {};
-  
-  switch (period) {
-    case 'week':
-      dateFilter = { createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } };
-      break;
-    case 'month':
-      dateFilter = { createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 1000) } };
-      break;
-    case 'year':
-      dateFilter = { createdAt: { $gte: new Date(Date.now() - 365 * 24 * 60 * 1000) } };
-      break;
-    default:
-      dateFilter = { createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 1000) } };
-  }
-
-  // Group orders by status and date
-  const orderData = await Order.aggregate([
-    {
-      $match: dateFilter
-    },
-    {
-      $group: {
-        _id: {
-          date: {
-            $dateToString: {
-              format: period === 'year' ? '%Y-%m' : '%Y-%m-%d',
-              date: '$createdAt'
-            }
-          },
-          status: '$status'
-        },
-        count: { $sum: 1 }
-      }
-    }
-  ]);
-
-  // Format data by date
-  const formattedData = {};
-  orderData.forEach(item => {
-    if (!formattedData[item._id.date]) {
-      formattedData[item._id.date] = {
-        period: item._id.date,
-        orders: 0,
-        completed: 0,
-        cancelled: 0
-      };
-    }
-    
-    formattedData[item._id.date].orders += item.count;
-    
-    if (item._id.status === 'completed' || item._id.status === 'delivered') {
-      formattedData[item._id.date].completed += item.count;
-    } else if (item._id.status === 'cancelled') {
-      formattedData[item._id.date].cancelled += item.count;
-    }
- });
-
-  res.status(200).json({
-    success: true,
-    data: Object.values(formattedData)
-  });
-});
-
-/**
- * Get user growth trends
- */
-const getUserGrowthTrends = asyncHandler(async (req, res, next) => {
- const { period = 'month' } = req.query;
-  
-  let dateFilter = {};
-  
-  switch (period) {
-    case 'week':
-      dateFilter = { createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 1000) } };
-      break;
-    case 'month':
-      dateFilter = { createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 1000) } };
-      break;
-    case 'year':
-      dateFilter = { createdAt: { $gte: new Date(Date.now() - 365 * 24 * 60 * 1000) } };
-      break;
-    default:
-      dateFilter = { createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 1000) } };
-  }
-
-  // Group users by date and calculate growth
-  const userData = await User.aggregate([
-    {
-      $match: dateFilter
-    },
-    {
-      $group: {
-        _id: {
-          $dateToString: {
-            format: period === 'year' ? '%Y-%m' : '%Y-%m-%d',
-            date: '$createdAt'
-          }
-        },
-        newUsers: { $sum: 1 }
-      }
-    },
-    {
-      $sort: { _id: 1 }
-    }
-  ]);
-
-  // Calculate total users up to each date
- let totalUsers = await User.countDocuments();
- const formattedData = userData.map(item => {
-    // Calculate approximate total users at that point in time
-    // This is a simplified calculation - in a real app you'd need historical data
-    return {
-      period: item._id,
-      newUsers: item.newUsers,
-      totalUsers: totalUsers // This would need historical data for accuracy
-    };
-  });
-
-  res.status(200).json({
-    success: true,
-    data: formattedData
-  });
-});
-
-/**
- * Get performance metrics
- */
-const getPerformanceMetrics = asyncHandler(async (req, res, next) => {
-  const { timeframe = 'month' } = req.query;
-  
-  let dateFilter = {};
-  let previousDateFilter = {};
-  
-  const now = new Date();
-  const startOfCurrent = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  
-  switch (timeframe) {
-    case 'today':
-      dateFilter = { 
-        createdAt: { 
-          $gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
-          $lt: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)
-        }
-      };
-      previousDateFilter = { 
-        createdAt: { 
-          $gte: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1),
-          $lt: new Date(now.getFullYear(), now.getMonth(), now.getDate())
-        }
-      };
-      break;
-    case 'week':
-      dateFilter = { 
-        createdAt: { 
-          $gte: new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay())
-        }
-      };
-      previousDateFilter = { 
-        createdAt: { 
-          $gte: new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay() - 7),
-          $lt: new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay())
-        }
-      };
-      break;
-    case 'month':
-      dateFilter = { 
-        createdAt: { 
-          $gte: new Date(now.getFullYear(), now.getMonth(), 1)
-        }
-      };
-      previousDateFilter = { 
-        createdAt: { 
-          $gte: new Date(now.getFullYear(), now.getMonth() - 1, 1),
-          $lt: new Date(now.getFullYear(), now.getMonth(), 1)
-        }
-      };
-      break;
-    case 'year':
-      dateFilter = { 
-        createdAt: { 
-          $gte: new Date(now.getFullYear(), 0, 1)
-        }
-      };
-      previousDateFilter = { 
-        createdAt: { 
-          $gte: new Date(now.getFullYear() - 1, 0, 1),
-          $lt: new Date(now.getFullYear(), 0, 1)
-        }
-      };
-      break;
-    default:
-      dateFilter = { 
-        createdAt: { 
-          $gte: new Date(now.getFullYear(), now.getMonth(), 1)
-        }
-      };
-      previousDateFilter = { 
-        createdAt: { 
-          $gte: new Date(now.getFullYear(), now.getMonth() - 1, 1),
-          $lt: new Date(now.getFullYear(), now.getMonth(), 1)
-        }
-      };
-  }
-
-  // Current period metrics
-  const currentRevenue = await Order.aggregate([
-    {
-      $match: {
-        ...dateFilter,
-        status: { $in: ['completed', 'delivered'] }
-      }
-    },
-    {
-      $group: {
-        _id: null,
-        total: { $sum: '$total' }
-      }
-    }
-  ]);
-  
-  const currentOrders = await Order.countDocuments({
-    ...dateFilter
-  });
-  
-  const currentUsers = await User.countDocuments({
-    ...dateFilter
-  });
-
-  // Previous period metrics
-  const previousRevenue = await Order.aggregate([
-    {
-      $match: {
-        ...previousDateFilter,
-        status: { $in: ['completed', 'delivered'] }
-      }
-    },
-    {
-      $group: {
-        _id: null,
-        total: { $sum: '$total' }
-      }
-    }
-  ]);
-  
-  const previousOrders = await Order.countDocuments({
-    ...previousDateFilter
- });
-  
-  const previousUsers = await User.countDocuments({
-    ...previousDateFilter
-  });
-
-  const currentRevenueValue = currentRevenue[0] ? currentRevenue[0].total : 0;
-  const previousRevenueValue = previousRevenue[0] ? previousRevenue[0].total : 0;
-  
-  const revenueGrowth = previousRevenueValue !== 0 
-    ? ((currentRevenueValue - previousRevenueValue) / previousRevenueValue) * 100 
-    : currentRevenueValue > 0 ? 100 : 0;
-    
-  const ordersGrowth = previousOrders !== 0 
-    ? ((currentOrders - previousOrders) / previousOrders) * 100 
-    : currentOrders > 0 ? 100 : 0;
-    
- const usersGrowth = previousUsers !== 0 
-    ? ((currentUsers - previousUsers) / previousUsers) * 100 
-    : currentUsers > 0 ? 100 : 0;
-
-  res.status(200).json({
-    success: true,
-    data: {
-      revenue: {
-        current: currentRevenueValue,
-        previous: previousRevenueValue,
-        growth: parseFloat(revenueGrowth.toFixed(2))
-      },
-      orders: {
-        current: currentOrders,
-        previous: previousOrders,
-        growth: parseFloat(ordersGrowth.toFixed(2))
-      },
-      users: {
-        current: currentUsers,
-        previous: previousUsers,
-        growth: parseFloat(usersGrowth.toFixed(2))
-      },
-      conversion: {
-        rate: 0, // Placeholder - would need more complex calculation
-        previous: 0,
-        growth: 0
-      }
-    }
-  });
-});
-
-/**
- * Get system health
- */
-const getSystemHealth = asyncHandler(async (req, res, next) => {
-  // Simulate system health metrics
-  // In a real app, you'd check actual system metrics
-  
-  res.status(200).json({
-    success: true,
-    data: {
-      apiResponseTime: 120, // milliseconds
-      databaseConnections: 1, // placeholder
-      activeUsers: 0, // placeholder - would need real-time tracking
-      errorRate: 0.1, // percentage
-      uptime: 99.9 // percentage
-    }
-  });
-});
-
-/**
- * Get user statistics
- */
-const getUserStats = asyncHandler(async (req, res, next) => {
-  const total = await User.countDocuments();
-  
-  // Get users from this month
-  const startOfMonth = new Date();
-  startOfMonth.setDate(1);
-  startOfMonth.setHours(0, 0, 0, 0);
-  
-  const newThisMonth = await User.countDocuments({
-    createdAt: { $gte: startOfMonth }
-  });
-  
-  // Get active users (placeholder - would need actual activity tracking)
-  const active = total; // placeholder
-  
-  // Calculate growth percentage
-  const lastMonthStart = new Date();
-  lastMonthStart.setMonth(lastMonthStart.getMonth() - 1);
-  lastMonthStart.setDate(1);
-  lastMonthStart.setHours(0, 0, 0, 0);
-  
-  const lastMonthNew = await User.countDocuments({
-    createdAt: { 
-      $gte: lastMonthStart,
-      $lt: startOfMonth
-    }
-  });
-  
-  const growth = lastMonthNew !== 0 
-    ? ((newThisMonth - lastMonthNew) / lastMonthNew) * 100 
-    : newThisMonth > 0 ? 100 : 0;
-
-  // Get users by role
-  const usersByRole = await User.aggregate([
-    {
-      $group: {
-        _id: '$role',
-        count: { $sum: 1 }
-      }
-    }
-  ]);
-  
-  const byRole = {};
-  usersByRole.forEach(role => {
-    byRole[role._id] = role.count;
-  });
-
-  res.status(200).json({
-    success: true,
-    data: {
+  res.status(200).json(
+    ApiResponse.success('Users retrieved successfully', {
+      users,
       total,
-      active,
-      newThisMonth,
-      growth: parseFloat(growth.toFixed(2)),
-      byRole
-    }
-  });
+      pagination: {
+        page: parseInt(page),
+        pages: Math.ceil(total / parseInt(limit)),
+        limit: parseInt(limit)
+      }
+    })
+  );
 });
 
-/**
- * Get order statistics
- */
-const getOrderStats = asyncHandler(async (req, res, next) => {
-  const total = await Order.countDocuments();
-  const pending = await Order.countDocuments({ status: { $in: ['pending', 'confirmed'] } });
-  const completed = await Order.countDocuments({ status: { $in: ['completed', 'delivered'] } });
-  
-  // Calculate revenue
-  const revenueData = await Order.aggregate([
-    {
-      $match: {
-        status: { $in: ['completed', 'delivered'] }
+// @desc    Get user by ID
+// @route   GET /api/admin/users/:id
+// @access  Private (Admin only)
+const getUserById = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id)
+    .select('-password -refreshToken')
+    .populate('profile.store', 'name status')
+    .populate('profile.driver', 'vehicleInfo isAvailable');
+
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+
+  res.status(200).json(
+    ApiResponse.success('User retrieved successfully', { user })
+  );
+});
+
+// @desc    Update user role
+// @route   PUT /api/admin/users/:id/role
+// @access  Private (Admin only)
+const updateUserRole = asyncHandler(async (req, res) => {
+  const { role } = req.body;
+
+  const validRoles = ['customer', 'driver', 'store', 'admin', 'superadmin'];
+  if (!validRoles.includes(role)) {
+    throw new AppError('Invalid role. Valid roles: ' + validRoles.join(', '), 400);
+  }
+
+  const user = await User.findById(req.params.id);
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+
+  // Update roles array
+  if (!user.roles.includes(role)) {
+    user.roles.push(role);
+  }
+
+  // Update active role
+  user.activeRole = role;
+
+  // Update legacy role for backward compatibility
+  if (role === 'store') {
+    user.role = 'seller';
+  } else if (role === 'admin' || role === 'superadmin') {
+    user.role = 'admin';
+  } else {
+    user.role = 'user';
+  }
+
+  await user.save();
+
+  res.status(200).json(
+    ApiResponse.success('User role updated successfully', { user })
+  );
+});
+
+// @desc    Update user status
+// @route   PUT /api/admin/users/:id/status
+// @access  Private (Admin only)
+const updateUserStatus = asyncHandler(async (req, res) => {
+  const { status } = req.body;
+
+  const validStatuses = ['active', 'inactive', 'suspended', 'banned'];
+  if (!validStatuses.includes(status)) {
+    throw new AppError('Invalid status. Valid statuses: ' + validStatuses.join(', '), 400);
+  }
+
+  const user = await User.findById(req.params.id);
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+
+  switch (status) {
+    case 'active':
+      user.isActive = true;
+      user.isVerified = true;
+      user.status = 'active';
+      break;
+    case 'inactive':
+      user.isActive = false;
+      user.status = 'inactive';
+      break;
+    case 'suspended':
+      user.isActive = false;
+      user.status = 'suspended';
+      break;
+    case 'banned':
+      user.isActive = false;
+      user.isVerified = false;
+      user.status = 'banned';
+      break;
+  }
+
+  await user.save();
+
+  // Create notification for user
+  await Notification.create({
+    recipient: user._id,
+    title: 'Account Status Update',
+    message: `Your account status has been updated to ${status}`,
+    type: 'account_status',
+    data: {
+      oldStatus: user.status,
+      newStatus: status
+    }
+  });
+
+  res.status(200).json(
+    ApiResponse.success('User status updated successfully', { user })
+  );
+});
+
+// @desc    Delete user
+// @route   DELETE /api/admin/users/:id
+// @access  Private (Admin only)
+const deleteUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (!user) {
+    throw new AppError('User not found', 404);
+  }
+
+  // Soft delete - mark as inactive
+  user.isActive = false;
+  user.isDeleted = true;
+  user.deletedAt = new Date();
+  await user.save();
+
+  res.status(200).json(
+    ApiResponse.success('User deactivated successfully')
+  );
+});
+
+// @desc    Get all stores
+// @route   GET /api/admin/stores
+// @access  Private (Admin only)
+const getAllStores = asyncHandler(async (req, res) => {
+  const { status, search, sortBy = 'createdAt', limit = 20, page = 1 } = req.query;
+  const skip = (page - 1) * limit;
+
+  let query = {};
+
+  if (status) {
+    query.status = status;
+  }
+
+  if (search) {
+    query.$or = [
+      { name: { $regex: search, $options: 'i' } },
+      { description: { $regex: search, $options: 'i' } }
+    ];
+  }
+
+  let sort = {};
+  switch (sortBy) {
+    case 'name':
+      sort = { name: 1 };
+      break;
+    case 'rating':
+      sort = { ratingsAverage: -1 };
+      break;
+    case 'newest':
+      sort = { createdAt: -1 };
+      break;
+    case 'oldest':
+      sort = { createdAt: 1 };
+      break;
+    default:
+      sort = { createdAt: -1 };
+      break;
+  }
+
+  const stores = await Store.find(query)
+    .populate('owner', 'name email phone')
+    .sort(sort)
+    .skip(skip)
+    .limit(parseInt(limit));
+
+  const total = await Store.countDocuments(query);
+
+  res.status(200).json(
+    ApiResponse.success('Stores retrieved successfully', {
+      stores,
+      total,
+      pagination: {
+        page: parseInt(page),
+        pages: Math.ceil(total / parseInt(limit)),
+        limit: parseInt(limit)
       }
+    })
+  );
+});
+
+// @desc    Get store by ID
+// @route   GET /api/admin/stores/:id
+// @access  Private (Admin only)
+const getStoreById = asyncHandler(async (req, res) => {
+  const store = await Store.findById(req.params.id)
+    .populate('owner', 'name email phone')
+    .populate('category', 'name')
+    .populate('subcategories', 'name');
+
+  if (!store) {
+    throw new AppError('Store not found', 404);
+  }
+
+  res.status(200).json(
+    ApiResponse.success('Store retrieved successfully', { store })
+  );
+});
+
+// @desc    Update store status
+// @route   PUT /api/admin/stores/:id/status
+// @access  Private (Admin only)
+const updateStoreStatus = asyncHandler(async (req, res) => {
+  const { status } = req.body;
+
+  const validStatuses = ['active', 'inactive', 'suspended', 'closed'];
+  if (!validStatuses.includes(status)) {
+    throw new AppError('Invalid status. Valid statuses: ' + validStatuses.join(', '), 400);
+  }
+
+  const store = await Store.findById(req.params.id);
+  if (!store) {
+    throw new AppError('Store not found', 404);
+  }
+
+  store.status = status;
+  store.isActive = status === 'active';
+  await store.save();
+
+  // Create notification for store owner
+  await Notification.create({
+    recipient: store.owner,
+    title: 'Store Status Update',
+    message: `Your store status has been updated to ${status}`,
+    type: 'store_status',
+    data: {
+      storeId: store._id,
+      oldStatus: store.status,
+      newStatus: status
+    }
+  });
+
+  res.status(200).json(
+    ApiResponse.success('Store status updated successfully', { store })
+  );
+});
+
+// @desc    Update store commission rate
+// @route   PUT /api/admin/stores/:id/commission
+// @access  Private (Admin only)
+const updateCommissionRate = asyncHandler(async (req, res) => {
+  const { commissionRate } = req.body;
+
+  if (typeof commissionRate !== 'number' || commissionRate < 0 || commissionRate > 100) {
+    throw new AppError('Commission rate must be a number between 0 and 100', 400);
+  }
+
+  const store = await Store.findById(req.params.id);
+  if (!store) {
+    throw new AppError('Store not found', 404);
+  }
+
+  store.commissionRate = commissionRate;
+  await store.save();
+
+  res.status(200).json(
+    ApiResponse.success('Commission rate updated successfully', { store })
+  );
+});
+
+// @desc    Delete store
+// @route   DELETE /api/admin/stores/:id
+// @access  Private (Admin only)
+const deleteStore = asyncHandler(async (req, res) => {
+  const store = await Store.findById(req.params.id);
+  if (!store) {
+    throw new AppError('Store not found', 404);
+  }
+
+  // Soft delete
+  store.isActive = false;
+  store.status = 'deleted';
+  store.deletedAt = new Date();
+  await store.save();
+
+  res.status(200).json(
+    ApiResponse.success('Store deleted successfully')
+  );
+});
+
+// @desc    Get all orders
+// @route   GET /api/admin/orders
+// @access  Private (Admin only)
+const getAllOrders = asyncHandler(async (req, res) => {
+  const { status, customer, store, dateRange, sortBy = 'createdAt', limit = 20, page = 1 } = req.query;
+  const skip = (page - 1) * limit;
+
+  let query = {};
+
+  if (status) {
+    query.status = status;
+  }
+
+  if (customer) {
+    query.customer = customer;
+  }
+
+  if (store) {
+    query.store = store;
+  }
+
+  if (dateRange) {
+    const [startDate, endDate] = dateRange.split(',');
+    if (startDate) query.createdAt = { $gte: new Date(startDate) };
+    if (endDate) query.createdAt = { ...query.createdAt, $lte: new Date(endDate) };
+  }
+
+  let sort = {};
+  switch (sortBy) {
+    case 'newest':
+      sort = { createdAt: -1 };
+      break;
+    case 'oldest':
+      sort = { createdAt: 1 };
+      break;
+    case 'amount-high':
+      sort = { totalAmount: -1 };
+      break;
+    case 'amount-low':
+      sort = { totalAmount: 1 };
+      break;
+    default:
+      sort = { createdAt: -1 };
+      break;
+  }
+
+  const orders = await Order.find(query)
+    .populate('customer', 'name email phone')
+    .populate('seller', 'name email phone')
+    .populate('store', 'name')
+    .populate('items.product', 'title')
+    .sort(sort)
+    .skip(skip)
+    .limit(parseInt(limit));
+
+  const total = await Order.countDocuments(query);
+
+  res.status(200).json(
+    ApiResponse.success('Orders retrieved successfully', {
+      orders,
+      total,
+      pagination: {
+        page: parseInt(page),
+        pages: Math.ceil(total / parseInt(limit)),
+        limit: parseInt(limit)
+      }
+    })
+  );
+});
+
+// @desc    Get order by ID
+// @route   GET /api/admin/orders/:id
+// @access  Private (Admin only)
+const getOrderById = asyncHandler(async (req, res) => {
+  const order = await Order.findById(req.params.id)
+    .populate('customer', 'name email phone')
+    .populate('seller', 'name email phone')
+    .populate('store', 'name')
+    .populate('items.product', 'title description price')
+    .populate('deliveryAssignment.assignedDriver', 'name phone');
+
+  if (!order) {
+    throw new AppError('Order not found', 404);
+  }
+
+  res.status(200).json(
+    ApiResponse.success('Order retrieved successfully', { order })
+  );
+});
+
+// @desc    Update order status
+// @route   PUT /api/admin/orders/:id/status
+// @access  Private (Admin only)
+const updateOrderStatus = asyncHandler(async (req, res) => {
+  const { status } = req.body;
+
+  const validStatuses = ['pending', 'confirmed', 'preparing', 'ready', 'out_for_delivery', 'delivered', 'completed', 'cancelled', 'refunded'];
+
+  if (!validStatuses.includes(status)) {
+    throw new AppError('Invalid status. Valid statuses: ' + validStatuses.join(', '), 400);
+  }
+
+  const order = await Order.findById(req.params.id);
+  if (!order) {
+    throw new AppError('Order not found', 404);
+  }
+
+  // Validate status transitions
+  const validTransitions = {
+    'pending': ['confirmed', 'cancelled'],
+    'confirmed': ['preparing', 'cancelled'],
+    'preparing': ['ready', 'cancelled'],
+    'ready': ['out_for_delivery'],
+    'out_for_delivery': ['delivered'],
+    'delivered': ['completed'],
+    'completed': [],
+    'cancelled': [],
+    'refunded': []
+  };
+
+  if (!validTransitions[order.status]?.includes(status)) {
+    throw new AppError(`Cannot change status from ${order.status} to ${status}`, 400);
+  }
+
+  order.status = status;
+  order.statusHistory.push({
+    status: status,
+    updatedBy: req.user._id,
+    timestamp: new Date(),
+    note: `Updated by admin`
+  });
+
+  if (status === 'cancelled') {
+    order.cancellation = {
+      reason: 'Cancelled by admin',
+      cancelledBy: req.user._id,
+      cancelledAt: new Date()
+    };
+  }
+
+  await order.save();
+
+  // Create notifications for involved parties
+  const statusMessages = {
+    'confirmed': 'Your order has been confirmed by admin',
+    'preparing': 'Your order is being prepared',
+    'ready': 'Your order is ready for delivery',
+    'out_for_delivery': 'Your order is out for delivery',
+    'delivered': 'Your order has been delivered',
+    'completed': 'Your order has been completed',
+    'cancelled': 'Your order has been cancelled by admin',
+    'refunded': 'Your order has been refunded'
+  };
+
+  // Notify customer
+  await Notification.create({
+    recipient: order.customer,
+    title: 'Order Status Update',
+    message: statusMessages[status],
+    type: 'order_status',
+    relatedEntity: {
+      entityType: 'Order',
+      entityId: order._id
     },
-    {
-      $group: {
+    data: {
+      orderId: order._id,
+      status: status,
+      updatedBy: 'admin'
+    }
+  });
+
+  // Notify store owner
+  await Notification.create({
+    recipient: order.seller,
+    title: 'Order Status Update',
+    message: `Order ${order.orderNumber} status updated to ${status}`,
+    type: 'order_status',
+    relatedEntity: {
+      entityType: 'Order',
+      entityId: order._id
+    },
+    data: {
+      orderId: order._id,
+      status: status,
+      updatedBy: 'admin'
+    }
+  });
+
+  res.status(200).json(
         _id: null,
         totalRevenue: { $sum: '$total' }
       }
