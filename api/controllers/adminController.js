@@ -564,246 +564,429 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
   });
 
   res.status(200).json(
-        _id: null,
-        totalRevenue: { $sum: '$total' }
-      }
+    ApiResponse.success('Order status updated successfully', { order })
+  );
+});
+
+// @desc    Get system analytics
+// @route   GET /api/admin/analytics/system
+// @access  Private (Admin only)
+const getSystemAnalytics = asyncHandler(async (req, res) => {
+  const { period = 'month', startDate, endDate } = req.query;
+
+  let dateFilter = {};
+  
+  if (startDate || endDate) {
+    dateFilter = {
+      createdAt: {}
+    };
+    if (startDate) dateFilter.createdAt.$gte = new Date(startDate);
+    if (endDate) dateFilter.createdAt.$lte = new Date(endDate);
+  } else {
+    const now = new Date();
+    switch (period.toLowerCase()) {
+      case 'day':
+        dateFilter.createdAt.$gte = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        dateFilter.createdAt.$lt = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        break;
+      case 'week':
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        dateFilter.createdAt.$gte = startOfWeek;
+        dateFilter.createdAt.$lt = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000);
+        break;
+      case 'month':
+        dateFilter.createdAt.$gte = new Date(now.getFullYear(), now.getMonth(), 1);
+        dateFilter.createdAt.$lt = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        break;
     }
-  ]);
-  
-  const revenue = revenueData[0] ? revenueData[0].totalRevenue : 0;
-  
-  // Calculate revenue growth
-  const startOfMonth = new Date();
-  startOfMonth.setDate(1);
-  startOfMonth.setHours(0, 0, 0, 0);
-  
-  const currentMonthRevenue = await Order.aggregate([
-    {
-      $match: {
-        status: { $in: ['completed', 'delivered'] },
-        createdAt: { $gte: startOfMonth }
-      }
-    },
+  }
+
+  // Get user statistics
+  const userStats = await User.getStatistics();
+
+  // Get store statistics
+  const storeStats = await Store.getStatistics();
+
+  // Get order statistics
+  const orderStats = await Order.getStatistics(dateFilter);
+
+  // Get daily orders for the period
+  const dailyOrders = await Order.aggregate([
+    { $match: dateFilter },
     {
       $group: {
-        _id: null,
-        total: { $sum: '$total' }
-      }
-    }
-  ]);
-  
-  const lastMonthStart = new Date();
-  lastMonthStart.setMonth(lastMonthStart.getMonth() - 1);
-  lastMonthStart.setDate(1);
-  lastMonthStart.setHours(0, 0, 0, 0);
-  
-  const lastMonthEnd = new Date();
-  lastMonthEnd.setDate(0); // Last day of last month
-  lastMonthEnd.setHours(23, 59, 59, 999);
-  
-  const lastMonthRevenue = await Order.aggregate([
-    {
-      $match: {
-        status: { $in: ['completed', 'delivered'] },
-        createdAt: { 
-          $gte: lastMonthStart,
-          $lt: lastMonthEnd
+        _id: {
+          year: { $year: '$createdAt' },
+          month: { $month: '$createdAt' },
+          day: { $dayOfMonth: '$createdAt' }
+        },
+        count: { $sum: 1 },
+        totalAmount: { $sum: '$totalAmount' },
+        completedOrders: {
+          $sum: { $cond: [{ $eq: ['$status', 'completed'] }, 1, 0] }
         }
       }
     },
+    { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } }
+  ]);
+
+  res.status(200).json(
+    ApiResponse.success('System analytics retrieved successfully', {
+      userStats,
+      storeStats,
+      orderStats,
+      dailyOrders,
+      period: dateFilter.createdAt
+    })
+  );
+});
+
+// @desc    Get user analytics
+// @route   GET /api/admin/analytics/users
+// @access  Private (Admin only)
+const getUserAnalytics = asyncHandler(async (req, res) => {
+  const { period = 'month', startDate, endDate } = req.query;
+
+  let dateFilter = {};
+  
+  if (startDate || endDate) {
+    dateFilter = {
+      createdAt: {}
+    };
+    if (startDate) dateFilter.createdAt.$gte = new Date(startDate);
+    if (endDate) dateFilter.createdAt.$lte = new Date(endDate);
+  } else {
+    const now = new Date();
+    switch (period.toLowerCase()) {
+      case 'day':
+        dateFilter.createdAt.$gte = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        dateFilter.createdAt.$lt = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        break;
+      case 'week':
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        dateFilter.createdAt.$gte = startOfWeek;
+        dateFilter.createdAt.$lt = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 1000);
+        break;
+      case 'month':
+        dateFilter.createdAt.$gte = new Date(now.getFullYear(), now.getMonth(), 1);
+        dateFilter.createdAt.$lt = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        break;
+    }
+  }
+
+  const newUserCount = await User.countDocuments({
+    ...dateFilter
+  });
+
+  const activeUserCount = await User.countDocuments({
+    ...dateFilter,
+    isActive: true
+  });
+
+  const userGrowth = await User.aggregate([
+    { $match: dateFilter },
     {
       $group: {
-        _id: null,
-        total: { $sum: '$total' }
+        _id: {
+          year: { $year: '$createdAt' },
+          month: { $month: '$createdAt' },
+          day: { $dayOfMonth: '$createdAt' }
+        },
+        count: { $sum: 1 }
+      }
+    },
+    { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } }
+  ]);
+
+  const userRoles = await User.aggregate([
+    { $match: dateFilter },
+    { $unwind: '$roles' },
+    {
+      $group: {
+        _id: '$roles',
+        count: { $sum: 1 }
       }
     }
   ]);
-  
-  const currentMonthValue = currentMonthRevenue[0] ? currentMonthRevenue[0].total : 0;
-  const lastMonthValue = lastMonthRevenue[0] ? lastMonthRevenue[0].total : 0;
-  
-  const revenueGrowth = lastMonthValue !== 0 
-    ? ((currentMonthValue - lastMonthValue) / lastMonthValue) * 100 
-    : currentMonthValue > 0 ? 100 : 0;
 
-  // Get orders by status
-  const ordersByStatus = await Order.aggregate([
+  res.status(200).json(
+    ApiResponse.success('User analytics retrieved successfully', {
+      newUserCount,
+      activeUserCount,
+      userGrowth,
+      userRoles,
+      period: dateFilter.createdAt
+    })
+  );
+});
+
+// @desc    Get store analytics
+// @route   GET /api/admin/analytics/stores
+// @access  Private (Admin only)
+const getStoreAnalytics = asyncHandler(async (req, res) => {
+  const { period = 'month', startDate, endDate } = req.query;
+
+  let dateFilter = {};
+  
+  if (startDate || endDate) {
+    dateFilter = {
+      createdAt: {}
+    };
+    if (startDate) dateFilter.createdAt.$gte = new Date(startDate);
+    if (endDate) dateFilter.createdAt.$lte = new Date(endDate);
+  } else {
+    const now = new Date();
+    switch (period.toLowerCase()) {
+      case 'day':
+        dateFilter.createdAt.$gte = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        dateFilter.createdAt.$lt = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        break;
+      case 'week':
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        dateFilter.createdAt.$gte = startOfWeek;
+        dateFilter.createdAt.$lt = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 1000);
+        break;
+      case 'month':
+        dateFilter.createdAt.$gte = new Date(now.getFullYear(), now.getMonth(), 1);
+        dateFilter.createdAt.$lt = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        break;
+    }
+  }
+
+  const newStoreCount = await Store.countDocuments({
+    ...dateFilter
+  });
+
+  const activeStoreCount = await Store.countDocuments({
+    ...dateFilter,
+    status: 'active'
+  });
+
+  const storeGrowth = await Store.aggregate([
+    { $match: dateFilter },
+    {
+      $group: {
+        _id: {
+          year: { $year: '$createdAt' },
+          month: { $month: '$createdAt' },
+          day: { $dayOfMonth: '$createdAt' }
+        },
+        count: { $sum: 1 }
+      }
+    },
+    { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } }
+  ]);
+
+  const storeCategories = await Store.aggregate([
+    { $match: dateFilter },
+    { $unwind: '$category' },
+    {
+      $group: {
+        _id: '$category',
+        count: { $sum: 1 }
+      }
+    }
+  ]);
+
+  res.status(200).json(
+    ApiResponse.success('Store analytics retrieved successfully', {
+      newStoreCount,
+      activeStoreCount,
+      storeGrowth,
+      storeCategories,
+      period: dateFilter.createdAt
+    })
+  );
+});
+
+// @desc    Get order analytics
+// @route   GET /api/admin/analytics/orders
+// @access  Private (Admin only)
+const getOrderAnalytics = asyncHandler(async (req, res) => {
+  const { period = 'month', startDate, endDate } = req.query;
+
+  let dateFilter = {};
+  
+  if (startDate || endDate) {
+    dateFilter = {
+      createdAt: {}
+    };
+    if (startDate) dateFilter.createdAt.$gte = new Date(startDate);
+    if (endDate) dateFilter.createdAt.$lte = new Date(endDate);
+  } else {
+    const now = new Date();
+    switch (period.toLowerCase()) {
+      case 'day':
+        dateFilter.createdAt.$gte = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        dateFilter.createdAt.$lt = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        break;
+      case 'week':
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        dateFilter.createdAt.$gte = startOfWeek;
+        dateFilter.createdAt.$lt = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 1000);
+        break;
+      case 'month':
+        dateFilter.createdAt.$gte = new Date(now.getFullYear(), now.getMonth(), 1);
+        dateFilter.createdAt.$lt = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        break;
+    }
+  }
+
+  const orderStats = await Order.getStatistics(dateFilter);
+
+  const dailyOrders = await Order.aggregate([
+    { $match: dateFilter },
+    {
+      $group: {
+        _id: {
+          year: { $year: '$createdAt' },
+          month: { $month: '$createdAt' },
+          day: { $dayOfMonth: '$createdAt' }
+        },
+        orders: { $sum: 1 },
+        totalAmount: { $sum: '$totalAmount' },
+        avgOrderValue: { $avg: '$totalAmount' }
+      }
+    },
+    { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } }
+  ]);
+
+  const orderStatusDistribution = await Order.aggregate([
+    { $match: dateFilter },
     {
       $group: {
         _id: '$status',
         count: { $sum: 1 }
       }
     }
- ]);
-  
-  const ordersByStatusObj = {};
-  ordersByStatus.forEach(status => {
-    ordersByStatusObj[status._id] = status.count;
-  });
+  ]);
 
-  res.status(200).json({
-    success: true,
-    data: {
-      total,
-      pending,
-      completed,
-      revenue,
-      revenueGrowth: parseFloat(revenueGrowth.toFixed(2)),
-      ordersByStatus: ordersByStatusObj
-    }
-  });
+  const topStores = await Order.aggregate([
+    { $match: dateFilter },
+    {
+      $group: {
+        _id: '$store',
+        orders: { $sum: 1 },
+        totalRevenue: { $sum: '$totalAmount' }
+      }
+    },
+    { $sort: { totalRevenue: -1 } },
+    { $limit: 10 }
+  ]);
+
+  res.status(200).json(
+    ApiResponse.success('Order analytics retrieved successfully', {
+      orderStats,
+      dailyOrders,
+      orderStatusDistribution,
+      topStores,
+      period: dateFilter.createdAt
+    })
+  );
 });
 
-/**
- * Get store statistics
- */
-const getStoreStats = asyncHandler(async (req, res, next) => {
-  const total = await Store.countDocuments();
-  const active = await Store.countDocuments({ status: 'active' });
-  const pending = await Store.countDocuments({ status: 'pending' });
-  const verified = await Store.countDocuments({ status: 'verified' });
+// @desc    Get financial analytics
+// @route   GET /api/admin/analytics/financial
+// @access  Private (Admin only)
+const getFinancialAnalytics = asyncHandler(async (req, res) => {
+  const { period = 'month', startDate, endDate } = req.query;
+
+  let dateFilter = {};
   
-  // Get top performing stores by revenue
-  let topPerforming = [];
-  try {
-    topPerforming = await Order.aggregate([
-      {
-        $match: {
-          status: { $in: ['completed', 'delivered'] }
-        }
-      },
-      {
-        $group: {
-          _id: '$store',
-          revenue: { $sum: '$total' },
-          orders: { $sum: 1 }
-        }
-      },
-      {
-        $lookup: {
-          from: 'stores',
-          localField: '_id',
-          foreignField: '_id',
-          as: 'storeInfo'
-        }
-      },
-      {
-        $unwind: '$storeInfo'
-      },
-      {
-        $project: {
-          _id: '$storeInfo._id',
-          name: '$storeInfo.name',
-          revenue: 1,
-          orders: 1
-        }
-      },
-      {
-        $sort: { revenue: -1 }
-      },
-      {
-        $limit: 5
-      }
-    ]);
-  } catch (error) {
-    console.error('Error calculating top performing stores:', error);
-    // Return empty array if aggregation fails
-    topPerforming = [];
+  if (startDate || endDate) {
+    dateFilter = {
+      createdAt: {}
+    };
+    if (startDate) dateFilter.createdAt.$gte = new Date(startDate);
+    if (endDate) dateFilter.createdAt.$lte = new Date(endDate);
+  } else {
+    const now = new Date();
+    switch (period.toLowerCase()) {
+      case 'day':
+        dateFilter.createdAt.$gte = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        dateFilter.createdAt.$lt = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+        break;
+      case 'week':
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        dateFilter.createdAt.$gte = startOfWeek;
+        dateFilter.createdAt.$lt = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 1000);
+        break;
+      case 'month':
+        dateFilter.createdAt.$gte = new Date(now.getFullYear(), now.getMonth(), 1);
+        dateFilter.createdAt.$lt = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        break;
+    }
   }
 
-  res.status(200).json({
-    success: true,
-    data: {
-      total,
-      active,
-      pending,
-      verified,
-      topPerforming
-    }
+  const orders = await Order.find({
+    ...dateFilter,
+    status: { $in: ['completed', 'delivered'] }
   });
-});
 
-/**
- * Get driver statistics
- */
-const getDriverStats = asyncHandler(async (req, res, next) => {
-  const total = await User.countDocuments({ role: 'driver' });
-  const active = await User.countDocuments({ role: 'driver', status: 'active' });
-  const pending = await User.countDocuments({ role: 'driver', status: 'pending' });
-  const approved = await User.countDocuments({ role: 'driver', status: 'approved' });
-  
-  // Calculate average rating for drivers
-  // Since drivers are users, we'll look at delivery ratings for users with driver role
-  let averageRating = 0;
-  let totalDeliveries = 0;
-  
-  try {
-    const driverRatings = await Delivery.aggregate([
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'driver',
-          foreignField: '_id',
-          as: 'driverInfo'
-        }
-      },
-      {
-        $unwind: '$driverInfo'
-      },
-      {
-        $match: {
-          'driverInfo.role': 'driver',
-          'driverRating.rating': { $exists: true, $ne: null }
-        }
-      },
-      {
-        $group: {
-          _id: '$driver',
-          avgRating: { $avg: '$driverRating.rating' },
-          deliveryCount: { $sum: 1 }
-        }
-      },
-      {
-        $group: {
-          _id: null,
-          averageRating: { $avg: '$avgRating' },
-          totalDeliveries: { $sum: '$deliveryCount' }
-        }
+  const totalRevenue = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+  const totalCommission = orders.reduce((sum, order) => sum + (order.commission || 0), 0);
+  const netRevenue = totalRevenue - totalCommission;
+
+  const monthlyRevenue = await Order.aggregate([
+    { $match: { ...dateFilter, status: { $in: ['completed', 'delivered'] } } },
+    {
+      $group: {
+        _id: {
+          year: { $year: '$createdAt' },
+          month: { $month: '$createdAt' }
+        },
+        total: { $sum: '$totalAmount' },
+        count: { $sum: 1 }
       }
-    ]);
-    
-    if (driverRatings && driverRatings.length > 0) {
-      averageRating = driverRatings[0].averageRating || 0;
-      totalDeliveries = driverRatings[0].totalDeliveries || 0;
-    }
-  } catch (error) {
-    // If there's an error with the aggregation, use fallback values
-    console.error('Error calculating driver ratings:', error);
-  }
+    },
+    { $sort: { '_id.year': 1, '_id.month': 1 } }
+  ]);
 
-  res.status(200).json({
-    success: true,
-    data: {
-      total,
-      active,
-      pending,
-      approved,
-      averageRating: parseFloat(averageRating.toFixed(2)),
-      totalDeliveries
+  const paymentMethods = await Order.aggregate([
+    { $match: { ...dateFilter, status: { $in: ['completed', 'delivered'] } } },
+    {
+      $group: {
+        _id: '$payment.method',
+        total: { $sum: '$totalAmount' },
+        count: { $sum: 1 }
+      }
     }
-  });
+  ]);
+
+  res.status(200).json(
+    ApiResponse.success('Financial analytics retrieved successfully', {
+      totalRevenue,
+      totalCommission,
+      netRevenue,
+      monthlyRevenue,
+      paymentMethods,
+      period: dateFilter.createdAt
+    })
+  );
 });
 
 module.exports = {
-  getDashboardMetrics,
-  getRecentActivity,
-  getRevenueTrends,
-  getOrderTrends,
-  getUserGrowthTrends,
-  getPerformanceMetrics,
-  getSystemHealth,
-  getUserStats,
-  getOrderStats,
-  getStoreStats,
-  getDriverStats
+  getAllUsers,
+  getUserById,
+  updateUserRole,
+  updateUserStatus,
+  deleteUser,
+  getAllStores,
+  getStoreById,
+  updateStoreStatus,
+  updateCommissionRate,
+  deleteStore,
+  getAllOrders,
+  getOrderById,
+  updateOrderStatus,
+  getSystemAnalytics,
+  getUserAnalytics,
+  getStoreAnalytics,
+  getOrderAnalytics,
+  getFinancialAnalytics
 };

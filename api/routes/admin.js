@@ -1,25 +1,70 @@
 const express = require('express');
-const router = express.Router();
-const adminController = require('../controllers/adminController');
 const { protect, authorize } = require('../middleware/auth');
+const {
+  getAllUsers,
+  getUserById,
+  updateUserRole,
+  updateUserStatus,
+  deleteUser,
+  getAllStores,
+  getStoreById,
+  updateStoreStatus,
+  updateCommissionRate,
+  deleteStore,
+  getAllOrders,
+  getOrderById,
+  updateOrderStatus,
+  getSystemAnalytics,
+  getUserAnalytics,
+  getStoreAnalytics,
+  getOrderAnalytics,
+  getFinancialAnalytics
+} = require('../controllers/adminController');
 
-// Admin dashboard routes - require authentication and admin role
-router.get('/dashboard/metrics', protect, authorize('admin'), adminController.getDashboardMetrics);
-router.get('/dashboard/activity', protect, authorize('admin'), adminController.getRecentActivity);
+const router = express.Router();
 
-// Analytics routes
-router.get('/analytics/revenue-trends', protect, authorize('admin'), adminController.getRevenueTrends);
-router.get('/analytics/order-trends', protect, authorize('admin'), adminController.getOrderTrends);
-router.get('/analytics/user-growth', protect, authorize('admin'), adminController.getUserGrowthTrends);
-router.get('/analytics/performance', protect, authorize('admin'), adminController.getPerformanceMetrics);
+// Admin - Users Management
+router.route('/users')
+  .get(protect, authorize('admin', 'superadmin'), getAllUsers);
 
-// System health route
-router.get('/system/health', protect, authorize('admin'), adminController.getSystemHealth);
+router.route('/users/:id')
+  .get(protect, authorize('admin', 'superadmin'), getUserById)
+  .put(protect, authorize('admin', 'superadmin'), updateUserRole)
+  .patch(protect, authorize('admin', 'superadmin'), updateUserStatus)
+  .delete(protect, authorize('admin', 'superadmin'), deleteUser);
 
-// Stats routes
-router.get('/users/stats', protect, authorize('admin'), adminController.getUserStats);
-router.get('/orders/stats', protect, authorize('admin'), adminController.getOrderStats);
-router.get('/stores/stats', protect, authorize('admin'), adminController.getStoreStats);
-router.get('/drivers/stats', protect, authorize('admin'), adminController.getDriverStats);
+// Admin - Stores Management
+router.route('/stores')
+  .get(protect, authorize('admin', 'superadmin'), getAllStores);
+
+router.route('/stores/:id')
+  .get(protect, authorize('admin', 'superadmin'), getStoreById)
+  .put(protect, authorize('admin', 'superadmin'), updateStoreStatus)
+  .patch(protect, authorize('admin', 'superadmin'), updateCommissionRate)
+  .delete(protect, authorize('admin', 'superadmin'), deleteStore);
+
+// Admin - Orders Management
+router.route('/orders')
+  .get(protect, authorize('admin', 'superadmin'), getAllOrders);
+
+router.route('/orders/:id')
+  .get(protect, authorize('admin', 'superadmin'), getOrderById)
+  .put(protect, authorize('admin', 'superadmin'), updateOrderStatus);
+
+// Admin - Analytics
+router.route('/analytics/system')
+  .get(protect, authorize('admin', 'superadmin'), getSystemAnalytics);
+
+router.route('/analytics/users')
+  .get(protect, authorize('admin', 'superadmin'), getUserAnalytics);
+
+router.route('/analytics/stores')
+  .get(protect, authorize('admin', 'superadmin'), getStoreAnalytics);
+
+router.route('/analytics/orders')
+  .get(protect, authorize('admin', 'superadmin'), getOrderAnalytics);
+
+router.route('/analytics/financial')
+  .get(protect, authorize('admin', 'superadmin'), getFinancialAnalytics);
 
 module.exports = router;
