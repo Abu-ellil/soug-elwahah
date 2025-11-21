@@ -70,18 +70,9 @@ const deliveryRoutes = require('../routes/deliveries');
 // Create Express app
 const app = express();
 
-// Connect to database with proper error handling for serverless
-if (!global.mongooseConnection) {
-  connectDB()
-    .then(() => {
-      global.mongooseConnection = true;
-      console.log('✅ MongoDB Connected in serverless environment');
-    })
-    .catch((err) => {
-      console.error('❌ Database connection failed in serverless:', err.message);
-      // In serverless, we don't want to crash the function, just log the error
-    });
-}
+// Note: In serverless environments, database connection should be handled by the connection string
+// Mongoose will handle connection pooling automatically
+// Remove the initial connection attempt to avoid blocking the function
 
 // Trust proxy (important for Vercel deployment)
 app.set('trust proxy', 1);
