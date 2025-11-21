@@ -3,7 +3,7 @@
   "name": "tawseela-api",
   "functions": {
     "api/serverless/index.js": {
-      "runtime": "nodejs18.x"
+      "runtime": "nodejs18"
     }
   },
   "routes": [
