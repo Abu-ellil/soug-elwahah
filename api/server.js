@@ -153,6 +153,32 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Environment check endpoint (for debugging)
+app.get('/env-check', (req, res) => {
+  const requiredEnvVars = [
+    'MONGODB_URI', 
+    'JWT_SECRET', 
+    'NODE_ENV', 
+    'API_VERSION'
+  ];
+  
+  const envStatus = {};
+  requiredEnvVars.forEach(envVar => {
+    envStatus[envVar] = process.env[envVar] ? '✅ SET' : '❌ NOT SET';
+  });
+  
+  res.status(200).json({
+    success: true,
+    message: 'Environment Variables Check',
+    environment: {
+      NODE_ENV: process.env.NODE_ENV || 'not set',
+      VERCEL: process.env.VERCEL || 'not set',
+      ...envStatus
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
 // API routes
 const API_VERSION = process.env.API_VERSION || 'v1';
 
