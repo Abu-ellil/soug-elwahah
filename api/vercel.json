@@ -1,28 +1,16 @@
 {
   "version": 2,
-  "name": "tawseela-grocery-api",
-  "builds": [
-    {
-      "src": "index.js",
-      "use": "@vercel/node"
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "**"
     }
-  ],
+  },
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "index.js"
+      "destination": "/api/index.js"
     }
   ],
-  "env": {
-    "NODE_ENV": "production",
-    "PORT": "3000",
-    "API_VERSION": "v1"
-  },
-  "regions": ["iad1"],
-  "github": {
-    "enabled": true,
-    "autoAlias": true
-  },
   "headers": [
     {
       "source": "/api/(.*)",
@@ -33,13 +21,18 @@
         },
         {
           "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
         },
         {
           "key": "Access-Control-Allow-Headers",
-          "value": "X-Requested-With, Content-Type, Authorization"
+          "value": "Content-Type, Authorization"
         }
       ]
     }
-  ]
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
 }
+
+
