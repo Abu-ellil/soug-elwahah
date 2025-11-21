@@ -4,7 +4,6 @@ const cors = require('cors');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
 const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
 const hpp = require('hpp');
@@ -13,18 +12,6 @@ const dotenv = require('dotenv');
 
 // Load environment variables
 dotenv.config();
-
-// Import database connection
-const connectDB = require('../config/database');
-
-// Import Socket.IO configuration (only initialize if needed)
-const { initializeSocket } = require('../config/socket');
-
-// Import scheduler
-const DeliveryScheduler = require('../utils/scheduler');
-
-// Import Swagger configuration
-const { specs, swaggerUi, swaggerOptions } = require('../config/swagger');
 
 // Import middleware
 const errorHandler = require('../middleware/errorHandler');
@@ -53,26 +40,18 @@ try {
 
 const adminRoutes = require('../routes/admin');
 const customerRoutes = require('../routes/customer');
-const driverRoutes = require('../routes/driver');
 const productRoutes = require('../routes/products');
 const serviceRoutes = require('../routes/services');
 const storeRoutes = require('../routes/store');
 const orderRoutes = require('../routes/orders');
-const paymentRoutes = require('../routes/payment');
 const messageRoutes = require('../routes/messages');
 const reviewRoutes = require('../routes/reviews');
 const notificationRoutes = require('../routes/notifications');
 const categoryRoutes = require('../routes/categories');
-const uploadRoutes = require('../routes/upload');
 const testRoutes = require('../routes/test');
-const deliveryRoutes = require('../routes/deliveries');
 
 // Create Express app
 const app = express();
-
-// Note: In serverless environments, database connection should be handled by the connection string
-// Mongoose will handle connection pooling automatically
-// Remove the initial connection attempt to avoid blocking the function
 
 // Trust proxy (important for Vercel deployment)
 app.set('trust proxy', 1);
@@ -82,57 +61,11 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
 
-// Rate limiting - DISABLED for serverless (can cause issues)
-// const limiter = rateLimit({
-//   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 10 * 60 * 1000, // 15 minutes
-//   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 250, // limit each IP to 100 requests per windowMs
-//   message: {
-//     success: false,
-//     message: 'تم تجاوز الحد المسموح من الطلبات، يرجى المحاولة لاحقاً'
-//   },
-//   standardHeaders: true,
-//   legacyHeaders: false,
-// });
-
-// app.use('/api/', limiter);
-
-// CORS configuration
-const corsOptions = {
- origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) return callback(null, true);
-    
-    const allowedOrigins = [
-      'http://localhost:8081',
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:19006', // Expo dev server
-      'https://your-frontend-domain.vercel.app',
-      'http://192.168.1.4:8081', // Local IP for mobile devices
-      'http://192.168.1.4:3000', // Local IP for mobile devices
-      'http://192.168.1.4:3001', // Local IP for mobile devices
-      'http://192.168.1.4:19006', // Local IP for Expo dev server
-      'http://10.0.2.2:19006', // Android emulator to access host machine
-      'http://10.0.2.2:8081', // Android emulator to access host machine
-      'http://10.0.2.2:3000', // Android emulator to access host machine
-      'http://10.0.2.2:3001', // Android emulator to access host machine
-      process.env.FRONTEND_URL,
-      process.env.CORS_ORIGIN,
-      process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null
-    ].filter(Boolean);
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('غير مسموح بالوصول من هذا المصدر'));
-    }
- },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-};
-
-app.use(cors(corsOptions));
+// Simple CORS configuration
+app.use(cors({
+  origin: '*',
+  credentials: true
+}));
 
 // Cookie parsing middleware
 app.use(cookieParser());
@@ -141,21 +74,17 @@ app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Data sanitization against NoSQL query injection
+// Data sanitization
 app.use(mongoSanitize());
-
-// Data sanitization against XSS
 app.use(xss());
-
-// Prevent parameter pollution
 app.use(hpp());
 
 // Compression middleware
 app.use(compression());
 
-// Logging middleware
-if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'production') {
-  app.use(morgan('combined'));
+// Logging middleware - only in development to avoid hanging
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
 }
 
 // Health check endpoint
@@ -181,21 +110,14 @@ app.use(`/api/${API_VERSION}/services`, serviceRoutes);
 // Conditionally mount stores routes only if available
 if (storesRoutes) { app.use(`/api/${API_VERSION}/stores`, storesRoutes); }
 app.use(`/api/${API_VERSION}/orders`, orderRoutes);
-app.use(`/api/${API_VERSION}/payment`, paymentRoutes);
 app.use(`/api/${API_VERSION}/messages`, messageRoutes);
 app.use(`/api/${API_VERSION}/reviews`, reviewRoutes);
 app.use(`/api/${API_VERSION}/notifications`, notificationRoutes);
 app.use(`/api/${API_VERSION}/categories`, categoryRoutes);
-app.use(`/api/${API_VERSION}/upload`, uploadRoutes);
 app.use(`/api/${API_VERSION}/test`, testRoutes);
-app.use(`/api/${API_VERSION}/drivers`, driverRoutes);
-app.use(`/api/${API_VERSION}/deliveries`, deliveryRoutes);
 
 // Mount admin routes
 app.use(`/api/${API_VERSION}/admin`, adminRoutes);
-
-// API Documentation with Swagger
-app.use(`/api/${API_VERSION}/docs`, swaggerUi.serve, swaggerUi.setup(specs, swaggerOptions));
 
 // Base API route
 app.get(`/api/${API_VERSION}`, (req, res) => {
@@ -212,7 +134,6 @@ app.get(`/api/${API_VERSION}`, (req, res) => {
       services: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/services`,
       stores: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/stores`,
       orders: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/orders`,
-      payment: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/payment`,
       deliveries: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/deliveries`,
       drivers: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/drivers`,
       messages: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/messages`,
@@ -256,11 +177,5 @@ app.use(notFound);
 // Global error handler
 app.use(errorHandler);
 
-// Export the serverless handler with proper configuration
-module.exports = serverless(app, {
-  binary: ['application/octet-stream', 'image/*'],
-  cors: {
-    origin: true,
-    credentials: true
- }
-});
+// Export the serverless handler with minimal configuration
+module.exports = serverless(app);
