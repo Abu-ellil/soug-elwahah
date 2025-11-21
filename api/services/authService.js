@@ -2,6 +2,7 @@ const User = require('../models/User');
 const AppError = require('../utils/appError');
 const { createSendToken } = require('../utils/jwt');
 const { generateOTP, hashOTP, verifyOTP, sendOTP } = require('../utils/otp');
+const jwt = require('jsonwebtoken');
 
 /**
  * Register a new user with multi-role support
@@ -27,14 +28,14 @@ const registerUser = async (userData) => {
 
   // Determine roles based on input
   let roles = ['customer']; // Default role
-  if (role === 'store' || role === 'seller') {
+ if (role === 'store' || role === 'seller') {
     roles.push('store');
-  } else if (role === 'driver') {
+ } else if (role === 'driver') {
     roles = ['driver']; // For drivers, set only driver role
   }
 
   // Create user with complete profile
-  const user = await User.create({
+ const user = await User.create({
     name: `${firstName} ${lastName}`,
     phone,
     email,
@@ -50,6 +51,85 @@ const registerUser = async (userData) => {
   });
 
   return user;
+};
+
+/**
+ * Resend OTP for phone verification
+ */
+const resendPhoneVerificationOTP = async (phoneNumber) => {
+  // Validate phone number format
+  const phoneRegex = /^(\+20|0)?1[0-9]{9}$/;
+  if (!phoneRegex.test(phoneNumber)) {
+    throw new AppError('رقم الهاتف غير صحيح', 400);
+  }
+
+  // Find user
+  const user = await User.findOne({ phone: phoneNumber }).select('+phoneOTP +phoneOTPExpires +phoneOTPAttempts');
+
+  if (!user) {
+    throw new AppError('لم يتم العثور على المستخدم', 404);
+  }
+
+  // Check if user has existing OTP that hasn't expired yet
+  if (user.phoneOTP && user.phoneOTPExpires > Date.now()) {
+    const remainingTime = Math.ceil((user.phoneOTPExpires - Date.now()) / (1000 * 60));
+    throw new AppError(`رمز التحقق لا يزال نشطًا. يرجى الانتظار ${remainingTime} دقيقة قبل المحاولة مجددًا`, 429);
+  }
+
+  // Generate new OTP
+  const otp = generateOTP();
+  const hashedOTP = hashOTP(otp);
+
+  // Update user with new OTP
+  user.phoneOTP = hashedOTP;
+  user.phoneOTPExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+  user.phoneOTPAttempts = 0; // Reset attempts when resending
+  await user.save({ validateBeforeSave: false });
+
+  // Send OTP via SMS
+ try {
+    await sendOTP(phoneNumber, otp);
+  } catch (error) {
+    user.phoneOTP = undefined;
+    user.phoneOTPExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    throw new AppError('فشل في إرسال رمز التحقق، يرجى المحاولة لاحقاً', 500);
+  }
+
+  return {
+    phoneNumber,
+    expiresIn: '10 دقائق'
+  };
+};
+
+/**
+ * Refresh JWT token
+ */
+const refreshToken = async (refreshToken) => {
+  if (!refreshToken) {
+    throw new AppError('Please provide refresh token', 401);
+  }
+
+  try {
+    // Verify refresh token
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+
+    // Find user
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      throw new AppError('The user belonging to this token no longer exists', 401);
+    }
+
+    // Check if refresh token is still valid
+    if (user.changedPasswordAfter(decoded.iat)) {
+      throw new AppError('User recently changed password. Please log in again', 401);
+    }
+
+    return user;
+  } catch (error) {
+    throw new AppError('Invalid refresh token', 401);
+  }
 };
 
 /**
@@ -275,7 +355,9 @@ module.exports = {
   loginUser,
   sendPhoneVerificationOTP,
   verifyPhoneOTP,
-  completeUserProfile,
+ completeUserProfile,
   switchUserRole,
-  getUserPermissions
+  getUserPermissions,
+  resendPhoneVerificationOTP,
+  refreshToken
 };

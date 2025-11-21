@@ -3,6 +3,7 @@ const AppError = require('../utils/appError');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiResponse = require('../utils/apiResponse');
 const { createSendToken } = require('../utils/jwt');
+const jwt = require('jsonwebtoken');
 const authService = require('../services/authService');
 
 /**
@@ -34,6 +35,21 @@ const sendPhoneOTP = asyncHandler(async (req, res, next) => {
 });
 
 /**
+ * Resend OTP
+ */
+const resendOTP = asyncHandler(async (req, res, next) => {
+  try {
+    const result = await authService.resendPhoneVerificationOTP(req.body.phoneNumber);
+    
+    res.status(200).json(
+      ApiResponse.success('تم إعادة إرسال رمز التحقق بنجاح', result)
+    );
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/**
  * Verify OTP and login/register user
  */
 const verifyPhoneOTP = asyncHandler(async (req, res, next) => {
@@ -45,6 +61,25 @@ const verifyPhoneOTP = asyncHandler(async (req, res, next) => {
 
     // Create and send token
     createSendToken(user, 200, res, isProfileComplete ? 'تم تسجيل الدخول بنجاح' : 'تم التحقق من الهاتف، يرجى إكمال الملف الشخصي');
+  } catch (error) {
+    return next(error);
+  }
+});
+
+/**
+ * Refresh JWT token
+ */
+const refreshToken = asyncHandler(async (req, res, next) => {
+  const token = req.body.refreshToken || req.cookies.refreshToken;
+
+  if (!token) {
+    return next(new AppError('Please provide refresh token', 401));
+  }
+
+  try {
+    const user = await authService.refreshToken(token);
+    // Create new tokens
+    createSendToken(user, 200, res, 'Token refreshed successfully');
   } catch (error) {
     return next(error);
   }

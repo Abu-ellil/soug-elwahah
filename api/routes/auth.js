@@ -6,16 +6,17 @@ const router = express.Router();
 
 // Public routes (no authentication required)
 router.post('/register', authController.register);
-router.post('/login', authController.login);
-router.post('/send-otp', authRateLimit, authController.sendPhoneOTP);
 router.post('/verify-otp', authController.verifyPhoneOTP);
+router.post('/login', authController.login);
+router.post('/refresh-token', authController.refreshToken);
+router.post('/resend-otp', authRateLimit, authController.resendOTP);
+router.post('/send-otp', authRateLimit, authController.sendPhoneOTP);
 
 // Protected routes (authentication required)
 router.use(protect); // All routes after this middleware are protected
 
-router.post('/complete-profile', authController.completeProfile);
-router.get('/me', authController.getMe);
-router.patch('/update-profile', authController.updateProfile);
+router.get('/profile', authController.getMe);
+router.put('/profile', authController.updateProfile);
 router.patch('/update-location', authController.updateLocation);
 router.post('/logout', authController.logout);
 router.delete('/deactivate', authController.deactivateAccount);

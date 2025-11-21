@@ -38,11 +38,13 @@ const authRoutes = require('./routes/auth');
 // Replace users routes import with safe require to avoid crash during testing
 let userRoutes; try { userRoutes = require('./routes/users'); } catch (e) { console.warn('Users routes module not found, skipping users routes.'); }
 const adminRoutes = require('./routes/admin');
+const customerRoutes = require('./routes/customer');
 const driverRoutes = require('./routes/drivers');
 const productRoutes = require('./routes/products');
 const serviceRoutes = require('./routes/services');
 const storeRoutes = require('./routes/stores');
 const orderRoutes = require('./routes/orders');
+const paymentRoutes = require('./routes/payment');
 const messageRoutes = require('./routes/messages');
 const reviewRoutes = require('./routes/reviews');
 const notificationRoutes = require('./routes/notifications');
@@ -157,10 +159,12 @@ const API_VERSION = process.env.API_VERSION || 'v1';
 app.use(`/api/${API_VERSION}/auth`, authRoutes);
 // Conditionally mount users routes only if available
 if (userRoutes) { app.use(`/api/${API_VERSION}/users`, userRoutes); }
+app.use(`/api/${API_VERSION}/customer`, customerRoutes);
 app.use(`/api/${API_VERSION}/products`, productRoutes);
 app.use(`/api/${API_VERSION}/services`, serviceRoutes);
 app.use(`/api/${API_VERSION}/stores`, storeRoutes);
 app.use(`/api/${API_VERSION}/orders`, orderRoutes);
+app.use(`/api/${API_VERSION}/payment`, paymentRoutes);
 app.use(`/api/${API_VERSION}/messages`, messageRoutes);
 app.use(`/api/${API_VERSION}/reviews`, reviewRoutes);
 app.use(`/api/${API_VERSION}/notifications`, notificationRoutes);
@@ -186,10 +190,12 @@ app.get(`/api/${API_VERSION}`, (req, res) => {
     endpoints: {
       auth: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/auth`,
       users: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/users`,
+      customer: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/customer`,
       products: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/products`,
       services: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/services`,
       stores: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/stores`,
       orders: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/orders`,
+      payment: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/payment`,
       deliveries: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/deliveries`,
       drivers: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/drivers`,
       messages: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/messages`,
