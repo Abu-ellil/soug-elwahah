@@ -42,7 +42,6 @@
     "express-rate-limit": "^6.10.0",
     "express-mongo-sanitize": "^2.2.0",
     "express-validator": "^7.0.1",
-    "helmet": "^7.0.0",
     "hpp": "^0.2.3",
     "joi": "^17.9.2",
     "jsonwebtoken": "^9.0.2",
@@ -63,7 +62,8 @@
     "axios": "^1.13.1",
     "dotenv": "^16.3.1",
     "node-cron": "^3.0.3",
-    "cloudinary": "^1.41.3"
+    "cloudinary": "^1.41.3",
+    "serverless-http": "^3.2.0"
   },
   "devDependencies": {
     "eslint": "^8.47.0",

@@ -1,5 +1,5 @@
 const serverless = require("serverless-http");
-const app = require("./server");
+const app = require("./server.js");
 
 // If executed directly, run a standard HTTP server for local development.
 if (require.main === module) {

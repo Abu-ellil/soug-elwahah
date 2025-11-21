@@ -367,6 +367,8 @@ module.exports = {
   login,
   sendPhoneOTP,
   verifyPhoneOTP,
+  resendOTP,
+  refreshToken,
   completeProfile,
   getMe,
   updateProfile,

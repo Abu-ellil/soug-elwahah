@@ -672,13 +672,13 @@ const getStoreReviews = asyncHandler(async (req, res) => {
 
   const total = await Review.countDocuments({
     reviewee: req.params.storeId,
-    entityType: 'store'
+    entityType: 'store'–––
   });
 
   // Get average rating
  const avgRating = await Review.aggregate([
     { $match: { reviewee: req.params.storeId, entityType: 'store' } },
-    { $group: { _id: null, average: { $avg: '$rating' } }
+    { $group: { _id: null, average: { $avg: '$rating' } } }
   ]);
 
   res.status(200).json(

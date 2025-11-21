@@ -489,7 +489,7 @@ const getStoreReviews = asyncHandler(async (req, res) => {
   // Get average rating
   const avgRating = await Review.aggregate([
     { $match: { reviewee: req.params.storeId, entityType: 'store' } },
-    { $group: { _id: null, average: { $avg: '$rating' } }
+    { $group: { _id: null, average: { $avg: '$rating' } } }
   ]);
 
   res.status(200).json(
@@ -530,7 +530,7 @@ const getDriverReviews = asyncHandler(async (req, res) => {
   // Get average rating
   const avgRating = await Review.aggregate([
     { $match: { reviewee: req.params.driverId, entityType: 'driver' } },
-    { $group: { _id: null, average: { $avg: '$rating' } }
+    { $group: { _id: null, average: { $avg: '$rating' } } }
   ]);
 
   res.status(200).json(
