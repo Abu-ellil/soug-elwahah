@@ -2,10 +2,9 @@
   "version": 2,
   "functions": {
     "api/index.js": {
-      "runtime": "nodejs18.x",
       "includeFiles": "config/**"
     }
- },
+  },
   "headers": [
     {
       "source": "/api/(.*)",
