@@ -244,14 +244,17 @@ app.use(errorHandler);
 if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
   const PORT = process.env.PORT || 5000;
 
-
   const server = app.listen(PORT, '0.0.0.0', () => console.log(`API running on port ${PORT}`));
   
-  // Initialize Socket.IO
-  initializeSocket(server);
+  // Initialize Socket.IO only if not in serverless environment
+  if (!process.env.VERCEL) {
+    initializeSocket(server);
+  }
   
-  // Initialize delivery scheduler
-  DeliveryScheduler.initialize();
+  // Initialize delivery scheduler only if not in serverless environment
+  if (!process.env.VERCEL) {
+    DeliveryScheduler.initialize();
+  }
   
   // Handle unhandled promise rejections
   process.on('unhandledRejection', (err, promise) => {
