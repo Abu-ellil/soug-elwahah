@@ -3,14 +3,17 @@
   "name": "tawseela-api",
   "functions": {
     "api/serverless/index.js": {
-      "runtime": "now-node@1.0.0",
-      "includeFiles": "**"
+      "runtime": "nodejs18.x"
     }
   },
   "rewrites": [
     {
-      "source": "/(.*)",
-      "destination": "/api/serverless/index.js"
+      "source": "/api/(.*)",
+      "destination": "/serverless/index.js"
+    },
+    {
+      "source": "/health",
+      "destination": "/serverless/index.js"
     }
   ],
   "headers": [
@@ -32,7 +35,7 @@
       ]
     }
   ],
- "env": {
+  "env": {
     "MONGODB_URI": "mongodb+srv://mrabuellil_db_user:mrabuellil_db_user@aifarm.j5pnubg.mongodb.net/elsoog",
     "JWT_SECRET": "your_super_secret_jwt_key_change_this_in_production",
     "JWT_EXPIRE": "30d",
