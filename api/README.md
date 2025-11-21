@@ -1,168 +1,249 @@
-# منصة توصيل - Tawseela Backend
+# Tawseela Grocery Delivery API
 
-نظام توصيل متكامل مبني باستخدام Node.js وExpress مع دعم للتعقب في الوقت الفعلي باستخدام Socket.io
+A comprehensive grocery delivery system API with multi-role support for customers, drivers, store owners, and administrators.
 
-## المميزات
+## Features
 
-- **نظام تعقب في الوقت الفعلي**: باستخدام Socket.io لمتابعة السائقين والطلبات
-- **نظام مصادقة قوي**: باستخدام JWT ودعم تسجيل الدخول عبر البريد الإلكتروني وكلمة المرور
-- **نظام دفع متكامل**: دعم المحاكيات لبوابات Paymob وFawry
-- **نظام التحقق من السائقين**: مراجعة المستندات من قبل الأدمن
-- **واجهة إدارة الأدمن**: مراجعة السائقين، إدارة الطلبات، إعدادات العمولة
-- **دعم المحفظة**: محفظة داخلية للمستخدمين
-- **نظام الإشعارات**: دعم الإشعارات الفورية
+### User Management
+- Phone number based registration and authentication
+- Multi-role system (customer, driver, store_owner, service_provider, admin)
+- OTP verification via SMS
+- Role-based access control
+- Account status management (pending, active, suspended, banned)
 
-## الهيكل المعياري
+### Store Management
+- Store creation and management
+- Product catalog management
+- Business hours configuration
+- Delivery zones setup
+- Store approval workflow
+- Inventory management
+- Store analytics and reporting
 
-- `modules/auth`: نظام المصادقة
-- `modules/users`: إدارة المستخدمين
-- `modules/drivers`: إدارة السائقين ونظام التحقق
-- `modules/stores`: إدارة المتاجر والمنتجات
-- `modules/orders`: إدارة الطلبات
-- `modules/payments`: نظام الدفع
-- `modules/notifications`: نظام الإشعارات
-- `modules/admin`: لوحة تحكم الأدمن
-- `modules/customers`: إدارة العملاء
-- `modules/storeowners`: إدارة ملاك المتاجر
+### Order Management
+- Order creation with multiple items
+- Price negotiation and bidding system for drivers
+- Order status tracking
+- Multiple payment methods
+- Order scheduling
+- Cancellation and refund system
 
-## قواعد البيانات
+### Customer Features
+- Nearby store discovery
+- Product search and filtering
+- Favorites and wishlist
+- Reviews and ratings
+- Order history
+- Delivery tracking
 
-- MongoDB Atlas للتخزين
-- دعم لتحديد المواقع الجغرافية (GeoJSON)
-- مخططات العلاقات بين الكيانات (ERD)
+### Driver Features
+- Nearby order discovery
+- Bidding system with price negotiation
+- Order status updates
+- Earnings tracking
+- Performance analytics
+- Availability management
 
-## الإعداد
+### Admin Features
+- Complete system oversight
+- User management (roles, status, permissions)
+- Store management and approval
+- Order management
+- Comprehensive analytics
+- Financial reporting
+- System configuration
 
-1. **تثبيت التبعيات**:
-   ```bash
-   npm install
-   ```
+### Payment System
+- Multiple payment methods (card, wallet, cash)
+- Digital wallet with transaction history
+- Refund processing
+- Stripe integration
+- Commission management
 
-2. **إنشاء ملف .env**:
-   ```env
-   MONGODB_URI=ongodb+srv://<username>:<password>@cluster.mongodb.net/tawseela?retryWrites=true&w=majority
-   JWT_SECRET=your_jwt_secret_key_here
-   JWT_EXPIRE=7d
-   PORT=5000
-   NODE_ENV=development
-   CLIENT_URL=http://localhost:3000
-   JWT_COOKIE_EXPIRE=30
-   PAYMOB_INTEGRATION_ID=your_paymob_integration_id
-   PAYMOB_IFRAME_ID=your_paymob_iframe_id
-   PAYMOB_API_KEY=your_paymob_api_key
-   PAYMOB_HMAC=your_paymob_hmac
-   FAWRY_API_KEY=your_fawry_api_key
-   FAWRY_SECRET=your_fawry_secret
-   ```
-
-3. **تشغيل الخادم**:
-   ```bash
-   npm run dev
-   ```
+### Security Features
+- JWT-based authentication
+- Rate limiting
+- Input validation
+- Account lockout protection
+- Phone number verification
+- Role-based access control
 
 ## API Endpoints
 
-### تسجيل ودخول العملاء
-- `POST /api/customers/register` - تسجيل عميل جديد
-- `POST /api/customers/login` - تسجيل دخول العميل
-- `GET /api/customers/me` - الحصول على معلومات العميل الحالي
-- `PUT /api/customers/me` - تحديث معلومات العميل
-- `PUT /api/customers/me/password` - تحديث كلمة مرور العميل
-- `POST /api/customers/forgotpassword` - استعادة كلمة المرور
-- `PUT /api/customers/resetpassword/:resettoken` - إعادة تعيين كلمة المرور
+### Authentication
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/verify-otp` - Verify OTP
+- `POST /api/auth/login` - Login user
+- `POST /api/auth/refresh-token` - Refresh token
+- `POST /api/auth/resend-otp` - Resend OTP
+- `GET /api/auth/profile` - Get user profile
+- `PUT /api/auth/profile` - Update user profile
 
-### تسجيل ودخول السائقين
-- `POST /api/drivers/register` - تسجيل سائق جديد
-- `POST /api/drivers/login` - تسجيل دخول السائق
-- `GET /api/drivers/me` - الحصول على معلومات السائق الحالي
-- `PUT /api/drivers/me` - تحديث معلومات السائق
-- `PUT /api/drivers/me/password` - تحديث كلمة مرور السائق
-- `PUT /api/drivers/me/documents` - رفع وثائق التحقق
-- `PUT /api/drivers/me/online` - تحديث حالة توفر السائق
-- `POST /api/drivers/forgotpassword` - استعادة كلمة المرور
-- `PUT /api/drivers/resetpassword/:resettoken` - إعادة تعيين كلمة المرور
+### Customer
+- `GET /api/customer/stores/nearby` - Get nearby stores
+- `GET /api/customer/products/search` - Search products
+- `POST /api/customer/orders` - Create order
+- `GET /api/customer/orders` - Get customer orders
+- `GET /api/customer/orders/:id` - Get order details
+- `PUT /api/customer/orders/:id/cancel` - Cancel order
+- `POST /api/customer/favorites` - Add to favorites
+- `DELETE /api/customer/favorites` - Remove from favorites
+- `GET /api/customer/favorites` - Get favorites
+- `POST /api/customer/reviews` - Add review
+- `GET /api/customer/reviews/store/:storeId` - Get store reviews
+- `GET /api/customer/reviews/driver/:driverId` - Get driver reviews
 
-### تسجيل ودخول ملاك المتاجر
-- `POST /api/store-owners/register` - تسجيل مالك متجر جديد
-- `POST /api/store-owners/login` - تسجيل دخول مالك المتجر
-- `GET /api/store-owners/me` - الحصول على معلومات مالك المتجر الحالي
-- `PUT /api/store-owners/me` - تحديث معلومات مالك المتجر
-- `PUT /api/store-owners/me/password` - تحديث كلمة مرور مالك المتجر
-- `PUT /api/store-owners/me/documents` - رفع وثائق التحقق
-- `POST /api/store-owners/forgotpassword` - استعادة كلمة المرور
-- `PUT /api/store-owners/resetpassword/:resettoken` - إعادة تعيين كلمة المرور
+### Driver
+- `GET /api/driver/orders/nearby` - Get nearby orders
+- `POST /api/driver/orders/:orderId/bid` - Bid on order
+- `PUT /api/driver/orders/:orderId/bid` - Update bid price
+- `GET /api/driver/orders` - Get driver orders
+- `PUT /api/driver/orders/:orderId/status` - Update order status
+- `GET /api/driver/profile` - Get driver profile
+- `PUT /api/driver/profile` - Update driver profile
+- `PUT /api/driver/availability` - Update availability
+- `GET /api/driver/earnings` - Get earnings
+- `GET /api/driver/analytics` - Get analytics
+- `POST /api/driver/orders/:orderId/accept` - Accept order bid
+- `GET /api/driver/bids` - Get bid history
 
-### المستخدمين
-- `GET /api/users` - الحصول على جميع المستخدمين (الأدمن فقط)
-- `GET /api/users/:id` - الحصول على مستخدم محدد
-- `PUT /api/users/:id` - تحديث مستخدم
+### Store
+- `POST /api/store` - Create store
+- `GET /api/store/:id` - Get store profile
+- `PUT /api/store/:id` - Update store
+- `GET /api/store/my` - Get my store
+- `PUT /api/store/:storeId/business-hours` - Update business hours
+- `PUT /api/store/:storeId/delivery-zones` - Update delivery zones
+- `GET /api/store/:storeId/products` - Get store products
+- `POST /api/store/:storeId/products` - Add product
+- `PUT /api/store/:storeId/products/:productId` - Update product
+- `DELETE /api/store/:storeId/products/:productId` - Delete product
+- `PUT /api/store/:storeId/products/:productId/stock` - Update stock
+- `GET /api/store/:storeId/orders` - Get store orders
+- `PUT /api/store/:storeId/orders/:orderId/status` - Update order status
+- `GET /api/store/:storeId/analytics` - Get store analytics
+- `GET /api/store/:storeId/reviews` - Get store reviews
+- `GET /api/store/:storeId/customers/nearby` - Get nearby customers
 
-### السائقين
-- `GET /api/drivers` - الحصول على جميع السائقين
-- `PUT /api/drivers/:id/documents` - تحديث وثائق السائق
-- `PUT /api/drivers/:id/verify` - تحقق الأدمن من وثائق السائق (الأدمن فقط)
-- `GET /api/drivers/pending` - الحصول على السائقين المعلقين (الأدمن فقط)
+### Admin
+- `GET /api/admin/users` - Get all users
+- `GET /api/admin/users/:id` - Get user by ID
+- `PUT /api/admin/users/:id/role` - Update user role
+- `PUT /api/admin/users/:id/status` - Update user status
+- `DELETE /api/admin/users/:id` - Delete user
+- `GET /api/admin/stores` - Get all stores
+- `GET /api/admin/stores/:id` - Get store by ID
+- `PUT /api/admin/stores/:id/status` - Update store status
+- `PUT /api/admin/stores/:id/commission` - Update commission rate
+- `DELETE /api/admin/stores/:id` - Delete store
+- `GET /api/admin/orders` - Get all orders
+- `GET /api/admin/orders/:id` - Get order by ID
+- `PUT /api/admin/orders/:id/status` - Update order status
+- `GET /api/admin/analytics/system` - System analytics
+- `GET /api/admin/analytics/users` - User analytics
+- `GET /api/admin/analytics/stores` - Store analytics
+- `GET /api/admin/analytics/orders` - Order analytics
+- `GET /api/admin/analytics/financial` - Financial analytics
 
-### المتاجر
-- `GET /api/stores` - الحصول على جميع المتاجر
-- `POST /api/stores` - إنشاء متجر (مالك المتجر فقط)
-- `GET /api/stores/:id` - الحصول على متجر محدد
+### Payment
+- `POST /api/payment/intent` - Create payment intent
+- `POST /api/payment` - Process payment
+- `GET /api/payment/methods` - Get payment methods
+- `POST /api/payment/methods` - Add payment method
+- `GET /api/payment/wallet` - Get wallet balance
+- `POST /api/payment/wallet/add-funds` - Add funds to wallet
+- `POST /api/payment/refund` - Process refund
+- `GET /api/payment/transactions` - Get transaction history
 
-### الطلبات
-- `GET /api/orders` - الحصول على جميع الطلبات (الأدمن فقط)
-- `POST /api/orders` - إنشاء طلب جديد (العملاء فقط)
-- `PUT /api/orders/:id/status` - تحديث حالة الطلب
+## Installation
 
-### المدفوعات
-- `POST /api/payments/process` - معالجة الدفع
-- `GET /api/payments/:id` - الحصول على معلومات الدفع
+1. Clone the repository
+2. Install dependencies: `npm install`
+3. Create `.env` file with environment variables
+4. Start the server: `npm run dev`
 
-### الإشعارات
-- `GET /api/notifications` - الحصول على إشعارات المستخدم
-- `PUT /api/notifications/:id/read` - وضع علامة على الإشعار كمقروء
+## Environment Variables
 
-### لوحة تحكم الأدمن
-- `GET /api/admin/dashboard` - لوحة التحكم (الأدمن فقط)
-- `GET /api/admin/users` - إدارة المستخدمين (الأدمن فقط)
-- `GET /api/admin/orders` - إدارة الطلبات (الأدمن فقط)
+```env
+# Database
+MONGODB_URI=mongodb://localhost:27017/tawseela-grocery
 
-## نظام Socket.io
+# JWT
+JWT_SECRET=your-super-secret-jwt-key-change-in-production
+JWT_EXPIRE=7d
+JWT_REFRESH_SECRET=your-super-secret-refresh-key-change-in-production
+JWT_REFRESH_EXPIRE=30d
 
-- تتبع السائقين في الوقت الفعلي
-- إشعارات الطلبات
-- تحديثات الحالة الفورية
-- دعم غرف منفصلة للعملاء، السائقين، وملاك المتاجر
+# Twilio (for SMS verification)
+TWILIO_ACCOUNT_SID=your_twilio_account_sid
+TWILIO_AUTH_TOKEN=your_twilio_auth_token
+TWILIO_PHONE_NUMBER=your_twilio_phone_number
 
-## المتطلبات
+# Email
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-email-password
 
-- Node.js v14 أو أعلى
-- MongoDB Atlas
-- npm أو yarn
+# Stripe (for payments)
+STRIPE_SECRET_KEY=your_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
 
-## التوسع
+# Server
+PORT=5000
+NODE_ENV=development
+```
 
-- دعم عدة قرى ومدن
-- نظام تحديد المواقع الجغرافي
-- تعقب الطلبات في الوقت الف realtime
-- دعم وسائل دفع متعددة
+## Deployment to Vercel
 
-## الملفات
+1. Install Vercel CLI: `npm i -g vercel`
+2. Login to Vercel: `vercel login`
+3. Set up environment variables in Vercel dashboard:
+   - Go to your Vercel project settings
+   - Add all environment variables from your `.env` file
+   - Make sure to add sensitive variables like JWT secrets, API keys, etc.
+4. Deploy the project: `vercel --prod`
+5. Or use the Vercel dashboard to connect your GitHub repository for automatic deployments
 
-- `server.js` - ملف الخادم الرئيسي
-- `config/db.js` - إعدادات قاعدة البيانات
-- `middleware/auth.js` - مiddleware للمصادقة
-- `utils/logger.js` - وحدة تسجيل الأحداث
-- `docs/erd.json` - مخطط العلاقات بين الكيانات
-- `models/Customer.js` - نموذج العميل
-- `models/Driver.js` - نموذج السائق
-- `models/StoreOwner.js` - نموذج مالك المتجر
-- `models/` - نماذج قاعدة البيانات الأخرى
-- `modules/` - وحدات النظام المعيارية
+The `vercel.json` file is already configured for this project and includes:
+- Proper build configuration for Express.js
+- Environment variable mapping
+- Route handling for API endpoints
+- Security configurations
 
-## المطور
+Your API will be deployed and accessible at `https://your-project-name.vercel.app`
 
-تم تطوير هذا النظام كمنصة توصيل متكاملة تدعم السائقين والعملاء والمتاجر في بيئة عربية.
+## Technologies Used
 
-## الرخصة
+- Node.js
+- Express.js
+- MongoDB with Mongoose
+- JWT for authentication
+- Stripe for payments
+- Twilio for SMS
+- Nodemailer for email
+- Express-validator for validation
+- CORS, Helmet, Rate limiting for security
 
-MIT
+## Security Features
+
+- Password hashing with bcrypt
+- JWT token authentication
+- Rate limiting to prevent abuse
+- Input validation and sanitization
+- Account lockout after failed attempts
+- Phone number verification
+- Role-based access control
+- Secure payment processing
+
+## Database Models
+
+- User: Customer, driver, store owner, admin profiles
+- Store: Store information and settings
+- Product: Product catalog
+- Order: Order management and tracking
+- Review: User reviews and ratings
+- Favorite: Favorites and wishlist
+- Wallet: Digital wallet system
+- Notification: Push notifications
+- Payment: Payment processing and records

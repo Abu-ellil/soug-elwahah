@@ -1,248 +1,231 @@
-/**
- * @file middleware/auth.js - Authentication middleware
- * @description هذا الملف يتضمن Middleware للتحقق من صحة المستخدم باستخدام JWT
- */
-
 const jwt = require('jsonwebtoken');
-const Customer = require('../models/Customer');
-const Driver = require('../models/Driver');
-const StoreOwner = require('../models/StoreOwner');
-const User = require('../models/User'); // الحفاظ على النموذج القديم للتوافق
-const logger = require('../utils/logger');
+const User = require('../models/User');
+const AppError = require('../utils/appError');
+const asyncHandler = require('../utils/asyncHandler');
+const { verifyToken, extractToken } = require('../utils/jwt');
 
-// Middleware عام للتحقق من صحة JWT
-const auth = async (req, res, next) => {
-  try {
-    // استخراج الرمز من رأس الطلب
-    let token;
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-      token = req.headers.authorization.split(' ')[1];
-    } else if (req.cookies.token) {
-      token = req.cookies.token;
-    }
+/**
+ * Protect middleware - Verify JWT token and authenticate user
+ */
+const protect = asyncHandler(async (req, res, next) => {
+  // 1) Get token from request
+  const token = extractToken(req);
 
-    // التحقق من وجود الرمز
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Not authorized to access this route'
-      });
-    }
-
-    try {
-      // التحقق من الرمز
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      
-      // محاولة العثور على المستخدم في النماذج الثلاثة
-      let user = null;
-      user = await Customer.findById(decoded.id).select('-password');
-      if (!user) {
-        user = await Driver.findById(decoded.id).select('-password');
-      }
-      if (!user) {
-        user = await StoreOwner.findById(decoded.id).select('-password');
-      }
-      if (!user) {
-        user = await User.findById(decoded.id).select('-password'); // للتوافق مع النموذج القديم
-      }
-      
-      // التحقق من أن المستخدم نشط
-      if (!user || !user.isActive) {
-        return res.status(401).json({
-          success: false,
-          message: 'User account is inactive'
-        });
-      }
-
-      // تعيين المستخدم في الطلب
-      req.user = user;
-      next();
-    } catch (error) {
-      logger.error(`Token verification error: ${error.message}`);
-      return res.status(401).json({
-        success: false,
-        message: 'Not authorized, token failed'
-      });
-    }
-  } catch (error) {
-    logger.error(`Authentication error: ${error.message}`);
-    return res.status(500).json({
-      success: false,
-      message: 'Server error during authentication'
-    });
+  if (!token) {
+    return next(new AppError('يجب تسجيل الدخول للوصول إلى هذا المورد', 401));
   }
-};
 
-// Middleware للتحقق من دور المستخدم
+  // 2) Verify token
+  let decoded;
+  try {
+    decoded = verifyToken(token);
+  } catch (error) {
+    if (error.name === 'JsonWebTokenError') {
+      return next(new AppError('رمز المصادقة غير صحيح', 401));
+    } else if (error.name === 'TokenExpiredError') {
+      return next(new AppError('انتهت صلاحية رمز المصادقة، يرجى تسجيل الدخول مرة أخرى', 401));
+    }
+    return next(new AppError('خطأ في المصادقة', 401));
+  }
+
+  // 3) Check if user still exists
+  const currentUser = await User.findById(decoded.id).select('+active');
+  if (!currentUser) {
+    return next(new AppError('المستخدم المرتبط بهذا الرمز لم يعد موجوداً', 401));
+  }
+
+  // 4) Check if user is active
+  if (!currentUser.active) {
+    return next(new AppError('تم إلغاء تفعيل حسابك، يرجى التواصل مع الدعم', 401));
+  }
+
+  // 5) Check if user changed password after token was issued
+   if (currentUser.changedPasswordAfter(decoded.iat)) {
+     return next(new AppError('تم تغيير كلمة المرور مؤخراً، يرجى تسجيل الدخول مرة أخرى', 401));
+   }
+ 
+   // 6) Check if user changed roles after token was issued
+   if (currentUser.changedRolesAfter(decoded.iat)) {
+     return next(new AppError('تم تغيير صلاحيات الحساب مؤخراً، يرجى تسجيل الدخول مرة أخرى', 401));
+   }
+ 
+   // Grant access to protected route
+   req.user = currentUser;
+   next();
+ });
+
+/**
+ * Authorize middleware - Check user roles
+ * @param {...string} roles - Allowed roles
+ */
 const authorize = (...roles) => {
   return (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({
-        success: false,
-        message: `User role '${req.user.role}' is not authorized to access this route`
-      });
+    // Check if user has any of the required roles (supporting new multi-role system)
+    const hasRole = roles.some(role => req.user.roles && req.user.roles.includes(role));
+    
+    if (!hasRole) {
+      return next(new AppError('ليس لديك صلاحية للوصول إلى هذا المورد', 403));
     }
     next();
   };
 };
 
-// Middleware لحماية العملاء
-const protectCustomer = async (req, res, next) => {
-  try {
-    // استخراج الرمز من رأس الطلب
-    let token;
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-      token = req.headers.authorization.split(' ')[1];
-    } else if (req.cookies.token) {
-      token = req.cookies.token;
+/**
+ * Require specific permission middleware
+ * @param {string} permission - Required permission
+ */
+const requirePermission = (permission) => {
+  return (req, res, next) => {
+    if (!req.user || !req.user.permissions || !req.user.permissions.includes(permission)) {
+      return next(new AppError('لا تملك الصلاحيات المطلوبة للوصول إلى هذا المورد', 403));
     }
-
-    // التحقق من وجود الرمز
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Not authorized to access this route'
-      });
-    }
-
-    try {
-      // التحقق من الرمز
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      
-      // العثور على العميل
-      const customer = await Customer.findById(decoded.id).select('-password');
-      
-      // التحقق من أن العميل نشط
-      if (!customer || !customer.isActive) {
-        return res.status(401).json({
-          success: false,
-          message: 'Customer account is inactive'
-        });
-      }
-
-      // تعيين العميل في الطلب
-      req.customer = customer;
-      next();
-    } catch (error) {
-      logger.error(`Customer token verification error: ${error.message}`);
-      return res.status(401).json({
-        success: false,
-        message: 'Not authorized, token failed'
-      });
-    }
-  } catch (error) {
-    logger.error(`Customer authentication error: ${error.message}`);
-    return res.status(500).json({
-      success: false,
-      message: 'Server error during customer authentication'
-    });
-  }
+    next();
+  };
 };
 
-// Middleware لحماية السائقين
-const protectDriver = async (req, res, next) => {
-  try {
-    // استخراج الرمز من رأس الطلب
-    let token;
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-      token = req.headers.authorization.split(' ')[1];
-    } else if (req.cookies.token) {
-      token = req.cookies.token;
+/**
+ * Switch active role for multi-role users
+ * @param {string} targetRole - Role to switch to
+ */
+const switchRole = (targetRole) => {
+  return (req, res, next) => {
+    if (!req.user.roles.includes(targetRole)) {
+      return next(new AppError('لا يمكنك التبديل إلى هذا الدور', 403));
     }
-
-    // التحقق من وجود الرمز
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Not authorized to access this route'
-      });
-    }
-
-    try {
-      // التحقق من الرمز
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      
-      // العثور على السائق
-      const driver = await Driver.findById(decoded.id).select('-password');
-      
-      // التحقق من أن السائق نشط
-      if (!driver || !driver.isActive) {
-        return res.status(401).json({
-          success: false,
-          message: 'Driver account is inactive'
-        });
-      }
-
-      // تعيين السائق في الطلب
-      req.driver = driver;
-      next();
-    } catch (error) {
-      logger.error(`Driver token verification error: ${error.message}`);
-      return res.status(401).json({
-        success: false,
-        message: 'Not authorized, token failed'
-      });
-    }
-  } catch (error) {
-    logger.error(`Driver authentication error: ${error.message}`);
-    return res.status(500).json({
-      success: false,
-      message: 'Server error during driver authentication'
-    });
-  }
+    
+    req.user.activeRole = targetRole;
+    
+    // Update permissions based on active role
+    req.user.permissions = getPermissionsForRole(targetRole);
+    
+    next();
+  };
 };
 
-// Middleware لحماية ملاك المتاجر
-const protectStoreOwner = async (req, res, next) => {
-  try {
-    // استخراج الرمز من رأس الطلب
-    let token;
-    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-      token = req.headers.authorization.split(' ')[1];
-    } else if (req.cookies.token) {
-      token = req.cookies.token;
-    }
-
-    // التحقق من وجود الرمز
-    if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: 'Not authorized to access this route'
-      });
-    }
-
-    try {
-      // التحقق من الرمز
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      
-      // العثور على مالك المتجر
-      const storeOwner = await StoreOwner.findById(decoded.id).select('-password');
-      
-      // التحقق من أن مالك المتجر نشط
-      if (!storeOwner || !storeOwner.isActive) {
-        return res.status(401).json({
-          success: false,
-          message: 'Store owner account is inactive'
-        });
-      }
-
-      // تعيين مالك المتجر في الطلب
-      req.storeOwner = storeOwner;
-      next();
-    } catch (error) {
-      logger.error(`Store owner token verification error: ${error.message}`);
-      return res.status(401).json({
-        success: false,
-        message: 'Not authorized, token failed'
-      });
-    }
-  } catch (error) {
-    logger.error(`Store owner authentication error: ${error.message}`);
-    return res.status(500).json({
-      success: false,
-      message: 'Server error during store owner authentication'
-    });
-  }
+/**
+ * Get permissions for a specific role
+ * @param {string} role - Role to get permissions for
+ */
+const getPermissionsForRole = (role) => {
+  const permissions = {
+    customer: ['profile:read', 'profile:update', 'order:create', 'order:read', 'address:read', 'address:create', 'address:update', 'address:delete'],
+    driver: ['profile:read', 'profile:update', 'order:read', 'order:accept', 'order:pickup', 'order:deliver', 'delivery:read', 'delivery:stats', 'vehicle:read', 'vehicle:update'],
+    store: ['store:read', 'store:update', 'product:create', 'product:read', 'product:update', 'product:delete', 'order:read', 'order:accept', 'inventory:read', 'inventory:update'],
+    admin: ['admin:all'],
+    superadmin: ['admin:all', 'user:manage', 'system:config']
+  };
+  
+  return permissions[role] || [];
 };
 
-module.exports = { auth, authorize, protectCustomer, protectDriver, protectStoreOwner };
+/**
+ * Check if user owns resource or is admin
+ */
+
+/**
+ * Optional authentication - Don't fail if no token provided
+ */
+const optionalAuth = asyncHandler(async (req, res, next) => {
+  const token = extractToken(req);
+
+  if (token) {
+    try {
+      const decoded = verifyToken(token);
+      const currentUser = await User.findById(decoded.id).select('+active');
+      
+      if (currentUser && currentUser.active && !currentUser.changedPasswordAfter(decoded.iat) && !currentUser.changedRolesAfter(decoded.iat)) {
+        req.user = currentUser;
+      }
+    } catch (error) {
+      // Silently fail for optional auth
+    }
+  }
+
+  next();
+});
+
+/**
+ * Check if user owns resource or is admin
+ */
+const restrictToOwnerOrAdmin = (resourceUserField = 'user') => {
+  return (req, res, next) => {
+    if (req.user.role === 'admin') {
+      return next();
+    }
+
+    // Check if user owns the resource
+    const resource = req.resource || req.body;
+    if (resource && resource[resourceUserField] && resource[resourceUserField].toString() === req.user._id.toString()) {
+      return next();
+    }
+
+    return next(new AppError('يمكنك فقط الوصول إلى مواردك الخاصة', 403));
+  };
+};
+
+/**
+ * Check if user is verified (phone number verified)
+ */
+const requireVerification = (req, res, next) => {
+  if (!req.user.isPhoneVerified) {
+    return next(new AppError('يجب تأكيد رقم الهاتف أولاً', 403));
+  }
+  next();
+};
+
+/**
+ * Check if user has completed profile setup
+ */
+const requireCompleteProfile = (req, res, next) => {
+  const user = req.user;
+  
+  if (!user.name || !user.phoneNumber) {
+    return next(new AppError('يجب إكمال الملف الشخصي أولاً', 403));
+  }
+  
+  next();
+};
+
+/**
+ * Rate limiting for authentication attempts
+ */
+const authRateLimit = (maxAttempts = 5, windowMs = 15 * 60 * 1000) => {
+  const attempts = new Map();
+
+  return (req, res, next) => {
+    const key = req.ip + (req.body.phoneNumber || req.body.email || '');
+    const now = Date.now();
+    
+    if (!attempts.has(key)) {
+      attempts.set(key, { count: 1, resetTime: now + windowMs });
+      return next();
+    }
+
+    const attempt = attempts.get(key);
+    
+    if (now > attempt.resetTime) {
+      attempts.set(key, { count: 1, resetTime: now + windowMs });
+      return next();
+    }
+
+    if (attempt.count >= maxAttempts) {
+      return next(new AppError('تم تجاوز عدد المحاولات المسموح، يرجى المحاولة لاحقاً', 429));
+    }
+
+    attempt.count++;
+    next();
+  };
+};
+
+module.exports = {
+  protect,
+  authorize,
+  optionalAuth,
+  restrictToOwnerOrAdmin,
+  requireVerification,
+  requireCompleteProfile,
+  authRateLimit,
+  requirePermission,
+  switchRole,
+  getPermissionsForRole
+};

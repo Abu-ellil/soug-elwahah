@@ -1,12 +1,13 @@
-/**
- * @file api/index.js - Vercel Serverless Function Entry Point
- * @description Main handler for Vercel serverless functions
- */
+const serverless = require("serverless-http");
+const app = require("./app");
 
-const serverless = require('serverless-http');
-const app = require('./serverless');
-
-// Wrap the Express app with serverless-http
-const handler = serverless(app);
-
-module.exports = handler;
+// If executed directly, run a standard HTTP server for local development.
+if (require.main === module) {
+  const port = process.env.PORT || 5000;
+  app.listen(port, () =>
+    console.log(`API listening on http://localhost:${port}`)
+  );
+} else {
+  // Export serverless handler for Vercel / serverless platforms
+  module.exports = serverless(app);
+}
