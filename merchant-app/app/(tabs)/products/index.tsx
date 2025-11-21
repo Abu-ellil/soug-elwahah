@@ -32,14 +32,17 @@ export default function ProductsIndex() {
     fetchProducts, 
     handleRefresh,
     deleteProduct,
-    toggleAvailability 
+    toggleAvailability,
+    initialize 
   } = useProductsStore();
 
   useEffect(() => {
     if (currentUser) {
+      // Initialize the store with current user data
+      initialize();
       fetchProducts();
     }
-  }, [currentUser, fetchProducts]);
+  }, [currentUser, initialize, fetchProducts]);
 
   const handleDeleteProduct = (productId: string, productName: string) => {
     Alert.alert(

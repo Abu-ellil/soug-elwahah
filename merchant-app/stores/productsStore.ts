@@ -15,6 +15,7 @@ interface ProductsState {
   toggleAvailability: (productId: string) => Promise<void>;
   addProduct: (productData: any) => Promise<{ success: boolean; error?: string }>;
   updateProduct: (productId: string, productData: any) => Promise<{ success: boolean; error?: string }>;
+  initialize: () => void;
 }
 
 const checkApprovedStores = () => {
@@ -40,12 +41,31 @@ export const useProductsStore = create<ProductsState>((set, get) => ({
   refreshing: false,
   hasApprovedStore: false,
 
+  // Initialize hasApprovedStore when store is created
+  initialize: () => {
+    const { currentUser } = useAuthStore.getState();
+    const approved = currentUser?.stores?.some(
+      (store: any) => store.verificationStatus === 'approved'
+    ) || false;
+    console.log('Initializing products store - has approved store:', approved);
+    set({ hasApprovedStore: approved });
+  },
+
   fetchProducts: async () => {
     try {
       console.log('Fetching products...');
       set({ isLoading: true });
-      const approved = checkApprovedStores();
+      
+      // Get fresh user data to ensure we have the latest store information
+      const { currentUser } = useAuthStore.getState();
+      console.log('Current user in fetchProducts:', currentUser);
+      
+      const approved = currentUser?.stores?.some(
+        (store: any) => store.verificationStatus === 'approved'
+      ) || false;
+      
       console.log('Has approved store:', approved);
+      console.log('User stores:', currentUser?.stores);
       set({ hasApprovedStore: approved });
 
       if (!approved) {

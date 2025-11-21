@@ -1,0 +1,2879 @@
+{
+  "info": {
+    "name": "Tawseela Delivery API",
+    "description": "Comprehensive Postman Collection for Tawseela Delivery Service Backend API\n\n## API Overview\nTawseela is a delivery service platform connecting customers, drivers, and store owners. This collection provides complete API testing coverage.\n\n## Authentication\nThe API uses JWT (JSON Web Tokens) for authentication. Include the token in the Authorization header:\n```\nAuthorization: Bearer {{auth_token}}\n```\n\n## User Roles\n- **customer**: Regular customers placing orders\n- **driver**: Delivery drivers\n- **store_owner**: Store owners managing their stores and products\n- **admin**: System administrators with full access\n\n## Environment Variables\n- `baseUrl`: API base URL (default: http://localhost:5000/api)\n- `auth_token`: JWT token obtained from login\n- `user_id`: Current user ID\n- `admin_token`: Admin authentication token\n- `store_owner_token`: Store owner authentication token\n- `driver_token`: Driver authentication token\n- `customer_token`: Customer authentication token\n\n## Data Models\n- **User**: Contains user profile, location, wallet, and driver documents\n- **Store**: Store information with location, working hours, and products\n- **Order**: Order details including items, payment, and delivery info\n- **Product**: Product information with pricing and inventory\n- **Transaction**: Payment transactions and refunds\n- **Notification**: System notifications for users\n\n## Error Handling\nAll endpoints return consistent error responses:\n```json\n{\n  \"success\": false,\n  \"error\": \"Error message\"\n}\n```\n\n## Rate Limiting\nAPI implements rate limiting: 100 requests per 15 minutes per IP.\n\nGenerated on: 2025-11-20",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "admin_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "store_owner_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "driver_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "customer_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "store_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "order_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "product_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "payment_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "notification_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+          "name": "🔐 Authentication",
+          "description": "User authentication and authorization endpoints",
+          "item": [
+            {
+              "name": "🔐 General Authentication",
+              "description": "General auth endpoints that work with role-based user creation",
+              "item": [
+                {
+                  "name": "Register User",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"أحمد محمد\",\n  \"email\": \"ahmed@example.com\",\n  \"password\": \"123456\",\n  \"phone\": \"01234567890\",\n  \"role\": \"customer\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/register",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "register"
+                      ]
+                    },
+                    "description": "Register a new user with email, password, and role\n\n**Valid Roles:**\n- `customer` - Regular customers\n- `driver` - Delivery drivers\n- `store_owner` - Store owners\n- `admin` - System administrators"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Login User",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"email\": \"ahmed@example.com\",\n  \"password\": \"123456\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/login",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "login"
+                      ]
+                    },
+                    "description": "Authenticate user and receive JWT token\n\n**Response includes:**\n- `token` - JWT token for subsequent requests\n- `user` - User profile information\n- Cookie with token (httpOnly)"
+                  },
+                  "response": [],
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "if (pm.response.code === 200) {",
+                          "    const response = pm.response.json();",
+                          "    if (response.token) {",
+                          "        pm.collectionVariables.set('auth_token', response.token);",
+                          "        pm.collectionVariables.set('user_id', response.user.id);",
+                          "        ",
+                          "        // Set role-specific tokens",
+                          "        if (response.user.role === 'admin') {",
+                          "            pm.collectionVariables.set('admin_token', response.token);",
+                          "        } else if (response.user.role === 'store_owner') {",
+                          "            pm.collectionVariables.set('store_owner_token', response.token);",
+                          "        } else if (response.user.role === 'driver') {",
+                          "            pm.collectionVariables.set('driver_token', response.token);",
+                          "        } else if (response.user.role === 'customer') {",
+                          "            pm.collectionVariables.set('customer_token', response.token);",
+                          "        }",
+                          "    }",
+                          "}"
+                        ],
+                        "type": "text/javascript"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "Get Current User",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/me",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "me"
+                      ]
+                    },
+                    "description": "Get current authenticated user profile\n\n**Requires:** Valid JWT token in Authorization header"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Profile",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"أحمد محمد upd\",\n \"email\": \"ahmed.updated@example.com\",\n  \"phone\": \"01234567891\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/me",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "me"
+                      ]
+                    },
+                    "description": "Update current user profile information"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Logout",
+                  "request": {
+                    "method": "POST",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/logout",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "logout"
+                      ]
+                    },
+                    "description": "Logout user and invalidate token\n\n**Effect:** Clears authentication cookie"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Forgot Password",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"email\": \"ahmed@example.com\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/forgotpassword",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "forgotpassword"
+                      ]
+                    },
+                    "description": "Request password reset token via email\n**Note:** Email sending is disabled in development"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Reset Password",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"password\": \"newpassword123\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/resetpassword/{{resetToken}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "resetpassword",
+                        "{{resetToken}}"
+                      ]
+                    },
+                    "description": "Reset password using reset token\n**URL Parameter:**\n- `resettoken` - Token received via email"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Verify Email",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/verify/{{verificationToken}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "verify",
+                        "{{verificationToken}}"
+                      ]
+                    },
+                    "description": "Verify user email address\n\n**URL Parameter:**\n- `verificationtoken` - Token received during registration"
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "🔐 Customer Authentication",
+              "description": "Customer-specific authentication endpoints",
+              "item": [
+                {
+                  "name": "Customer Register",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"عميل تجريبي\",\n \"email\": \"customer@example.com\",\n \"password\": \"123456\",\n  \"phone\": \"01234567890\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/customer/register",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "customer",
+                        "register"
+                      ]
+                    },
+                    "description": "Register a new customer\n\n**Response includes:**\n- `token` - JWT token for subsequent requests\n- `data` - Customer profile information\n- Cookie with token (httpOnly)"
+                  },
+                  "response": [],
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "if (pm.response.code === 200) {",
+                          "    const response = pm.response.json();",
+                          "    if (response.token) {",
+                          "        pm.collectionVariables.set('customer_token', response.token);",
+                          "        pm.collectionVariables.set('auth_token', response.token);",
+                          "        if (response.data && response.data.id) {",
+                          "            pm.collectionVariables.set('user_id', response.data.id);",
+                          "        }",
+                          "    }",
+                          "}"
+                        ],
+                        "type": "text/javascript"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "Customer Login",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"email\": \"customer@example.com\",\n  \"password\": \"123456\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/customer/login",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "customer",
+                        "login"
+                      ]
+                    },
+                    "description": "Login as customer and receive JWT token\n\n**Response includes:**\n- `token` - JWT token for subsequent requests\n- `data` - Customer profile information\n- Cookie with token (httpOnly)"
+                  },
+                  "response": [],
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "if (pm.response.code === 200) {",
+                          "    const response = pm.response.json();",
+                          "    if (response.token) {",
+                          "        pm.collectionVariables.set('customer_token', response.token);",
+                          "        pm.collectionVariables.set('auth_token', response.token);",
+                          "        if (response.data && response.data.id) {",
+                          "            pm.collectionVariables.set('user_id', response.data.id);",
+                          "        }",
+                          "    }",
+                          "}"
+                        ],
+                        "type": "text/javascript"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "Get Customer Profile",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/customer/me",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "customer",
+                        "me"
+                      ]
+                    },
+                    "description": "Get current authenticated customer profile\n\n**Requires:** Valid JWT token in Authorization header"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Customer Profile",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"عميل محدث\",\n  \"email\": \"updated-customer@example.com\",\n  \"phone\": \"01234567891\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/customer/me",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "customer",
+                        "me"
+                      ]
+                    },
+                    "description": "Update current customer profile information"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Customer Password",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"currentPassword\": \"123456\",\n  \"newPassword\": \"newpassword123\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/customer/me/password",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "customer",
+                        "me",
+                        "password"
+                      ]
+                    },
+                    "description": "Update customer password\n\n**Requires:** Current password and new password"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Customer Forgot Password",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"email\": \"customer@example.com\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/customer/forgotpassword",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "customer",
+                        "forgotpassword"
+                      ]
+                    },
+                    "description": "Request password reset token for customer via email\n\n**Note:** Email sending is disabled in development"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Customer Reset Password",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"password\": \"newpassword123\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/customer/resetpassword/{{resetToken}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "customer",
+                        "resetpassword",
+                        "{{resetToken}}"
+                      ]
+                    },
+                    "description": "Reset customer password using reset token\n\n**URL Parameter:**\n- `resettoken` - Token received via email"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Customer Logout",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/customer/logout",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "customer",
+                        "logout"
+                      ]
+                    },
+                    "description": "Logout customer and invalidate token\n\n**Effect:** Clears authentication cookie"
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "🔐 Driver Authentication",
+              "description": "Driver-specific authentication endpoints",
+              "item": [
+                {
+                  "name": "Driver Register",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"سائق تجريبي\",\n  \"email\": \"driver@example.com\",\n  \"password\": \"123456\",\n  \"phone\": \"01234567890\",\n  \"vehicle\": {\n    \"type\": \"car\",\n    \"model\": \"Toyota\",\n    \"plateNumber\": \"ABC1234\"\n  }\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/driver/register",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "driver",
+                        "register"
+                      ]
+                    },
+                    "description": "Register a new driver\n\n**Response includes:**\n- `token` - JWT token for subsequent requests\n- `data` - Driver profile information\n- Cookie with token (httpOnly)"
+                  },
+                  "response": [],
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "if (pm.response.code === 200) {",
+                          "    const response = pm.response.json();",
+                          "    if (response.token) {",
+                          "        pm.collectionVariables.set('driver_token', response.token);",
+                          "        pm.collectionVariables.set('auth_token', response.token);",
+                          "        if (response.data && response.data.id) {",
+                          "            pm.collectionVariables.set('user_id', response.data.id);",
+                          "        }",
+                          "    }",
+                          "}"
+                        ],
+                        "type": "text/javascript"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "Driver Login",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"email\": \"driver@example.com\",\n \"password\": \"123456\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/driver/login",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "driver",
+                        "login"
+                      ]
+                    },
+                    "description": "Login as driver and receive JWT token\n\n**Response includes:**\n- `token` - JWT token for subsequent requests\n- `data` - Driver profile information\n- Cookie with token (httpOnly)"
+                  },
+                  "response": [],
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "if (pm.response.code === 200) {",
+                          "    const response = pm.response.json();",
+                          "    if (response.token) {",
+                          "        pm.collectionVariables.set('driver_token', response.token);",
+                          "        pm.collectionVariables.set('auth_token', response.token);",
+                          "        if (response.data && response.data.id) {",
+                          "            pm.collectionVariables.set('user_id', response.data.id);",
+                          "        }",
+                          "    }",
+                          "}"
+                        ],
+                        "type": "text/javascript"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "Get Driver Profile",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/driver/me",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "driver",
+                        "me"
+                      ]
+                    },
+                    "description": "Get current authenticated driver profile\n\n**Requires:** Valid JWT token in Authorization header"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Driver Profile",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"سائق محدث\",\n \"email\": \"updated-driver@example.com\",\n  \"phone\": \"01234567891\",\n \"vehicle\": {\n    \"type\": \"motorcycle\",\n    \"model\": \"Honda\",\n    \"plateNumber\": \"XYZ9876\"\n }\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/driver/me",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "driver",
+                        "me"
+                      ]
+                    },
+                    "description": "Update current driver profile information"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Driver Password",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"currentPassword\": \"123456\",\n  \"newPassword\": \"newpassword123\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/driver/me/password",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "driver",
+                        "me",
+                        "password"
+                      ]
+                    },
+                    "description": "Update driver password\n\n**Requires:** Current password and new password"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Driver Forgot Password",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"email\": \"driver@example.com\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/driver/forgotpassword",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "driver",
+                        "forgotpassword"
+                      ]
+                    },
+                    "description": "Request password reset token for driver via email\n\n**Note:** Email sending is disabled in development"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Driver Reset Password",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"password\": \"newpassword123\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/driver/resetpassword/{{resetToken}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "driver",
+                        "resetpassword",
+                        "{{resetToken}}"
+                      ]
+                    },
+                    "description": "Reset driver password using reset token\n\n**URL Parameter:**\n- `resettoken` - Token received via email"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Driver Logout",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/driver/logout",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "driver",
+                        "logout"
+                      ]
+                    },
+                    "description": "Logout driver and invalidate token\n\n**Effect:** Clears authentication cookie"
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "🔐 Store Owner Authentication",
+              "description": "Store owner-specific authentication endpoints",
+              "item": [
+                {
+                  "name": "Store Owner Register",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"مالك متجر تجريبي\",\n  \"email\": \"storeowner@example.com\",\n  \"password\": \"123456\",\n  \"phone\": \"01234567890\",\n  \"businessName\": \"متجر تجريبي\",\n  \"businessType\": \"مطعم\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/storeowner/register",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "storeowner",
+                        "register"
+                      ]
+                    },
+                    "description": "Register a new store owner\n**Response includes:**\n- `token` - JWT token for subsequent requests\n- `data` - Store owner profile information\n- Cookie with token (httpOnly)"
+                  },
+                  "response": [],
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "if (pm.response.code === 200) {",
+                          "    const response = pm.response.json();",
+                          "    if (response.token) {",
+                          "        pm.collectionVariables.set('store_owner_token', response.token);",
+                          "        pm.collectionVariables.set('auth_token', response.token);",
+                          "        if (response.data && response.data.id) {",
+                          "            pm.collectionVariables.set('user_id', response.data.id);",
+                          "        }",
+                          "    }",
+                          "}"
+                        ],
+                        "type": "text/javascript"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "Store Owner Login",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"email\": \"storeowner@example.com\",\n  \"password\": \"123456\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/storeowner/login",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "storeowner",
+                        "login"
+                      ]
+                    },
+                    "description": "Login as store owner and receive JWT token\n\n**Response includes:**\n- `token` - JWT token for subsequent requests\n- `data` - Store owner profile information\n- Cookie with token (httpOnly)"
+                  },
+                  "response": [],
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "if (pm.response.code === 200) {",
+                          "    const response = pm.response.json();",
+                          "    if (response.token) {",
+                          "        pm.collectionVariables.set('store_owner_token', response.token);",
+                          "        pm.collectionVariables.set('auth_token', response.token);",
+                          "        if (response.data && response.data.id) {",
+                          "            pm.collectionVariables.set('user_id', response.data.id);",
+                          "        }",
+                          "    }",
+                          "}"
+                        ],
+                        "type": "text/javascript"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "Get Store Owner Profile",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/storeowner/me",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "storeowner",
+                        "me"
+                      ]
+                    },
+                    "description": "Get current authenticated store owner profile\n\n**Requires:** Valid JWT token in Authorization header"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Store Owner Profile",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"مالك متجر محدث\",\n  \"email\": \"updated-storeowner@example.com\",\n  \"phone\": \"01234567891\",\n \"businessName\": \"متجر محدث\",\n  \"businessType\": \"محل تجزئة\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/storeowner/me",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "storeowner",
+                        "me"
+                      ]
+                    },
+                    "description": "Update current store owner profile information"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Store Owner Password",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"currentPassword\": \"123456\",\n  \"newPassword\": \"newpassword123\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/storeowner/me/password",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "storeowner",
+                        "me",
+                        "password"
+                      ]
+                    },
+                    "description": "Update store owner password\n\n**Requires:** Current password and new password"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Store Owner Forgot Password",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n \"email\": \"storeowner@example.com\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/storeowner/forgotpassword",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "storeowner",
+                        "forgotpassword"
+                      ]
+                    },
+                    "description": "Request password reset token for store owner via email\n\n**Note:** Email sending is disabled in development"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Store Owner Reset Password",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"password\": \"newpassword123\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/storeowner/resetpassword/{{resetToken}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "storeowner",
+                        "resetpassword",
+                        "{{resetToken}}"
+                      ]
+                    },
+                    "description": "Reset store owner password using reset token\n\n**URL Parameter:**\n- `resettoken` - Token received via email"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Store Owner Logout",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/storeowner/logout",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "storeowner",
+                        "logout"
+                      ]
+                    },
+                    "description": "Logout store owner and invalidate token\n\n**Effect:** Clears authentication cookie"
+                  },
+                  "response": []
+                }
+              ]
+            },
+            {
+              "name": "🔐 Admin Authentication",
+              "description": "Admin-specific authentication endpoints",
+              "item": [
+                {
+                  "name": "Admin Register",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"مدير تجريبي\",\n \"email\": \"admin@example.com\",\n  \"password\": \"123456\",\n  \"phone\": \"01234567890\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/admin/register",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "admin",
+                        "register"
+                      ]
+                    },
+                    "description": "Register a new admin\n\n**Response includes:**\n- `token` - JWT token for subsequent requests\n- `data` - Admin profile information\n- Cookie with token (httpOnly)"
+                  },
+                  "response": [],
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "if (pm.response.code === 200) {",
+                          "    const response = pm.response.json();",
+                          "    if (response.token) {",
+                          "        pm.collectionVariables.set('admin_token', response.token);",
+                          "        pm.collectionVariables.set('auth_token', response.token);",
+                          "        if (response.data && response.data.id) {",
+                          "            pm.collectionVariables.set('user_id', response.data.id);",
+                          "        }",
+                          "    }",
+                          "}"
+                        ],
+                        "type": "text/javascript"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "Admin Login",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"123456\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/admin/login",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "admin",
+                        "login"
+                      ]
+                    },
+                    "description": "Login as admin and receive JWT token\n\n**Response includes:**\n- `token` - JWT token for subsequent requests\n- `data` - Admin profile information\n- Cookie with token (httpOnly)"
+                  },
+                  "response": [],
+                  "event": [
+                    {
+                      "listen": "test",
+                      "script": {
+                        "exec": [
+                          "if (pm.response.code === 200) {",
+                          "    const response = pm.response.json();",
+                          "    if (response.token) {",
+                          "        pm.collectionVariables.set('admin_token', response.token);",
+                          "        pm.collectionVariables.set('auth_token', response.token);",
+                          "        if (response.data && response.data.id) {",
+                          "            pm.collectionVariables.set('user_id', response.data.id);",
+                          "        }",
+                          "    }",
+                          "}"
+                        ],
+                        "type": "text/javascript"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "name": "Get Admin Profile",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/admin/me",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "admin",
+                        "me"
+                      ]
+                    },
+                    "description": "Get current authenticated admin profile\n\n**Requires:** Valid JWT token in Authorization header"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Admin Profile",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"مدير محدث\",\n  \"email\": \"updated-admin@example.com\",\n  \"phone\": \"01234567891\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/admin/me",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "admin",
+                        "me"
+                      ]
+                    },
+                    "description": "Update current admin profile information"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Update Admin Password",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"currentPassword\": \"123456\",\n  \"newPassword\": \"newpassword123\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/admin/me/password",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "admin",
+                        "me",
+                        "password"
+                      ]
+                    },
+                    "description": "Update admin password\n\n**Requires:** Current password and new password"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Admin Forgot Password",
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"email\": \"admin@example.com\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/admin/forgotpassword",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "admin",
+                        "forgotpassword"
+                      ]
+                    },
+                    "description": "Request password reset token for admin via email\n\n**Note:** Email sending is disabled in development"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Admin Reset Password",
+                  "request": {
+                    "method": "PUT",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"password\": \"newpassword123\"\n}"
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/admin/resetpassword/{{resetToken}}",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "admin",
+                        "resetpassword",
+                        "{{resetToken}}"
+                      ]
+                    },
+                    "description": "Reset admin password using reset token\n\n**URL Parameter:**\n- `resettoken` - Token received via email"
+                  },
+                  "response": []
+                },
+                {
+                  "name": "Admin Logout",
+                  "request": {
+                    "method": "GET",
+                    "header": [],
+                    "url": {
+                      "raw": "{{baseUrl}}/auth/admin/logout",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "auth",
+                        "admin",
+                        "logout"
+                      ]
+                    },
+                    "description": "Logout admin and invalidate token\n\n**Effect:** Clears authentication cookie"
+                  },
+                  "response": []
+                }
+              ]
+            }
+          ]
+        },
+    {
+      "name": "👤 Users",
+      "description": "User management endpoints",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            },
+            "description": "Get all users (Admin only)\n\n**Access:** Admin role required"
+          },
+          "response": []
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{user_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{user_id}}"
+              ]
+            },
+            "description": "Get user information by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Name\",\n  \"phone\": \"01234567892\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{user_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{user_id}}"
+              ]
+            },
+            "description": "Update user information"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{user_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{user_id}}"
+              ]
+            },
+            "description": "Delete user account (Admin only)\n\n**Access:** Admin role required"
+          },
+          "response": []
+        },
+        {
+          "name": "Update User Location",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"Point\",\n  \"coordinates\": [31.2357, 30.0444],\n  \"address\": \"القاهرة، مصر\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{user_id}}/location",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{user_id}}",
+                "location"
+              ]
+            },
+            "description": "Update user location with GPS coordinates\n\n**Body Parameters:**\n- `type`: Always \"Point\"\n- `coordinates`: [longitude, latitude]\n- `address`: Human readable address"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🏪 Stores",
+      "description": "Store management endpoints",
+      "item": [
+        {
+          "name": "Get All Stores",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stores"
+              ]
+            },
+            "description": "Get all active stores with owner information\n\n**Access:** Public endpoint"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Store by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stores/{{store_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stores",
+                "{{store_id}}"
+              ]
+            },
+            "description": "Get store details by ID with owner information\n\n**Access:** Public endpoint"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Store",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"مطعم النخيل\",\n  \"description\": \"مطعم مصري أصيل\",\n  \"phone\": \"01234567893\",\n  \"email\": \"contact@nakhil-restaurant.com\",\n  \"location\": {\n    \"type\": \"Point\",\n    \"coordinates\": [31.2357, 30.0444],\n    \"address\": \"شارع النيل، القاهرة\"\n  },\n  \"workingHours\": {\n    \"opening\": \"10:00\",\n    \"closing\": \"23:00\"\n  },\n  \"zone\": \"وسط البلد\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stores"
+              ]
+            },
+            "description": "Create a new store (Store Owner only)\n\n**Access:** Store Owner role required\n**Auto-filled:** owner field from authenticated user"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Store",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"مطعم النخيل المحدث\",\n  \"description\": \"مطعم مصري أصيل مع أطباق متنوعة\",\n  \"workingHours\": {\n    \"opening\": \"09:00\",\n    \"closing\": \"24:00\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stores/{{store_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stores",
+                "{{store_id}}"
+              ]
+            },
+            "description": "Update store information\n\n**Access:** Store Owner (owner) or Admin"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Store",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stores/{{store_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stores",
+                "{{store_id}}"
+              ]
+            },
+            "description": "Delete store and all associated products\n\n**Access:** Store Owner (owner) or Admin"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Stores by Owner",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stores/owner/{{user_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stores",
+                "owner",
+                "{{user_id}}"
+              ]
+            },
+            "description": "Get stores owned by specific user\n\n**Access:** Owner themselves or Admin"
+          },
+          "response": []
+        },
+        {
+          "name": "Add Product to Store",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"كبسة دجاج\",\n  \"description\": \"كبسة دجاج بالطريقة السعودية\",\n  \"price\": 45.50,\n  \"category\": \"أطباق رئيسية\",\n  \"stock\": 20,\n  \"discount\": 10\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stores/{{store_id}}/products",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stores",
+                "{{store_id}}",
+                "products"
+              ]
+            },
+            "description": "Add new product to store\n\n**Access:** Store Owner (owner) or Admin\n**Auto-filled:** store field from URL parameter"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Product in Store",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"كبسة دجاج محدثة\",\n  \"price\": 50.00,\n  \"stock\": 25,\n  \"discount\": 15\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stores/{{store_id}}/products/{{product_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stores",
+                "{{store_id}}",
+                "products",
+                "{{product_id}}"
+              ]
+            },
+            "description": "Update product information in store\n\n**Access:** Store Owner (owner) or Admin"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Product from Store",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/stores/{{store_id}}/products/{{product_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "stores",
+                "{{store_id}}",
+                "products",
+                "{{product_id}}"
+              ]
+            },
+            "description": "Delete product from store\n\n**Access:** Store Owner (owner) or Admin"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "📦 Orders",
+      "description": "Order management endpoints",
+      "item": [
+        {
+          "name": "Get All Orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            },
+            "description": "Get all orders (Admin only)\n\n**Access:** Admin role required\n**Includes:** Customer, store, and driver information"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{order_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{order_id}}"
+              ]
+            },
+            "description": "Get order details by ID\n\n**Access:** Order participants (customer, store owner, driver) or Admin"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"store\": \"{{store_id}}\",\n  \"items\": [\n    {\n      \"product\": \"{{product_id}}\",\n      \"quantity\": 2,\n      \"price\": 45.50\n    }\n  ],\n  \"payment\": {\n    \"method\": \"cash\",\n    \"amount\": 91.00\n  },\n  \"deliveryFee\": 15.00,\n  \"totalAmount\": 106.00,\n  \"deliveryLocation\": {\n    \"type\": \"Point\",\n    \"coordinates\": [31.2357, 30.0444],\n    \"address\": \"شارع المعز، القاهرة\"\n  },\n  \"pickupLocation\": {\n    \"type\": \"Point\",\n    \"coordinates\": [31.2304, 30.0327],\n    \"address\": \"شارع النيل، القاهرة\"\n  },\n  \"notes\": \"يرجى الاتصال قبل التوصيل\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders"
+              ]
+            },
+            "description": "Create new order (Customer only)\n\n**Access:** Customer role required\n**Auto-filled:** customer field from authenticated user\n\n**Order Status Flow:**\n1. `pending` - Initial state\n2. `confirmed` - Store accepted\n3. `preparing` - Food preparation\n4. `on_way` - Out for delivery\n5. `delivered` - Completed\n6. `cancelled` - Cancelled order"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Order",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"تحديث ملاحظات الطلب\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{order_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{order_id}}"
+              ]
+            },
+            "description": "Update order information\n\n**Access:** Order participants or Admin\n**Limited Fields:** Typically notes and delivery instructions"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Order",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{order_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{order_id}}"
+              ]
+            },
+            "description": "Delete order (Admin only)\n\n**Access:** Admin role required\n**Note:** Should only be used for administrative purposes"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Orders by Customer",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders/customer/{{user_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "customer",
+                "{{user_id}}"
+              ]
+            },
+            "description": "Get orders for specific customer\n\n**Access:** Customer themselves or Admin"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Orders by Store",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders/store/{{store_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "store",
+                "{{store_id}}"
+              ]
+            },
+            "description": "Get orders for specific store\n\n**Access:** Store owner or Admin"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Orders by Driver",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/orders/driver/{{user_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "driver",
+                "{{user_id}}"
+              ]
+            },
+            "description": "Get orders assigned to specific driver\n\n**Access:** Driver themselves or Admin"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Order Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"confirmed\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/orders/{{order_id}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orders",
+                "{{order_id}}",
+                "status"
+              ]
+            },
+            "description": "Update order status\n\n**Valid Statuses:**\n- `pending` - Initial state\n- `confirmed` - Store accepted\n- `preparing` - Food preparation\n- `on_way` - Out for delivery\n- `delivered` - Completed\n- `cancelled` - Cancelled order\n\n**Access:** Order participants based on role"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "💳 Payments",
+      "description": "Payment processing endpoints",
+      "item": [
+        {
+          "name": "Process Payment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"orderId\": \"{{order_id}}\",\n  \"method\": \"paymob\",\n  \"amount\": 106.00,\n  \"currency\": \"EGP\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payments/process",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payments",
+                "process"
+              ]
+            },
+            "description": "Process payment for order\n\n**Payment Methods:**\n- `cash` - Cash on delivery\n- `wallet` - User wallet balance\n- `paymob` - Paymob gateway\n- `fawry` - Fawry payment\n\n**Note:** Integrates with payment gateways"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Payment by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/payments/{{payment_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payments",
+                "{{payment_id}}"
+              ]
+            },
+            "description": "Get payment details by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Payments by User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/payments/user/{{user_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payments",
+                "user",
+                "{{user_id}}"
+              ]
+            },
+            "description": "Get all payments for specific user"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Payments by Order",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/payments/order/{{order_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payments",
+                "order",
+                "{{order_id}}"
+              ]
+            },
+            "description": "Get payments for specific order"
+          },
+          "response": []
+        },
+        {
+          "name": "Refund Payment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Order cancelled by customer\",\n  \"amount\": 106.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payments/{{payment_id}}/refund",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payments",
+                "{{payment_id}}",
+                "refund"
+              ]
+            },
+            "description": "Process payment refund (Admin only)\n\n**Access:** Admin role required\n**Notes:** Requires admin approval and refund processing"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🚗 Drivers",
+      "description": "Driver management endpoints",
+      "item": [
+        {
+          "name": "Get All Drivers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/drivers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drivers"
+              ]
+            },
+            "description": "Get all registered drivers\n\n**Includes:** Driver profile and verification status"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Driver by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/drivers/{{user_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drivers",
+                "{{user_id}}"
+              ]
+            },
+            "description": "Get driver details by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Driver",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"محمد أحمد\",\n  \"phone\": \"01234567894\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/drivers/{{user_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drivers",
+                "{{user_id}}"
+              ]
+            },
+            "description": "Update driver profile information"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Driver",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/drivers/{{user_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drivers",
+                "{{user_id}}"
+              ]
+            },
+            "description": "Delete driver account (Admin only)\n\n**Access:** Admin role required"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Driver Documents",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nationalId\": \"12345678901234\",\n  \"license\": \"DL123456789\",\n  \"photo\": \"driver-photo-url.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/drivers/{{user_id}}/documents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drivers",
+                "{{user_id}}",
+                "documents"
+              ]
+            },
+            "description": "Update driver verification documents\n\n**Document Types:**\n- `nationalId` - National ID number\n- `license` - Driver's license number\n- `photo` - Driver photo URL\n\n**Status:** Automatically set to 'pending' for admin review"
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Driver",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"notes\": \"All documents verified successfully\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/drivers/{{user_id}}/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drivers",
+                "{{user_id}}",
+                "verify"
+              ]
+            },
+            "description": "Verify driver documents (Admin only)\n\n**Access:** Admin role required\n**Valid Statuses:**\n- `approved` - Driver verified\n- `rejected` - Documents rejected\n- `pending` - Under review"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Pending Drivers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/drivers/pending",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drivers",
+                "pending"
+              ]
+            },
+            "description": "Get drivers pending verification (Admin only)\n\n**Access:** Admin role required\n**Filters:** Only drivers with 'pending' verification status"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Driver Location",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"Point\",\n  \"coordinates\": [31.2357, 30.0444],\n  \"address\": \"شارع النيل، القاهرة\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/drivers/{{user_id}}/location",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "drivers",
+                "{{user_id}}",
+                "location"
+              ]
+            },
+            "description": "Update driver current location\n\n**Real-time:** Used for order assignment and tracking\n**Coordinates:** [longitude, latitude] format"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🔔 Notifications",
+      "description": "Notification management endpoints",
+      "item": [
+        {
+          "name": "Get All Notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ]
+            },
+            "description": "Get all notifications for current user"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Notification by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{notification_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "{{notification_id}}"
+              ]
+            },
+            "description": "Get specific notification by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Notification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": \"{{user_id}}\",\n  \"type\": \"order_status\",\n  \"title\": \"طلبك في الطريق\",\n  \"message\": \"السائق في طريقه إليك\",\n  \"data\": {\n    \"orderId\": \"{{order_id}}\",\n    \"estimatedTime\": 15\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ]
+            },
+            "description": "Create new notification (Admin only)\n\n**Access:** Admin role required\n**Notification Types:**\n- `order_status` - Order status updates\n- `payment` - Payment notifications\n- `delivery` - Delivery updates\n- `system` - System notifications\n- `promotional` - Marketing messages"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Notification",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"تحديث عنوان الإشعار\",\n  \"message\": \"تحديث محتوى الإشعار\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{notification_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "{{notification_id}}"
+              ]
+            },
+            "description": "Update notification content"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Notification",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{notification_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "{{notification_id}}"
+              ]
+            },
+            "description": "Delete notification"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Unread Notifications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/unread",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "unread"
+              ]
+            },
+            "description": "Get unread notifications only\n\n**Filter:** `read: false`"
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Notification as Read",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{notification_id}}/read",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "{{notification_id}}",
+                "read"
+              ]
+            },
+            "description": "Mark specific notification as read\n\n**Sets:** `read: true`"
+          },
+          "response": []
+        },
+        {
+          "name": "Mark All Notifications as Read",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/read/all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications",
+                "read",
+                "all"
+              ]
+            },
+            "description": "Mark all user notifications as read\n\n**Updates:** All notifications with `read: false` to `read: true`"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "⚙️ Admin",
+      "description": "Administrative endpoints",
+      "item": [
+        {
+          "name": "Get Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/dashboard",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "dashboard"
+              ]
+            },
+            "description": "Get comprehensive dashboard statistics\n\n**Access:** Admin role required\n**Returns:**\n- Total users, customers, drivers, store owners\n- Total stores and orders\n- Completed vs pending orders\n- Total transactions and revenue\n- Pending driver verifications"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Users (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "users"
+              ]
+            },
+            "description": "Get all users with full details (Admin only)\n\n**Access:** Admin role required\n**Excludes:** Password fields for security"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Stores (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/stores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "stores"
+              ]
+            },
+            "description": "Get all stores with owner information (Admin only)\n\n**Access:** Admin role required"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Orders (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "orders"
+              ]
+            },
+            "description": "Get all orders with full context (Admin only)\n\n**Access:** Admin role required\n**Includes:** Customer, store, and driver details"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Drivers (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/drivers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "drivers"
+              ]
+            },
+            "description": "Get all drivers with verification status (Admin only)\n\n**Access:** Admin role required"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Transactions (Admin)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "transactions"
+              ]
+            },
+            "description": "Get all payment transactions (Admin only)\n\n**Access:** Admin role required\n**Includes:** User and order context"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Admin Settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"commissionRate\": 0.18,\n  \"deliveryFee\": 20,\n  \"appSettings\": {\n    \"maintenanceMode\": false,\n    \"newUserRegistration\": true,\n    \"featureX\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "settings"
+              ]
+            },
+            "description": "Update system settings (Admin only)\n\n**Access:** Admin role required\n**Note:** Currently returns confirmation (settings stored in .env in this implementation)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Admin Settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "settings"
+              ]
+            },
+            "description": "Get current system settings (Admin only)\n\n**Access:** Admin role required\n**Returns:**\n- Commission rate\n- Delivery fee\n- Currency\n- App version\n- Feature flags"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "🧪 Test Collections",
+      "description": "Pre-configured test scenarios and workflows",
+      "item": [
+        {
+          "name": "🔄 Complete User Journey",
+          "description": "Full user registration to order completion workflow",
+          "item": [
+            {
+              "name": "1. Register Customer",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"عميل تجريبي\",\n  \"email\": \"customer{{$timestamp}}@example.com\",\n  \"password\": \"123456\",\n  \"phone\": \"01234567895\",\n  \"role\": \"customer\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "2. Login Customer",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{customer_email}}\",\n  \"password\": \"123456\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/login",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "3. Browse Stores",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/stores",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "stores"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "4. Create Order",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"store\": \"{{store_id}}\",\n  \"items\": [\n    {\n      \"product\": \"{{product_id}}\",\n      \"quantity\": 1,\n      \"price\": 45.50\n    }\n  ],\n  \"payment\": {\n    \"method\": \"cash\",\n    \"amount\": 60.50\n  },\n  \"deliveryFee\": 15.00,\n  \"totalAmount\": 60.50,\n  \"deliveryLocation\": {\n    \"type\": \"Point\",\n    \"coordinates\": [31.2357, 30.0444],\n    \"address\": \"عنوان التوصيل\"\n  },\n  \"notes\": \"يرجى الاتصال قبل التوصيل\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/orders",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "orders"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "👨‍💼 Store Owner Workflow",
+          "description": "Complete store management workflow",
+          "item": [
+            {
+              "name": "1. Register Store Owner",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"مالك متجر\",\n  \"email\": \"storeowner{{$timestamp}}@example.com\",\n  \"password\": \"123456\",\n  \"phone\": \"01234567896\",\n  \"role\": \"store_owner\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/register",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "register"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "2. Create Store",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"مطعم التجربة\",\n  \"description\": \"مطعم للمأكولات المصرية\",\n  \"phone\": \"01234567897\",\n  \"email\": \"test@restaurant.com\",\n  \"location\": {\n    \"type\": \"Point\",\n    \"coordinates\": [31.2357, 30.0444],\n    \"address\": \"شارع التحرير، القاهرة\"\n  },\n  \"workingHours\": {\n    \"opening\": \"10:00\",\n    \"closing\": \"23:00\"\n  },\n  \"zone\": \"وسط البلد\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/stores",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "stores"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "3. Add Products",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"مندي لحم\",\n  \"description\": \"مندي لحم بالطريقة التقليدية\",\n  \"price\": 65.00,\n  \"category\": \"أطباق رئيسية\",\n  \"stock\": 50,\n  \"discount\": 0\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/stores/{{store_id}}/products",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "stores",
+                    "{{store_id}}",
+                    "products"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Pre-request script for dynamic data generation",
+          "",
+          "// Generate unique email for registration tests",
+          "if (!pm.collectionVariables.get('test_email')) {",
+          "    const timestamp = Date.now();",
+          "    pm.collectionVariables.set('test_email', `test${timestamp}@example.com`);",
+          "}",
+          "",
+          "// Set default coordinates for location updates",
+          "if (!pm.collectionVariables.get('default_coordinates')) {",
+          "    pm.collectionVariables.set('default_coordinates', JSON.stringify({",
+          "        type: 'Point',",
+          "        coordinates: [31.2357, 30.0444], // Cairo coordinates",
+          "        address: 'القاهرة، مصر'",
+          "    }));",
+          "}",
+          "",
+          "// Validate required environment variables",
+          "const requiredVars = ['baseUrl'];",
+          "const missingVars = requiredVars.filter(varName => !pm.environment.get(varName) && !pm.collectionVariables.get(varName));",
+          "if (missingVars.length > 0) {",
+          "    console.warn('Missing environment variables:', missingVars.join(', '));",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Test script for response validation",
+          "",
+          "// Check response status",
+          "pm.test('Status code is 200', function () {",
+          "    pm.response.to.have.status(200);",
+          "});",
+          "",
+          "// Check response time",
+          "pm.test('Response time is less than 1000ms', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+          "});",
+          "",
+          "// Check content type",
+          "pm.test('Content-Type is JSON', function () {",
+          "    pm.response.to.be.json;",
+          "});",
+          "",
+          "// Check success field in response",
+          "if (pm.response.to.be.json) {",
+          "    pm.test('Response has success field', function () {",
+          "        const responseJson = pm.response.json();",
+          "        pm.expect(responseJson).to.have.property('success');",
+          "    });",
+          "}",
+          "",
+          "// Handle authentication responses",
+          "if (pm.response.code === 200 && pm.response.to.be.json) {",
+          "    const responseJson = pm.response.json();",
+          "    ",
+          "    // Extract token from login response",
+          "    if (responseJson.token && pm.request.url.toString().includes('/auth/login')) {",
+          "        pm.collectionVariables.set('auth_token', responseJson.token);",
+          "        if (responseJson.user && responseJson.user.id) {",
+          "            pm.collectionVariables.set('user_id', responseJson.user.id);",
+          "        }",
+          "        ",
+          "        // Set role-specific tokens",
+          "        if (responseJson.user && responseJson.user.role) {",
+          "            const role = responseJson.user.role;",
+          "            pm.collectionVariables.set(`${role}_token`, responseJson.token);",
+          "        }",
+          "    }",
+          "    ",
+          "    // Extract IDs from create responses",
+          "    if (responseJson.data && responseJson.data._id) {",
+          "        if (pm.request.url.toString().includes('/stores')) {",
+          "            pm.collectionVariables.set('store_id', responseJson.data._id);",
+          "        } else if (pm.request.url.toString().includes('/orders')) {",
+          "            pm.collectionVariables.set('order_id', responseJson.data._id);",
+          "        } else if (pm.request.url.toString().includes('/products')) {",
+          "            pm.collectionVariables.set('product_id', responseJson.data._id);",
+          "        } else if (pm.request.url.toString().includes('/payments')) {",
+          "            pm.collectionVariables.set('payment_id', responseJson.data._id);",
+          "        } else if (pm.request.url.toString().includes('/notifications')) {",
+          "            pm.collectionVariables.set('notification_id', responseJson.data._id);",
+          "        }",
+          "    }",
+          "}",
+          "",
+          "// Handle error responses",
+          "if (pm.response.code >= 400) {",
+          "    pm.test('Error response has message', function () {",
+          "        if (pm.response.to.be.json) {",
+          "            const responseJson = pm.response.json();",
+          "            pm.expect(responseJson).to.have.property('error');",
+          "        }",
+          "    });",
+          "}",
+          "",
+          "// Log response for debugging",
+          "console.log('Response:', pm.response.text());"
+        ]
+      }
+    }
+  ]
+}

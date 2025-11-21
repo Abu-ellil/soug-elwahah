@@ -1,10 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import COLORS from '../constants/colors';
 import SIZES from '../constants/sizes';
@@ -52,11 +47,7 @@ const RangeSelector = ({
           style={[styles.button, value >= max && styles.buttonDisabled]}
           onPress={increaseValue}
           disabled={value >= max}>
-          <MaterialIcons
-            name="add"
-            size={20}
-            color={value >= max ? COLORS.gray : COLORS.primary}
-          />
+          <MaterialIcons name="add" size={20} color={value >= max ? COLORS.gray : COLORS.primary} />
         </TouchableOpacity>
       </View>
     </View>

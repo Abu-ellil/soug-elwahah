@@ -1,0 +1,198 @@
+{
+  "title": "Tawseela System ERD",
+  "description": "Entity Relationship Diagram for Tawseela Delivery Platform",
+  "entities": [
+    {
+      "name": "User",
+      "attributes": [
+        { "name": "_id", "type": "ObjectId", "required": true },
+        { "name": "name", "type": "String", "required": true },
+        { "name": "email", "type": "String", "required": true, "unique": true },
+        { "name": "password", "type": "String", "required": true },
+        { "name": "phone", "type": "String", "required": true },
+        { "name": "role", "type": "String", "enum": ["customer", "driver", "store_owner", "admin"], "required": true },
+        { "name": "location", "type": "Object", "properties": { "type": "Point", "coordinates": "Array", "address": "String" } },
+        { "name": "wallet", "type": "Number", "default": 0 },
+        { "name": "isVerified", "type": "Boolean", "default": false },
+        { "name": "isActive", "type": "Boolean", "default": true },
+        { "name": "driverDocuments", "type": "Object", "properties": { "nationalId": "String", "license": "String", "photo": "String", "status": "String" } },
+        { "name": "verificationToken", "type": "String" },
+        { "name": "resetPasswordToken", "type": "String" },
+        { "name": "resetPasswordExpire", "type": "Date" },
+        { "name": "createdAt", "type": "Date" },
+        { "name": "updatedAt", "type": "Date" }
+      ]
+    },
+    {
+      "name": "Store",
+      "attributes": [
+        { "name": "_id", "type": "ObjectId", "required": true },
+        { "name": "name", "type": "String", "required": true },
+        { "name": "owner", "type": "ObjectId", "ref": "User", "required": true },
+        { "name": "description", "type": "String" },
+        { "name": "phone", "type": "String", "required": true },
+        { "name": "email", "type": "String" },
+        { "name": "location", "type": "Object", "properties": { "type": "Point", "coordinates": "Array", "address": "String" } },
+        { "name": "workingHours", "type": "Object", "properties": { "opening": "String", "closing": "String" } },
+        { "name": "zone", "type": "String", "required": true },
+        { "name": "logo", "type": "String" },
+        { "name": "coverImage", "type": "String" },
+        { "name": "isActive", "type": "Boolean", "default": true },
+        { "name": "rating", "type": "Number", "default": 0 },
+        { "name": "products", "type": "Array", "items": "ObjectId", "ref": "Product" },
+        { "name": "createdAt", "type": "Date" },
+        { "name": "updatedAt", "type": "Date" }
+      ]
+    },
+    {
+      "name": "Product",
+      "attributes": [
+        { "name": "_id", "type": "ObjectId", "required": true },
+        { "name": "name", "type": "String", "required": true },
+        { "name": "description", "type": "String" },
+        { "name": "price", "type": "Number", "required": true },
+        { "name": "category", "type": "String" },
+        { "name": "stock", "type": "Number", "required": true, "default": 0 },
+        { "name": "image", "type": "String" },
+        { "name": "store", "type": "ObjectId", "ref": "Store", "required": true },
+        { "name": "isActive", "type": "Boolean", "default": true },
+        { "name": "rating", "type": "Number", "default": 0 },
+        { "name": "discount", "type": "Number", "default": 0 },
+        { "name": "createdAt", "type": "Date" },
+        { "name": "updatedAt", "type": "Date" }
+      ]
+    },
+    {
+      "name": "Order",
+      "attributes": [
+        { "name": "_id", "type": "ObjectId", "required": true },
+        { "name": "customer", "type": "ObjectId", "ref": "User", "required": true },
+        { "name": "store", "type": "ObjectId", "ref": "Store", "required": true },
+        { "name": "driver", "type": "ObjectId", "ref": "User" },
+        { "name": "items", "type": "Array", "items": "Object", "properties": { "product": "ObjectId", "ref": "Product", "quantity": "Number", "price": "Number" } },
+        { "name": "status", "type": "String", "enum": ["pending", "confirmed", "preparing", "on_way", "delivered", "cancelled"], "default": "pending" },
+        { "name": "payment", "type": "Object", "properties": { "method": "String", "status": "String", "amount": "Number" } },
+        { "name": "deliveryFee", "type": "Number", "default": 0 },
+        { "name": "totalAmount", "type": "Number", "required": true },
+        { "name": "deliveryLocation", "type": "Object", "properties": { "type": "Point", "coordinates": "Array", "address": "String" } },
+        { "name": "pickupLocation", "type": "Object", "properties": { "type": "Point", "coordinates": "Array", "address": "String" } },
+        { "name": "notes", "type": "String", "default": "" },
+        { "name": "estimatedDeliveryTime", "type": "Date" },
+        { "name": "actualDeliveryTime", "type": "Date" },
+        { "name": "createdAt", "type": "Date" },
+        { "name": "updatedAt", "type": "Date" }
+      ]
+    },
+    {
+      "name": "Transaction",
+      "attributes": [
+        { "name": "_id", "type": "ObjectId", "required": true },
+        { "name": "user", "type": "ObjectId", "ref": "User", "required": true },
+        { "name": "order", "type": "ObjectId", "ref": "Order", "required": true },
+        { "name": "type", "type": "String", "enum": ["payment", "refund", "wallet_add", "wallet_withdraw"], "required": true },
+        { "name": "amount", "type": "Number", "required": true },
+        { "name": "method", "type": "String", "enum": ["cash", "wallet", "paymob", "fawry"] },
+        { "name": "status", "type": "String", "enum": ["pending", "completed", "failed", "refunded"], "default": "pending" },
+        { "name": "transactionId", "type": "String" },
+        { "name": "reference", "type": "String" },
+        { "name": "gatewayResponse", "type": "Mixed" },
+        { "name": "createdAt", "type": "Date" },
+        { "name": "updatedAt", "type": "Date" }
+      ]
+    },
+    {
+      "name": "Notification",
+      "attributes": [
+        { "name": "_id", "type": "ObjectId", "required": true },
+        { "name": "user", "type": "ObjectId", "ref": "User", "required": true },
+        { "name": "type", "type": "String", "enum": ["order_status", "payment", "delivery", "system", "promotional"], "required": true },
+        { "name": "title", "type": "String", "required": true },
+        { "name": "message", "type": "String", "required": true },
+        { "name": "read", "type": "Boolean", "default": false },
+        { "name": "data", "type": "Mixed" },
+        { "name": "createdAt", "type": "Date" },
+        { "name": "updatedAt", "type": "Date" }
+      ]
+    },
+    {
+      "name": "Zone",
+      "attributes": [
+        { "name": "_id", "type": "ObjectId", "required": true },
+        { "name": "name", "type": "String", "required": true, "unique": true },
+        { "name": "description", "type": "String" },
+        { "name": "coordinates", "type": "Object", "properties": { "type": "Polygon", "coordinates": "Array" } },
+        { "name": "center", "type": "Object", "properties": { "type": "Point", "coordinates": "Array" } },
+        { "name": "active", "type": "Boolean", "default": true },
+        { "name": "deliveryFee", "type": "Number", "default": 15 },
+        { "name": "estimatedDeliveryTime", "type": "Number", "default": 30 },
+        { "name": "createdAt", "type": "Date" },
+        { "name": "updatedAt", "type": "Date" }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "from": "User",
+      "to": "Order",
+      "type": "one-to-many",
+      "fromField": "_id",
+      "toField": "customer"
+    },
+    {
+      "from": "User",
+      "to": "Order",
+      "type": "one-to-many",
+      "fromField": "_id",
+      "toField": "driver"
+    },
+    {
+      "from": "Store",
+      "to": "Order",
+      "type": "one-to-many",
+      "fromField": "_id",
+      "toField": "store"
+    },
+    {
+      "from": "User",
+      "to": "Store",
+      "type": "one-to-many",
+      "fromField": "_id",
+      "toField": "owner"
+    },
+    {
+      "from": "Store",
+      "to": "Product",
+      "type": "one-to-many",
+      "fromField": "_id",
+      "toField": "store"
+    },
+    {
+      "from": "Product",
+      "to": "Order.items.product",
+      "type": "one-to-many",
+      "fromField": "_id",
+      "toField": "items.product"
+    },
+    {
+      "from": "User",
+      "to": "Transaction",
+      "type": "one-to-many",
+      "fromField": "_id",
+      "toField": "user"
+    },
+    {
+      "from": "Order",
+      "to": "Transaction",
+      "type": "one-to-many",
+      "fromField": "_id",
+      "toField": "order"
+    },
+    {
+      "from": "User",
+      "to": "Notification",
+      "type": "one-to-many",
+      "fromField": "_id",
+      "toField": "user"
+    }
+  ]
+}

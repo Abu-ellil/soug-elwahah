@@ -1,12 +1,12 @@
 // API Service for Customer App
 import { BASE_URL } from '../config/api';
 import { getToken, removeToken } from '../utils/storage';
+import { networkManager } from '../utils/network';
 
 // Create a base API request function with retry mechanism
 const apiRequest = async (endpoint, options = {}) => {
-  // For Expo apps, we'll rely on the browser's built-in connectivity detection
-  // and catch network errors gracefully
-  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+  // Check network connectivity using our network manager
+  if (!networkManager.isInternetReachable()) {
     throw new Error('Network request failed: Device is offline.');
   }
 
@@ -72,18 +72,33 @@ const apiRequest = async (endpoint, options = {}) => {
       }
 
       const data = await response.json();
+
+      // Add validation for the expected data structure
+      if (data === null || data === undefined) {
+        throw new Error('Invalid response: Server returned null or undefined data');
+      }
+
       return data;
     } catch (error) {
       console.error(`API request error (attempt ${attempt + 1}/${retries + 1}):`, error);
       lastError = error; // Store the original error
 
       if (error.name === 'AbortError') {
-        lastError = new Error(`Request timed out after ${timeout / 1000} seconds.`);
+        lastError = new Error(
+          `Request timed out after ${timeout / 1000} seconds. Please check your internet connection and try again.`
+        );
       } else if (
         error.name === 'TypeError' &&
         (error.message === 'Network request failed' || error.message.includes('fetch'))
       ) {
-        lastError = new Error('Network request failed. Please check your internet connection.');
+        lastError = new Error(
+          'Network request failed: Device is offline. Please check your internet connection.'
+        );
+      } else if (error.message && error.message.includes('forEach')) {
+        // Handle the specific forEach error by providing a more descriptive message
+        lastError = new Error(
+          'Invalid response format received from server. Please try again later.'
+        );
       }
 
       // If this was the last attempt, or it's an error we don't want to retry, throw the error

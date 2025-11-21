@@ -23,7 +23,7 @@ const AddressesScreen = ({ navigation, route }) => {
   // Check if a new address was added
   React.useEffect(() => {
     if (route.params?.newAddress) {
-      setAddresses(prev => [...prev, route.params.newAddress]);
+      setAddresses((prev) => [...prev, route.params.newAddress]);
       // Clear the param
       navigation.setParams({ newAddress: undefined });
     }

@@ -1,253 +1,112 @@
-const path = require('path');
-require("dotenv").config({ path: path.resolve(__dirname, '.env') });
+/**
+ * @file server.js - Main server file for Tawseela Backend
+ * @description هذا الملف هو نقطة البداية للتطبيق ويتضمن إعداد Express وSocket.io وMongoDB
+ */
 
-console.log("MONGODB_URI from .env:", process.env.MONGODB_URI); // Add this line for debugging
+// استيراد المكتبات
+const express = require('express');
+const http = require('http');
+const socketIo = require('socket.io');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+require('dotenv').config();
 
-const express = require("express");
-const http = require("http");
-const socketIo = require("socket.io");
-const connectDB = require("./src/config/database");
+// استيراد الملفات الخاصة بالمشروع
+const connectDB = require('./config/db'); 
+const logger = require('./utils/logger');
+const errorHandler = require('./middleware/errorHandler');
 
-// Connect to database first
-connectDB()
-  .then(async () => {
-    // Import app after DB connection is established
-    const app = require("./src/app.js");
+// استيراد.routes
+const authRoutes = require('./modules/auth/routes');
+const userRoutes = require('./modules/users/routes');
+const driverRoutes = require('./modules/drivers/routes');
+const storeRoutes = require('./modules/stores/routes');
+const orderRoutes = require('./modules/orders/routes');
+const paymentRoutes = require('./modules/payments/routes');
+const notificationRoutes = require('./modules/notifications/routes');
+const adminRoutes = require('./modules/admin/routes');
 
-    // Create HTTP server
-    const server = http.createServer(app);
+// إنشاء تطبيق Express
+const app = express();
 
-    // Initialize Socket.IO with CORS configuration
-    const io = socketIo(server, {
-      cors: {
-        origin: [
-          "http://localhost:3000", // Admin app
-          "http://localhost:3001", // Alternative port for admin app
-          "http://localhost:19006", // Expo development server (for merchant app)
-          "http://localhost:19000", // Alternative Expo port
-          "http://localhost:3002", // Alternative port for admin app
-          "http://localhost:19001", // Alternative Expo port
-          process.env.ADMIN_URL || "", // Production admin URL from environment
-          process.env.MERCHANT_URL || "", // Production merchant URL from environment
-          "https://soug-elwahah.vercel.app", // Production deployment
-        ].filter((url) => url), // Remove empty strings
-        methods: ["GET", "POST"],
-        credentials: true,
-      },
-      transports: ["websocket", "polling"],
-      allowEIO3: true, // Allow Engine.IO v3 clients (for compatibility)
-    });
+// إعدادات الأمان
+app.use(helmet());
 
-    // Initialize WebSocket service
-    const webSocketService = require("./src/services/websocket.service");
-    webSocketService.init(io);
+// تهيئة CORS
+app.use(cors({
+  origin: [
+    process.env.CLIENT_URL || 'http://localhost:3000',
+    'http://localhost:19006', // Expo Metro
+    'http://localhost:8081', // React Native Metro
+    'http://localhost:19000', // Expo development
+    'http://127.0.0.1:19006',
+    'http://127.0.0.1:8081',
+    'http://127.0.0.1:19000'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
-    // Initialize real-time order assignment service
-    const realTimeOrderAssignmentService = require("./src/services/realtime-order-assignment.service");
-    realTimeOrderAssignmentService.init(io);
+// تهيئة rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 10 requests per windowMs
+});
+app.use(limiter);
 
-    // Store connected clients with their user info
-    const connectedClients = new Map();
+// تهيئة body parser
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 
-    // Socket.IO connection handler
-    io.use((socket, next) => {
-      const token = socket.handshake.auth.token || socket.handshake.query.token;
+// تهيئة الاتصال بقاعدة البيانات
+connectDB();
 
-      if (!token) {
-        return next(new Error("Authentication token required"));
-      }
+// إعداد Socket.io
+const server = http.createServer(app);
+const io = socketIo(server, {
+  cors: {
+    origin: process.env.CLIENT_URL || 'http://localhost:3000',
+    methods: ['GET', 'POST']
+  }
+});
 
-      try {
-        const { verifyToken } = require("./src/utils/jwt");
-        const decoded = verifyToken(token);
-        socket.userId = decoded.userId;
-        socket.userRole = decoded.role;
-        socket.userPhone = decoded.phone;
-        next();
-      } catch (error) {
-        console.error("Socket authentication error:", error);
-        next(new Error("Authentication failed"));
-      }
-    });
+// تهيئة Socket.io
+require('./socket')(io);
 
-    io.on("connection", (socket) => {
-      console.log(
-        `User connected: ${socket.id} (User ID: ${socket.userId}, Role: ${socket.userRole})`
-      );
+// استخدام.routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/drivers', driverRoutes);
+app.use('/api/stores', storeRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/admin', adminRoutes);
 
-      // Store user info with socket connection
-      connectedClients.set(socket.id, {
-        userId: socket.userId,
-        role: socket.userRole,
-        phone: socket.userPhone,
-        socketId: socket.id,
-      });
+// جذر API
+app.get('/api', (req, res) => {
+  res.json({ message: 'Tawseela Backend API is running!' });
+});
 
-      // Join specific rooms based on user role and ID
-      socket.join(`user_${socket.userId}`);
-      socket.join(`${socket.userRole}_${socket.userId}`);
-      console.log(`User authenticated: ${socket.userId} (${socket.userRole})`);
+// استخدام مiddleware لمعالجة الأخطاء
+app.use(errorHandler);
 
-      // Handle driver availability status
-      if (socket.userRole === "driver") {
-        socket.on("driverStatusUpdate", (status) => {
-          if (typeof status === "object" && status.isAvailable !== undefined) {
-            // Update driver availability in database
-            require("./src/models/Driver")
-              .findByIdAndUpdate(socket.userId, {
-                isAvailable: status.isAvailable,
-              })
-              .then(() => {
-                console.log(
-                  `Driver ${socket.userId} availability updated to ${status.isAvailable}`
-                );
+// تحديد port
+const PORT = process.env.PORT || 5000;
 
-                // Join or leave the available drivers room based on status
-                if (status.isAvailable) {
-                  socket.join("available_drivers");
-                  console.log(
-                    `Driver ${socket.userId} joined available_drivers room`
-                  );
-                } else {
-                  socket.leave("available_drivers");
-                  console.log(
-                    `Driver ${socket.userId} left available_drivers room`
-                  );
-                }
-              })
-              .catch((err) => {
-                console.error("Error updating driver availability:", err);
-              });
-          }
-        });
+// بدء تشغيل الخادم
+server.listen(PORT, () => {
+  logger.info(`Server running on port ${PORT}`);
+  console.log(`Tawseela Backend server running on port ${PORT}`);
+});
 
-        // Handle order acceptance
-        socket.on("acceptOrder", async (orderId) => {
-          const realTimeOrderAssignmentService = require("./src/services/realtime-order-assignment.service");
-          const result =
-            await realTimeOrderAssignmentService.handleOrderAcceptance(
-              socket.userId,
-              orderId
-            );
+// معالجة أخطاء الخادم
+server.on('error', (error) => {
+ logger.error(`Server error: ${error.message}`);
+  console.error(`Server error: ${error.message}`);
+});
 
-          if (result.success) {
-            // Join driver to order-specific room for updates
-            socket.join(`order_${orderId}`);
-            socket.join(`driver_orders_${socket.userId}`);
-
-            // Notify the driver that order was accepted
-            socket.emit("orderAcceptanceSuccess", {
-              orderId: orderId,
-              message: "تم قبول الطلب بنجاح",
-              timestamp: new Date().toISOString(),
-            });
-          } else {
-            socket.emit("orderAcceptanceFailed", {
-              orderId: orderId,
-              message: result.message,
-              timestamp: new Date().toISOString(),
-            });
-          }
-        });
-
-        // Handle location updates
-        socket.on("locationUpdate", (location) => {
-          if (location && location.lat && location.lng) {
-            // Update driver location in database
-            require("./src/models/Driver")
-              .findByIdAndUpdate(socket.userId, {
-                coordinates: { lat: location.lat, lng: location.lng },
-                lastLocationUpdate: new Date(),
-              })
-              .then(() => {
-                console.log(`Driver ${socket.userId} location updated`);
-
-                // Broadcast location update to relevant parties
-                webSocketService.broadcastDriverLocation(socket.userId, {
-                  lat: location.lat,
-                  lng: location.lng,
-                  timestamp: new Date().toISOString(),
-                });
-              })
-              .catch((err) => {
-                console.error("Error updating driver location:", err);
-              });
-          }
-        });
-      }
-
-      // Handle disconnection
-      socket.on("disconnect", () => {
-        console.log(`User disconnected: ${socket.id}`);
-        connectedClients.delete(socket.id);
-      });
-
-      // Handle errors
-      socket.on("error", (error) => {
-        console.error("Socket error:", error);
-      });
-    });
-
-    // Make io available globally or pass to routes that need it
-    app.set("io", io);
-
-    const DEFAULT_PORT = 5000;
-    const PORT = process.env.PORT || DEFAULT_PORT;
-
-    // Function to start server with fallback ports
-    function startServer(port, maxRetries = 5, retryCount = 0) {
-      server.on("error", (error) => {
-        if (error.code === "EADDRINUSE") {
-          if (retryCount < maxRetries) {
-            const newPort = parseInt(port) + 1;
-            console.log(
-              `Port ${port} is already in use. Trying port ${newPort}...`
-            );
-            // Close the current server before attempting to listen on a new port
-            server.close(() => {
-              startServer(newPort, maxRetries, retryCount + 1);
-            });
-          } else {
-            console.error(
-              `Could not start server after trying ${maxRetries + 1} ports`
-            );
-            process.exit(1);
-          }
-        } else {
-          console.error("Server error:", error);
-        }
-      });
-
-      server.listen(port, "0.0.0.0", () => {
-        console.log(`Server running on port ${port}`);
-        console.log(`API available at http://localhost:${port}/api`);
-        console.log(`API also available at http://192.168.1.4:${port}/api`);
-        console.log(`WebSocket available at ws://localhost:${port}`);
-      });
-
-      // Handle graceful shutdown
-      process.on("SIGTERM", () => {
-        console.log("SIGTERM received, shutting down gracefully");
-        server.close(() => {
-          console.log("Process terminated");
-        });
-      });
-
-      process.on("SIGINT", () => {
-        console.log("SIGINT received, shutting down gracefully");
-        server.close(() => {
-          console.log("Process terminated");
-        });
-      });
-
-      return server;
-    }
-
-    // Start the server with fallback logic
-    const serverInstance = startServer(PORT);
-    module.exports = serverInstance;
-  })
-  .catch((error) => {
-    console.error("Failed to connect to database:", error);
-    process.exit(1);
-  });
+module.exports = server;

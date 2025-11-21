@@ -1,33 +1,46 @@
-import 'react-native-get-random-values';
+import './global.css';
+import React, { useEffect } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import Toast from 'react-native-toast-message';
-import { NavigationContainer } from '@react-navigation/native';
 
-import './global.css';
-import React from 'react';
 import AppNavigator from './src/navigation/AppNavigator';
 import { AuthProvider } from './src/context/AuthContext';
 import { CartProvider } from './src/context/CartContext';
 import { LocationProvider } from './src/context/LocationProvider';
-import { LocalizationProvider } from './src/context/LocalizationContext';
 import { AnalyticsProvider } from './src/context/AnalyticsContext';
+import { LocalizationProvider } from './src/context/LocalizationContext';
+import AppInitializer from './src/components/AppInitializer';
+import { useOfflineStore } from './src/stores/offlineStore';
 
 export default function App() {
+  const initializeOffline = useOfflineStore((state) => state.initialize);
+
+  useEffect(() => {
+    // Initialize offline store and network monitoring
+    initializeOffline();
+  }, [initializeOffline]);
+
   return (
-    <NavigationContainer>
-      <AuthProvider>
-        <AnalyticsProvider>
-          <CartProvider>
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <LocalizationProvider>
+          <AuthProvider>
             <LocationProvider>
-              <LocalizationProvider>
-                <AppNavigator />
-                <StatusBar style="auto" />
-                <Toast />
-              </LocalizationProvider>
-            </LocationProvider>
-          </CartProvider>
-        </AnalyticsProvider>
-      </AuthProvider>
-    </NavigationContainer>
+              <AnalyticsProvider>
+                <CartProvider>
+                  <AppInitializer>
+                    <AppNavigator />
+                    <StatusBar style="auto" />
+                  </AppInitializer>
+                  </CartProvider>
+                </AnalyticsProvider>
+              </LocationProvider>
+            </AuthProvider>
+          </LocalizationProvider>
+        <Toast />
+      </NavigationContainer>
+    </SafeAreaProvider>
   );
 }

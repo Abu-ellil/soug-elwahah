@@ -1,528 +1,168 @@
-# Egyptian Villages Delivery API
-
-A comprehensive backend API for a delivery service that connects customers with local stores and drivers in Egyptian villages. Built with Express.js, MongoDB, and deployed on Vercel.
-
-## 🚀 Features
-
-- **Multi-role Authentication**: Customer, Store Owner, and Driver authentication
-- **Real-time Tracking**: GPS-based location tracking for drivers
-- **Push Notifications**: FCM-based notifications for order updates
-- **Order Management**: Complete order lifecycle from creation to delivery
-- **Product Management**: Store owners can manage their products
-- **Payment Integration Ready**: Supports cash, mobile payments, and card
-- **Geolocation Services**: Find nearby stores based on customer location
-
-## 🛠️ Tech Stack
-
-- **Backend**: Node.js, Express.js
-- **Database**: MongoDB with Mongoose ODM
-- **Authentication**: JWT (JSON Web Tokens)
-- **File Upload**: Multer + Cloudinary
-- **Validation**: Joi
-- **Security**: Helmet, CORS, Rate Limiting
-- **Push Notifications**: Firebase Cloud Messaging (FCM)
-- **Deployment**: Vercel (Serverless Functions)
-
-## 📁 Project Structure
-
-```
-delivery-api/
-├── api/
-│   └── index.js                    # Vercel serverless entry point
-├── src/
-│   ├── config/
-│   │   ├── database.js            # MongoDB connection
-│   │   ├── cloudinary.js          # Cloudinary config
-│   │   ├── firebase.js            # Firebase Admin SDK (FCM)
-│   │   └── constants.js           # App constants
-│   ├── models/
-│   │   ├── User.js                # Customer model
-│   │   ├── StoreOwner.js          # Store owner model
-│   │   ├── Store.js               # Store model
-│   │   ├── Product.js             # Product model
-│   │   ├── Order.js               # Order model
-│   │   ├── Address.js             # Address model
-│   │   ├── Category.js            # Category model
-│   │   ├── Driver.js              # Driver model
-│   │   └── Notification.js        # Notification log model
-│   ├── routes/
-│   │   ├── auth.routes.js         # Auth routes (Login/Register for all)
-│   │   ├── customer/              # Customer routes folder
-│   │   │   ├── index.js
-│   │   │   ├── profile.routes.js
-│   │   │   ├── orders.routes.js
-│   │   │   ├── addresses.routes.js
-│   │   │   ├── stores.routes.js
-│   │   │   ├── products.routes.js
-│   │   │   ├── notifications.routes.js
-│   │   │   └── tracking.routes.js
-│   │   ├── store/                 # Store Owner routes folder
-│   │   │   ├── index.js
-│   │   │   ├── profile.routes.js
-│   │   │   ├── store.routes.js
-│   │   │   ├── products.routes.js
-│   │   │   ├── orders.routes.js
-│   │   │   ├── statistics.routes.js
-│   │   │   └── notifications.routes.js
-│   │   ├── driver/                # Driver routes folder
-│   │   │   ├── index.js
-│   │   │   ├── profile.routes.js
-│   │   │   ├── orders.routes.js
-│   │   │   ├── tracking.routes.js
-│   │   │   ├── earnings.routes.js
-│   │   │   └── notifications.routes.js
-│   │   ├── category.routes.js     # Public categories
-│   │   └── upload.routes.js       # Shared upload
-│   ├── controllers/
-│   │   ├── auth.controller.js
-│   │   ├── customer/              # Customer controllers folder
-│   │   │   ├── profile.controller.js
-│   │   │   ├── orders.controller.js
-│   │   │   ├── addresses.controller.js
-│   │   │   ├── stores.controller.js
-│   │   │   ├── notifications.controller.js
-│   │   │   └── tracking.controller.js
-│   │   ├── store/                 # Store controllers folder
-│   │   │   ├── profile.controller.js
-│   │   │   ├── store.controller.js
-│   │   │   ├── products.controller.js
-│   │   │   ├── orders.controller.js
-│   │   │   ├── statistics.controller.js
-│   │   │   └── notifications.controller.js
-│   │   ├── driver/                # Driver controllers folder
-│   │   │   ├── profile.controller.js
-│   │   │   ├── orders.controller.js
-│   │   │   ├── tracking.controller.js
-│   │   │   ├── earnings.controller.js
-│   │   │   └── notifications.controller.js
-│   │   ├── category.controller.js
-│   │   └── upload.controller.js
-│   ├── middlewares/
-│   │   ├── auth.middleware.js     # JWT verification
-│   │   ├── validation.middleware.js
-│   │   ├── error.middleware.js
-│   │   └── upload.middleware.js
-│   ├── validators/
-│   │   ├── auth.validator.js
-│   │   ├── product.validator.js
-│   │   ├── order.validator.js
-│   │   └── store.validator.js
-│   ├── services/
-│   │   ├── notification.service.js # FCM notifications
-│   │   └── tracking.service.js     # Real-time tracking logic
-│   ├── utils/
-│   │   ├── jwt.js                 # JWT helper
-│   │   ├── distance.js            # GPS distance calculation
-│   │   ├── response.js            # Response formatter
-│   │   └── seeders.js             # Database seeding
-│   └── app.js                     # Express app setup
-├── .env.example
-├── .gitignore
-├── package.json
-├── vercel.json                     # Vercel configuration
-└── README.md
-```
+# منصة توصيل - Tawseela Backend
+
+نظام توصيل متكامل مبني باستخدام Node.js وExpress مع دعم للتعقب في الوقت الفعلي باستخدام Socket.io
+
+## المميزات
+
+- **نظام تعقب في الوقت الفعلي**: باستخدام Socket.io لمتابعة السائقين والطلبات
+- **نظام مصادقة قوي**: باستخدام JWT ودعم تسجيل الدخول عبر البريد الإلكتروني وكلمة المرور
+- **نظام دفع متكامل**: دعم المحاكيات لبوابات Paymob وFawry
+- **نظام التحقق من السائقين**: مراجعة المستندات من قبل الأدمن
+- **واجهة إدارة الأدمن**: مراجعة السائقين، إدارة الطلبات، إعدادات العمولة
+- **دعم المحفظة**: محفظة داخلية للمستخدمين
+- **نظام الإشعارات**: دعم الإشعارات الفورية
+
+## الهيكل المعياري
+
+- `modules/auth`: نظام المصادقة
+- `modules/users`: إدارة المستخدمين
+- `modules/drivers`: إدارة السائقين ونظام التحقق
+- `modules/stores`: إدارة المتاجر والمنتجات
+- `modules/orders`: إدارة الطلبات
+- `modules/payments`: نظام الدفع
+- `modules/notifications`: نظام الإشعارات
+- `modules/admin`: لوحة تحكم الأدمن
+- `modules/customers`: إدارة العملاء
+- `modules/storeowners`: إدارة ملاك المتاجر
+
+## قواعد البيانات
+
+- MongoDB Atlas للتخزين
+- دعم لتحديد المواقع الجغرافية (GeoJSON)
+- مخططات العلاقات بين الكيانات (ERD)
+
+## الإعداد
+
+1. **تثبيت التبعيات**:
+   ```bash
+   npm install
+   ```
+
+2. **إنشاء ملف .env**:
+   ```env
+   MONGODB_URI=ongodb+srv://<username>:<password>@cluster.mongodb.net/tawseela?retryWrites=true&w=majority
+   JWT_SECRET=your_jwt_secret_key_here
+   JWT_EXPIRE=7d
+   PORT=5000
+   NODE_ENV=development
+   CLIENT_URL=http://localhost:3000
+   JWT_COOKIE_EXPIRE=30
+   PAYMOB_INTEGRATION_ID=your_paymob_integration_id
+   PAYMOB_IFRAME_ID=your_paymob_iframe_id
+   PAYMOB_API_KEY=your_paymob_api_key
+   PAYMOB_HMAC=your_paymob_hmac
+   FAWRY_API_KEY=your_fawry_api_key
+   FAWRY_SECRET=your_fawry_secret
+   ```
+
+3. **تشغيل الخادم**:
+   ```bash
+   npm run dev
+   ```
+
+## API Endpoints
+
+### تسجيل ودخول العملاء
+- `POST /api/customers/register` - تسجيل عميل جديد
+- `POST /api/customers/login` - تسجيل دخول العميل
+- `GET /api/customers/me` - الحصول على معلومات العميل الحالي
+- `PUT /api/customers/me` - تحديث معلومات العميل
+- `PUT /api/customers/me/password` - تحديث كلمة مرور العميل
+- `POST /api/customers/forgotpassword` - استعادة كلمة المرور
+- `PUT /api/customers/resetpassword/:resettoken` - إعادة تعيين كلمة المرور
+
+### تسجيل ودخول السائقين
+- `POST /api/drivers/register` - تسجيل سائق جديد
+- `POST /api/drivers/login` - تسجيل دخول السائق
+- `GET /api/drivers/me` - الحصول على معلومات السائق الحالي
+- `PUT /api/drivers/me` - تحديث معلومات السائق
+- `PUT /api/drivers/me/password` - تحديث كلمة مرور السائق
+- `PUT /api/drivers/me/documents` - رفع وثائق التحقق
+- `PUT /api/drivers/me/online` - تحديث حالة توفر السائق
+- `POST /api/drivers/forgotpassword` - استعادة كلمة المرور
+- `PUT /api/drivers/resetpassword/:resettoken` - إعادة تعيين كلمة المرور
+
+### تسجيل ودخول ملاك المتاجر
+- `POST /api/store-owners/register` - تسجيل مالك متجر جديد
+- `POST /api/store-owners/login` - تسجيل دخول مالك المتجر
+- `GET /api/store-owners/me` - الحصول على معلومات مالك المتجر الحالي
+- `PUT /api/store-owners/me` - تحديث معلومات مالك المتجر
+- `PUT /api/store-owners/me/password` - تحديث كلمة مرور مالك المتجر
+- `PUT /api/store-owners/me/documents` - رفع وثائق التحقق
+- `POST /api/store-owners/forgotpassword` - استعادة كلمة المرور
+- `PUT /api/store-owners/resetpassword/:resettoken` - إعادة تعيين كلمة المرور
+
+### المستخدمين
+- `GET /api/users` - الحصول على جميع المستخدمين (الأدمن فقط)
+- `GET /api/users/:id` - الحصول على مستخدم محدد
+- `PUT /api/users/:id` - تحديث مستخدم
+
+### السائقين
+- `GET /api/drivers` - الحصول على جميع السائقين
+- `PUT /api/drivers/:id/documents` - تحديث وثائق السائق
+- `PUT /api/drivers/:id/verify` - تحقق الأدمن من وثائق السائق (الأدمن فقط)
+- `GET /api/drivers/pending` - الحصول على السائقين المعلقين (الأدمن فقط)
 
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Node.js (v14 or higher)
-- MongoDB (local or Atlas)
-- Cloudinary account
-- Firebase project for FCM
-
-### Installation
-
-1. Clone the repository:
-
-```bash
-git clone <repository-url>
-cd delivery-api
-```
+### المتاجر
+- `GET /api/stores` - الحصول على جميع المتاجر
+- `POST /api/stores` - إنشاء متجر (مالك المتجر فقط)
+- `GET /api/stores/:id` - الحصول على متجر محدد
 
-2. Install dependencies:
+### الطلبات
+- `GET /api/orders` - الحصول على جميع الطلبات (الأدمن فقط)
+- `POST /api/orders` - إنشاء طلب جديد (العملاء فقط)
+- `PUT /api/orders/:id/status` - تحديث حالة الطلب
 
-```bash
-npm install
-```
+### المدفوعات
+- `POST /api/payments/process` - معالجة الدفع
+- `GET /api/payments/:id` - الحصول على معلومات الدفع
 
-3. Create a `.env` file in the root directory and add the required environment variables:
+### الإشعارات
+- `GET /api/notifications` - الحصول على إشعارات المستخدم
+- `PUT /api/notifications/:id/read` - وضع علامة على الإشعار كمقروء
 
-```env
-# Server
-NODE_ENV=development
-PORT=5000
+### لوحة تحكم الأدمن
+- `GET /api/admin/dashboard` - لوحة التحكم (الأدمن فقط)
+- `GET /api/admin/users` - إدارة المستخدمين (الأدمن فقط)
+- `GET /api/admin/orders` - إدارة الطلبات (الأدمن فقط)
 
-# Database
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/delivery_db
+## نظام Socket.io
 
-# JWT
-JWT_SECRET=your_super_secret_key_here_change_in_production
-
-# Cloudinary
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
-CLOUDINARY_API_SECRET=your_api_secret
-
-# Firebase Cloud Messaging (FCM)
-FIREBASE_PROJECT_ID=your_firebase_project_id
-FIREBASE_PRIVATE_KEY_ID=your_private_key_id
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@project-id.iam.gserviceaccount.com
-FIREBASE_CLIENT_ID=your_client_id
-FIREBASE_CERT_URL=https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-xxxxx%40project-id.iam.gserviceaccount.com
-
-# App
-API_BASE_URL=http://localhost:5000/api
-```
-
-4. Run the database seed to populate initial data (optional but recommended for testing):
-
-```bash
-npm run seed
-```
+- تتبع السائقين في الوقت الفعلي
+- إشعارات الطلبات
+- تحديثات الحالة الفورية
+- دعم غرف منفصلة للعملاء، السائقين، وملاك المتاجر
 
-> **Note**: This will clear all existing data and create sample users, store owners, stores, categories, and products for testing purposes. The seed data includes:
->
-> - 3 sample categories (Grocery, Bakery, Fruits & Vegetables)
-> - 3 sample users (customers)
-> - 3 sample store owners
-> - 3 sample stores
-> - Various sample products across different stores
+## المتطلبات
 
-5. Start the development server:
+- Node.js v14 أو أعلى
+- MongoDB Atlas
+- npm أو yarn
 
-```bash
-npm run dev
-```
-
-### Database Seeding
+## التوسع
 
-The application includes several scripts to help with database seeding and management:
+- دعم عدة قرى ومدن
+- نظام تحديد المواقع الجغرافي
+- تعقب الطلبات في الوقت الف realtime
+- دعم وسائل دفع متعددة
 
-```bash
-# Seed the database with sample data (this will clear existing data first)
-npm run seed
-
-# Alternative: Run the enhanced seed script with confirmation prompts
-npm run seed:full
-
-# Clear all data from the database without adding sample data
-npm run seed:clear
-```
-
-The enhanced seed script (`npm run seed:full`) provides additional features like confirmation prompts and more detailed output about the seeding process. The sample data includes customers, store owners, stores, categories, and products for testing purposes.
-
-The API will be available at `http://localhost:5000/api`
-
-## 🌐 API Endpoints
-
-### Public Endpoints
-
-#### Health Check
-
-```
-GET /api/health
-Response: { success: true, message: "API is running" }
-```
-
-#### Categories
-
-```
-GET /api/categories
-Response: { success, data: { categories }, message }
-```
-
-### Authentication Endpoints (`/api/auth`)
-
-#### Register Customer
-
-```
-POST /api/auth/customer/register
-Body: { name, phone, password }
-Response: { success, data: { user, token }, message }
-```
-
-#### Register Store Owner
-
-```
-POST /api/auth/store/register
-Body: { name, phone, password }
-Response: { success, data: { owner, token }, message }
-```
-
-#### Register Driver
-
-```
-POST /api/auth/driver/register
-Body: FormData {
-  name, phone, password,
-  vehicleType, vehicleNumber,
-  nationalId: File, drivingLicense: File
-}
-Response: { success, data: { driver }, message: 'سيتم مراجعة طلبك خلال 24 ساعة' }
-```
-
-#### Login (Unified)
-
-```
-POST /api/auth/login
-Body: { phone, password, role: 'customer' | 'store' | 'driver' }
-Response: { success, data: { user/owner/driver, token, role }, message }
-```
-
-#### Get Current User
-
-```
-GET /api/auth/me
-Headers: { Authorization: 'Bearer {token}' }
-Response: { success, data: { user, role }, message }
-```
-
-### Customer Endpoints (`/api/customer`)
-
-#### Profile Management
-
-```
-GET /api/customer/profile                    # Get profile
-PUT /api/customer/profile                   # Update profile
-```
-
-#### Addresses
-
-```
-GET /api/customer/addresses                 # Get my addresses
-POST /api/customer/addresses                # Add address
-PUT /api/customer/addresses/:addressId      # Update address
-DELETE /api/customer/addresses/:addressId   # Delete address
-```
-
-#### Stores & Products
-
-```
-GET /api/customer/stores/nearby?lat=31.1107&lng=30.9388&radius=10&categoryId=cat1  # Get nearby stores
-GET /api/customer/stores/:storeId           # Get store details
-GET /api/customer/stores/search?query=بقالة&villageId=v1  # Search stores
-GET /api/customer/stores/:storeId/products?categoryId=cat1_sub1&search=أرز  # Get store products
-GET /api/customer/products/:productId       # Get product details
-```
-
-#### Orders
-
-```
-POST /api/customer/orders                   # Create order
-GET /api/customer/orders?status=pending&page=1&limit=20 # Get my orders
-GET /api/customer/orders/:orderId           # Get order details
-PATCH /api/customer/orders/:orderId/cancel  # Cancel order
-POST /api/customer/orders/:orderId/reorder  # Reorder
-```
-
-#### Tracking
-
-```
-GET /api/customer/tracking/:orderId         # Track order (real-time)
-GET /api/customer/tracking/driver/:driverId # Get driver location
-```
-
-#### Notifications
-
-```
-GET /api/customer/notifications?page=1&limit=20&unreadOnly=false  # Get my notifications
-PATCH /api/customer/notifications/:notificationId/read  # Mark as read
-PATCH /api/customer/notifications/read-all  # Mark all as read
-DELETE /api/customer/notifications/:notificationId  # Delete notification
-POST /api/customer/notifications/token      # Update FCM token
-```
+## الملفات
 
-### Store Owner Endpoints (`/api/store`)
-
-#### Profile Management
-
-```
-GET /api/store/profile                      # Get profile
-PUT /api/store/profile                      # Update profile
-```
-
-#### Store Management
-
-```
-GET /api/store/my-store                     # Get my store
-PUT /api/store/my-store                     # Update store
-PUT /api/store/my-store/image               # Update store image
-PATCH /api/store/my-store/toggle-status     # Toggle store status
-```
+- `server.js` - ملف الخادم الرئيسي
+- `config/db.js` - إعدادات قاعدة البيانات
+- `middleware/auth.js` - مiddleware للمصادقة
+- `utils/logger.js` - وحدة تسجيل الأحداث
+- `docs/erd.json` - مخطط العلاقات بين الكيانات
+- `models/Customer.js` - نموذج العميل
+- `models/Driver.js` - نموذج السائق
+- `models/StoreOwner.js` - نموذج مالك المتجر
+- `models/` - نماذج قاعدة البيانات الأخرى
+- `modules/` - وحدات النظام المعيارية
 
-#### Products Management
+## المطور
 
-```
-GET /api/store/products?categoryId=cat1_sub1&search=أرز&page=1&limit=20  # Get my products
-POST /api/store/products                    # Add product
-PUT /api/store/products/:productId          # Update product
-PUT /api/store/products/:productId/image    # Update product image
-PATCH /api/store/products/:productId/toggle-availability  # Toggle availability
-DELETE /api/store/products/:productId       # Delete product
-```
-
-#### Orders Management
-
-```
-GET /api/store/orders?status=pending&page=1&limit=20  # Get store orders
-GET /api/store/orders/:orderId              # Get order details
-PATCH /api/store/orders/:orderId/confirm    # Confirm order
-PATCH /api/store/orders/:orderId/cancel     # Cancel order
-```
+تم تطوير هذا النظام كمنصة توصيل متكاملة تدعم السائقين والعملاء والمتاجر في بيئة عربية.
 
-#### Statistics
+## الرخصة
 
-```
-GET /api/store/statistics?period=today|week|month  # Get store statistics
-```
-
-#### Notifications
-
-```
-GET /api/store/notifications?page=1&limit=20  # Get my notifications
-PATCH /api/store/notifications/:notificationId/read  # Mark as read
-POST /api/store/notifications/token         # Update FCM token
-```
-
-### Driver Endpoints (`/api/driver`)
-
-#### Profile Management
-
-```
-GET /api/driver/profile                     # Get profile
-PUT /api/driver/profile                     # Update profile
-PATCH /api/driver/toggle-availability       # Toggle availability
-```
-
-#### Orders Management
-
-```
-GET /api/driver/orders/available?lat=31.1110&lng=30.9390&radius=10  # Get available orders
-POST /api/driver/orders/:orderId/accept     # Accept order
-GET /api/driver/orders/active               # Get active order
-PATCH /api/driver/orders/:orderId/status    # Update order status
-GET /api/driver/orders/:orderId             # Get order details
-GET /api/driver/orders/history?period=today|week|month&page=1&limit=20  # Get order history
-```
-
-#### Tracking
-
-```
-PATCH /api/driver/tracking/location         # Update my location
-GET /api/driver/tracking/route/:orderId     # Get order route info
-```
-
-#### Earnings
-
-```
-GET /api/driver/earnings?period=today|week|month|year  # Get earnings summary
-GET /api/driver/statistics                # Get statistics
-```
-
-#### Notifications
-
-```
-GET /api/driver/notifications?page=1&limit=20 # Get my notifications
-PATCH /api/driver/notifications/:notificationId/read  # Mark as read
-POST /api/driver/notifications/token      # Update FCM token
-```
-
-## 📦 Environment Variables
-
-The application requires several environment variables to function properly. Create a `.env` file in the root directory with the following variables:
-
-- `NODE_ENV`: Environment mode (development/production)
-- `MONGODB_URI`: MongoDB connection string
-- `JWT_SECRET`: Secret key for JWT tokens
-- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`: Cloudinary credentials
-- `FIREBASE_*`: Firebase configuration variables for push notifications
-
-## 🛡️ Security Features
-
-- **Rate Limiting**: Prevents abuse with configurable limits per user type
-- **Input Validation**: Comprehensive validation using Joi
-- **Authentication**: JWT-based authentication with role-based access
-- **Security Headers**: Helmet.js for setting security headers
-- **CORS Configuration**: Restricted to allowed origins only
-
-## 📊 Database Models
-
-The application uses the following MongoDB collections:
-
-- **User**: Customer information
-- **StoreOwner**: Store owner information
-- **Store**: Store details and location
-- **Product**: Product catalog
-- **Order**: Order management
-- **Address**: Customer addresses
-- **Category**: Product categories
-- **Driver**: Driver information
-- **Notification**: Notification logs
-
-## 🚚 Deployment
-
-### Vercel Deployment
-
-1. Install Vercel CLI:
-
-```bash
-npm i -g vercel
-```
-
-2. Login to Vercel:
-
-```bash
-vercel login
-```
-
-3. Deploy the project:
-
-```bash
-vercel
-```
-
-4. Set environment variables in Vercel dashboard
-
-### Configuration
-
-The `vercel.json` file contains the necessary configuration for serverless deployment:
-
-```json
-{
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/index.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "api/index.js"
-    }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  }
-}
-```
-
-## 🧪 Testing
-
-To test the API endpoints, you can use:
-
-- Postman collections (recommended)
-- curl commands
-- Any HTTP client
-
-## 📞 Support
-
-For support, please contact the development team.
-
-## 📄 License
-
-This project is licensed under the MIT License.
+MIT

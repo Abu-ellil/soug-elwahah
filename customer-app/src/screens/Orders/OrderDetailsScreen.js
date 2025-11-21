@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, Fragment } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRoute } from '@react-navigation/native';
+import { useRoute, useNavigation } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 
 import Header from '../../components/Header';
@@ -9,6 +9,7 @@ import RTLText from '../../components/RTLText';
 import CartItem from '../../components/CartItem'; // Re-using for order items
 import COLORS from '../../constants/colors';
 import SIZES from '../../constants/sizes';
+import { useAuth } from '../../context/AuthContext';
 
 const OrderDetailsScreen = () => {
   const route = useRoute();
@@ -24,7 +25,7 @@ const OrderDetailsScreen = () => {
     // Driver location map has been removed
 
     // Add items list
-    if (order.items && order.items.length > 0) {
+    if (order.items && Array.isArray(order.items) && order.items.length > 0) {
       data.push({ type: 'items', items: order.items.filter(Boolean) });
     }
 

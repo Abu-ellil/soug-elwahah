@@ -8,12 +8,14 @@ import {
   FlatList,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocation } from '../../context/LocationProvider';
 import { useCart } from '../../context/CartContext';
-import { useAnalytics } from '../../context/AnalyticsContext';
+import { useAnalyticsStore } from '../../stores/analyticsStore';
 import { API } from '../../services/api';
+import fetchAllAPIData from '../../utils/apiDataFetcher';
 import StoreCard from '../../components/StoreCard';
 import CategoryCard from '../../components/CategoryCard';
 import ProductCard from '../../components/ProductCard';
@@ -34,7 +36,8 @@ const HomeScreen = ({ navigation }) => {
     getVillageNameFromCoordinates,
   } = useLocation();
   const { addToCart } = useCart();
-  const { getTopProducts } = useAnalytics();
+  const analyticsStore = useAnalyticsStore();
+  const getTopProducts = analyticsStore.getTopProducts || (() => []);
 
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,6 +47,9 @@ const HomeScreen = ({ navigation }) => {
   const [categories, setCategories] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
   const [villageName, setVillageName] = useState('');
+  const [showDebugSection, setShowDebugSection] = useState(false);
+  const [apiDataLoading, setApiDataLoading] = useState(false);
+  const [apiDataResults, setApiDataResults] = useState(null);
 
   useEffect(() => {
     // Use availableStores from context instead of local filtering
@@ -140,12 +146,36 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
-  const filteredStores = nearbyStores.filter((store) => {
+  // Debug function to fetch and log all API data
+  const handleFetchAllAPIData = async () => {
+    setApiDataLoading(true);
+    try {
+      console.log('\n🚀 Starting API Data Collection from HomeScreen...');
+      console.log('📅 Timestamp:', new Date().toISOString());
+      
+      const results = await fetchAllAPIData();
+      setApiDataResults(results);
+      
+      Alert.alert(
+        'API Data Collection Complete',
+        `Successfully fetched ${Object.keys(results.data).length} data types\nFailed: ${Object.keys(results.errors).length} requests\n\nCheck console for detailed logs.`,
+        [{ text: 'OK' }]
+      );
+      
+    } catch (error) {
+      console.error('❌ API Data Collection Failed:', error);
+      Alert.alert('Error', 'Failed to fetch API data. Check console for details.');
+    } finally {
+      setApiDataLoading(false);
+    }
+  };
+
+  const filteredStores = nearbyStores ? nearbyStores.filter((store) => {
     const matchesSearch =
       searchQuery === '' || store.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = !selectedCategory || store.categoryId === selectedCategory.id;
     return matchesSearch && matchesCategory;
-  });
+  }) : [];
 
   if (loading && !userLocation) {
     return <HomeScreenSkeleton />;
@@ -206,6 +236,62 @@ const HomeScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
+      {/* Debug Section Toggle */}
+      <View style={styles.debugToggleContainer}>
+        <TouchableOpacity
+          style={styles.debugToggle}
+          onPress={() => setShowDebugSection(!showDebugSection)}>
+          <Text style={styles.debugToggleText}>
+            🔧 Debug Tools {showDebugSection ? '▼' : '▶'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Debug Section */}
+      {showDebugSection && (
+        <View style={styles.debugSection}>
+          <Text style={styles.debugSectionTitle}>API Data Collection</Text>
+          
+          <TouchableOpacity
+            style={[
+              styles.debugButton,
+              apiDataLoading && styles.debugButtonDisabled
+            ]}
+            onPress={handleFetchAllAPIData}
+            disabled={apiDataLoading}>
+            {apiDataLoading ? (
+              <View style={styles.debugButtonContent}>
+                <ActivityIndicator size="small" color={COLORS.primary} />
+                <Text style={styles.debugButtonText}>Fetching API Data...</Text>
+              </View>
+            ) : (
+              <View style={styles.debugButtonContent}>
+                <MaterialIcons name="cloud-download" size={20} color={COLORS.primary} />
+                <Text style={styles.debugButtonText}>Fetch All API Data & Console Log</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          {apiDataResults && (
+            <View style={styles.debugResults}>
+              <Text style={styles.debugResultsTitle}>Last Collection Results:</Text>
+              <Text style={styles.debugResultsText}>
+                ✅ Successful: {Object.keys(apiDataResults.data || {}).length}
+              </Text>
+              <Text style={styles.debugResultsText}>
+                ❌ Failed: {Object.keys(apiDataResults.errors || {}).length}
+              </Text>
+              <Text style={styles.debugResultsText}>
+                🌐 Network: {apiDataResults.networkStatus}
+              </Text>
+              <Text style={styles.debugResultsText}>
+                🔑 Authenticated: {apiDataResults.authenticated ? 'Yes' : 'No'}
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
+
       {/* Search Bar */}
       <View style={styles.searchContainer}>
         <SearchBar
@@ -244,9 +330,7 @@ const HomeScreen = ({ navigation }) => {
             {/* Stores Section Header */}
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>
-                {selectedCategory
-                  ? `${selectedCategory.name} في منطقتك`
-                  : 'جميع المتاجر المتاحة'}
+                {selectedCategory ? `${selectedCategory.name} في منطقتك` : 'جميع المتاجر المتاحة'}
               </Text>
               <Text style={styles.storesCountText}>{filteredStores.length} متجر</Text>
             </View>
@@ -456,6 +540,74 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.primary,
     marginRight: SIZES.base,
+  },
+  
+  // Debug section styles
+  debugToggleContainer: {
+    backgroundColor: COLORS.card,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.lightGray,
+  },
+  debugToggle: {
+    paddingHorizontal: SIZES.padding,
+    paddingVertical: SIZES.base,
+  },
+  debugToggleText: {
+    fontSize: SIZES.body2,
+    color: COLORS.gray,
+    fontWeight: '500',
+  },
+  debugSection: {
+    backgroundColor: COLORS.lightGray,
+    padding: SIZES.padding,
+    marginBottom: SIZES.base,
+  },
+  debugSectionTitle: {
+    fontSize: SIZES.h6,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginBottom: SIZES.base,
+    textAlign: 'center',
+  },
+  debugButton: {
+    backgroundColor: COLORS.card,
+    borderRadius: SIZES.borderRadius,
+    padding: SIZES.base,
+    marginBottom: SIZES.base,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+  },
+  debugButtonDisabled: {
+    opacity: 0.6,
+  },
+  debugButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: SIZES.base,
+  },
+  debugButtonText: {
+    fontSize: SIZES.body2,
+    color: COLORS.primary,
+    fontWeight: '600',
+  },
+  debugResults: {
+    backgroundColor: COLORS.card,
+    borderRadius: SIZES.borderRadius,
+    padding: SIZES.base,
+    borderWidth: 1,
+    borderColor: COLORS.lightGray,
+  },
+  debugResultsTitle: {
+    fontSize: SIZES.body2,
+    fontWeight: 'bold',
+    color: COLORS.text,
+    marginBottom: SIZES.base,
+  },
+  debugResultsText: {
+    fontSize: SIZES.body3,
+    color: COLORS.text,
+    marginBottom: 4,
   },
 });
 

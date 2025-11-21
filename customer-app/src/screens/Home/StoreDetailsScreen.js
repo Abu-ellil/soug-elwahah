@@ -53,7 +53,7 @@ const StoreDetailsScreen = ({ navigation, route }) => {
       navigation.goBack();
       return;
     }
-  
+
     setLoading(true);
     try {
       // Get store details from API
@@ -63,10 +63,10 @@ const StoreDetailsScreen = ({ navigation, route }) => {
         navigation.goBack();
         return;
       }
-  
+
       const foundStore = storeResponse.data.store;
       setStore(foundStore);
-  
+
       // Calculate distance from user location
       if (userLocation && foundStore.coordinates) {
         const distance = calculateDistance(
@@ -77,25 +77,38 @@ const StoreDetailsScreen = ({ navigation, route }) => {
         );
         setStoreDistance(distance);
       }
-  
+
       // Get products for this store from API
       const productsResponse = await API.storesAPI.getStoreProducts(storeId);
       if (productsResponse.success) {
-        setStoreProducts(productsResponse.data.products);
-  
-        // Get unique category IDs from products
-        const uniqueCategoryIds = [
-          ...new Set(productsResponse.data.products.map((p) => p.categoryId)),
-        ];
-  
+        // Ensure products exist in the response before processing
+        const products = productsResponse.data?.products || [];
+        setStoreProducts(products);
+
+        // Get unique category IDs from products if products exist
+        let uniqueCategoryIds = [];
+        if (Array.isArray(products) && products.length > 0) {
+          uniqueCategoryIds = [
+            ...new Set(
+              products.map((p) => p.categoryId).filter((id) => id !== undefined && id !== null)
+            ),
+          ];
+        }
+
         // Get categories from API
         const categoriesResponse = await API.categoriesAPI.getCategories();
         if (categoriesResponse.success) {
-          const storeCategories = categoriesResponse.data.categories.filter((cat) =>
-            uniqueCategoryIds.includes(cat.id)
-          );
+          const allCategories = categoriesResponse.data?.categories || [];
+          const storeCategories = Array.isArray(allCategories)
+            ? allCategories.filter((cat) => uniqueCategoryIds.includes(cat.id))
+            : [];
           setCategories(storeCategories);
         }
+      } else {
+        // Handle case where API call was not successful
+        setStoreProducts([]);
+        setCategories([]);
+        console.error('Failed to fetch products:', productsResponse.message || 'Unknown error');
       }
     } catch (error) {
       console.error('Error loading store data:', error);
@@ -304,9 +317,7 @@ const StoreDetailsScreen = ({ navigation, route }) => {
           </Text>
           <Text style={styles.storeInfoText}>وقت التوصيل: {store.deliveryTime}</Text>
           {storeDistance !== null && (
-            <Text style={styles.storeInfoText}>
-              المسافة: {storeDistance.toFixed(1)} كم
-            </Text>
+            <Text style={styles.storeInfoText}>المسافة: {storeDistance.toFixed(1)} كم</Text>
           )}
         </TouchableOpacity>
       </ScrollView>

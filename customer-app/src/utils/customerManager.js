@@ -7,7 +7,7 @@ import { getToken } from './storage';
 // Customer Profile Manager using API
 export class CustomerProfileManager {
   // Get current customer profile
- static async getProfile(token) {
+  static async getProfile(token) {
     try {
       const response = await API.profileAPI.getProfile(token);
       if (response.success) {
@@ -49,7 +49,7 @@ export class CustomerProfileManager {
       console.error('Error getting addresses:', error);
       throw error;
     }
- }
+  }
 
   // Add new address
   static async addAddress(addressData, token) {
@@ -106,7 +106,7 @@ export const getCustomerProfile = async () => {
   if (!token) {
     throw new Error('غير مصادق عليه');
   }
- return CustomerProfileManager.getProfile(token);
+  return CustomerProfileManager.getProfile(token);
 };
 
 export const updateCustomerProfile = async (profileData) => {
