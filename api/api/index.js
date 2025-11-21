@@ -256,5 +256,11 @@ app.use(notFound);
 // Global error handler
 app.use(errorHandler);
 
-// Export the serverless handler
-module.exports = serverless(app);
+// Export the serverless handler with proper configuration
+module.exports = serverless(app, {
+  binary: ['application/octet-stream', 'image/*'],
+  cors: {
+    origin: true,
+    credentials: true
+ }
+});
