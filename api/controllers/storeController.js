@@ -672,7 +672,7 @@ const getStoreReviews = asyncHandler(async (req, res) => {
 
   const total = await Review.countDocuments({
     reviewee: req.params.storeId,
-    entityType: 'store'–––
+    entityType: 'store'
   });
 
   // Get average rating
