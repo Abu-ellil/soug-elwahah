@@ -3,10 +3,6 @@
  * @description Main handler for Vercel serverless functions
  */
 
-const serverless = require('serverless-http');
-const app = require('../vercel-serverless');
-
-// Wrap the Express app with serverless-http
-const handler = serverless(app);
+const handler = require('../serverless-handler');
 
 module.exports = handler;

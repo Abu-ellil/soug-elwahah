@@ -52,71 +52,77 @@ app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
+// Global database connection state
+let dbConnected = false;
+
 // Database connection helper
 const connectDB = async () => {
   try {
-    if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(process.env.MONGODB_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      });
-      console.log('MongoDB Connected');
+    // Check if already connected
+    if (mongoose.connection.readyState === 1) {
+      return;
     }
+
+    // Validate required environment variables
+    if (!process.env.MONGODB_URI) {
+      throw new Error('MONGODB_URI environment variable is required');
+    }
+
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET environment variable is required');
+    }
+
+    if (!process.env.JWT_EXPIRE) {
+      throw new Error('JWT_EXPIRE environment variable is required');
+    }
+
+    await mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 30000, // Increase timeout for server selection
+      socketTimeoutMS: 45000, // Increase socket timeout
+      bufferCommands: false, // Disable mongoose buffering
+      bufferMaxEntries: 0, // Disable mongoose buffering
+    });
+
+    console.log('MongoDB Connected in serverless environment');
+    dbConnected = true;
   } catch (error) {
     console.error('Database connection error:', error.message);
+    console.error('Error stack:', error.stack);
     throw error;
   }
 };
 
-// Initialize database connection
-let dbConnected = false;
+// Initialize database connection once
 const initializeDB = async () => {
   if (!dbConnected) {
     await connectDB();
-    dbConnected = true;
   }
 };
 
-// Use routes
-app.use('/api/auth', async (req, res, next) => {
-  await initializeDB();
-  authRoutes(req, res, next);
-});
+// Use routes with proper error handling
+const wrapRouteHandler = (routeHandler) => {
+  return async (req, res, next) => {
+    try {
+      await initializeDB();
+      await routeHandler(req, res, next);
+    } catch (error) {
+      console.error('Route handler error:', error.message);
+      next(error);
+    }
+  };
+};
 
-app.use('/api/users', async (req, res, next) => {
-  await initializeDB();
-  userRoutes(req, res, next);
-});
-
-app.use('/api/drivers', async (req, res, next) => {
-  await initializeDB();
-  driverRoutes(req, res, next);
-});
-
-app.use('/api/stores', async (req, res, next) => {
-  await initializeDB();
-  storeRoutes(req, res, next);
-});
-
-app.use('/api/orders', async (req, res, next) => {
-  await initializeDB();
-  orderRoutes(req, res, next);
-});
-
-app.use('/api/payments', async (req, res, next) => {
-  await initializeDB();
-  paymentRoutes(req, res, next);
-});
-
-app.use('/api/notifications', async (req, res, next) => {
-  await initializeDB();
-  notificationRoutes(req, res, next);
-});
-
-app.use('/api/admin', async (req, res, next) => {
-  await initializeDB();
-  adminRoutes(req, res, next);
-});
+// Use routes with database initialization
+app.use('/api/auth', wrapRouteHandler(authRoutes));
+app.use('/api/users', wrapRouteHandler(userRoutes));
+app.use('/api/drivers', wrapRouteHandler(driverRoutes));
+app.use('/api/stores', wrapRouteHandler(storeRoutes));
+app.use('/api/orders', wrapRouteHandler(orderRoutes));
+app.use('/api/payments', wrapRouteHandler(paymentRoutes));
+app.use('/api/notifications', wrapRouteHandler(notificationRoutes));
+app.use('/api/admin', wrapRouteHandler(adminRoutes));
 
 // API root
 app.get('/api', (req, res) => {

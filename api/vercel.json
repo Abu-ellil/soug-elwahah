@@ -1,14 +1,16 @@
 {
   "version": 2,
   "functions": {
-    "api/index.js": {
-      "includeFiles": "**"
+    "serverless/index.js": {
+      "includeFiles": "**",
+      "maxDuration": 30,
+      "memory": 1024
     }
   },
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/api/index.js"
+      "destination": "/serverless/index.js"
     }
   ],
   "headers": [
@@ -31,6 +33,19 @@
     }
   ],
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "MONGODB_URI": "$MONGODB_URI",
+    "JWT_SECRET": "$JWT_SECRET",
+    "JWT_EXPIRE": "$JWT_EXPIRE",
+    "JWT_COOKIE_EXPIRE": "$JWT_COOKIE_EXPIRE",
+    "CLIENT_URL": "$CLIENT_URL",
+    "SMTP_HOST": "$SMTP_HOST",
+    "SMTP_PORT": "$SMTP_PORT",
+    "SMTP_EMAIL": "$SMTP_EMAIL",
+    "SMTP_PASSWORD": "$SMTP_PASSWORD",
+    "FROM_EMAIL": "$FROM_EMAIL",
+    "COMMISSION_RATE": "$COMMISSION_RATE",
+    "DELIVERY_FEE": "$DELIVERY_FEE",
+    "CURRENCY": "$CURRENCY"
   }
 }
