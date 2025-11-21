@@ -1,55 +1,16 @@
 const express = require('express');
-
-// Import only the functions that exist in storeController
 const {
+  getAllStores,
   getStore,
   createStore,
   updateStore,
-  getStoreProducts
+  deleteStore,
+  toggleFollowStore,
+ getStoreProducts,
+  getStoreServices,
+  getStoreStats,
+  searchStores
 } = require('../controllers/storeController');
-
-// Create placeholder functions for missing controller functions
-const getAllStores = (req, res, next) => {
-  res.status(501).json({
-    success: false,
-    message: 'Function not implemented yet'
-  });
-};
-
-const deleteStore = (req, res, next) => {
-  res.status(501).json({
-    success: false,
-    message: 'Function not implemented yet'
-  });
-};
-
-const toggleFollowStore = (req, res, next) => {
- res.status(501).json({
-    success: false,
-    message: 'Function not implemented yet'
-  });
-};
-
-const getStoreServices = (req, res, next) => {
-  res.status(501).json({
-    success: false,
-    message: 'Function not implemented yet'
-  });
-};
-
-const getStoreStats = (req, res, next) => {
- res.status(501).json({
-    success: false,
-    message: 'Function not implemented yet'
-  });
-};
-
-const searchStores = (req, res, next) => {
-  res.status(501).json({
-    success: false,
-    message: 'Function not implemented yet'
-  });
-};
 
 const router = express.Router();
 

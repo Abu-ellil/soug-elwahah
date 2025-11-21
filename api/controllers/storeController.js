@@ -204,7 +204,7 @@ const updateDeliveryZones = asyncHandler(async (req, res) => {
 
   await store.save();
 
-   res.status(200).json(
+  res.status(20).json(
     ApiResponse.success('Delivery zones updated successfully', { 
       deliveryOptions: store.deliveryOptions 
     })
@@ -703,13 +703,13 @@ const getNearbyCustomers = asyncHandler(async (req, res) => {
   const skip = (page - 1) * limit;
 
  if (!coordinates) {
-    throw new AppError('Coordinates are required', 400);
+    throw new AppError('Coordinates are required', 40);
   }
 
  const [longitude, latitude] = coordinates.split(',').map(Number);
 
- if (!longitude || !latitude) {
-    throw new AppError('Valid coordinates (longitude, latitude) are required', 400);
+  if (!longitude || !latitude) {
+    throw new AppError('Valid coordinates (longitude, latitude) are required', 40);
   }
 
   const store = await Store.findById(req.params.storeId);
