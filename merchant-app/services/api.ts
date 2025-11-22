@@ -88,11 +88,21 @@ class ApiService {
 
         // Handle different response status codes
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
+          // Try to get error data from response
+          let errorData: any = {};
+          try {
+            errorData = await response.json();
+          } catch (parseError) {
+            // If response is not JSON, create a generic error
+            errorData = { message: `HTTP Error: ${response.status} ${response.statusText}` };
+          }
 
           // Handle specific error codes
-          if (response.status === 50) {
-            throw new Error("خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.");
+          if (response.status === 403) {
+            // This is likely the "لا توجد متاجر معتمدة" error
+            throw new Error(errorData.message || "لا توجد متاجر معتمدة");
+          } else if (response.status === 500) {
+            throw new Error("خطأ في الخادم. يرجى المحاولة مرة أخرى مجدداً.");
           } else if (response.status === 404) {
             throw new Error(
               "الخدمة غير متوفرة. يرجى التحقق من إعدادات التطبيق."

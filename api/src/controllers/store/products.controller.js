@@ -14,16 +14,16 @@ const getMyProducts = async (req, res) => {
   try {
     const { categoryId, search, page = 1, limit = 20 } = req.query;
 
-    // Get the first approved store for the owner
-    const approvedStore = req.approvedStores?.[0];
-    if (!approvedStore) {
+    // Find an approved store for the owner
+    const store = await Store.findOne({ ownerId: req.userId, verificationStatus: 'approved' });
+    if (!store) {
       return res
         .status(404)
-        .json({ success: false, message: "لا توجد متاجر معتمدة" });
+        .json({ success: false, message: "المحل غير موجود أو غير معتمد" });
     }
 
     let filter = {
-      storeId: approvedStore._id,
+      storeId: store._id,
     };
 
     if (categoryId) {
@@ -62,18 +62,25 @@ const getMyProducts = async (req, res) => {
 
 const addProduct = async (req, res) => {
   try {
-    const { name, price, stock, categoryId, category, description, isAvailable } = req.body;
+    const { name, price, categoryId, category, description, isAvailable } = req.body;
+
+    if (!name || !price || (!categoryId && !category)) {
+      return res.status(400).json({
+        success: false,
+        message: "الاسم والسعر وفئة المنتج مطلوبة"
+      });
+    }
 
     if (!req.file) {
       return res.status(400).json({ success: false, message: "الصورة مطلوبة" });
     }
 
-    // Get the first approved store for the owner
-    const approvedStore = req.approvedStores?.[0];
-    if (!approvedStore) {
+    // Find an approved store for the owner
+    const store = await Store.findOne({ ownerId: req.userId, verificationStatus: 'approved' });
+    if (!store) {
       return res
         .status(404)
-        .json({ success: false, message: "لا توجد متاجر معتمدة" });
+        .json({ success: false, message: "المحل غير موجود أو غير معتمد" });
     }
 
     let imageUrl = "";
@@ -122,12 +129,11 @@ const addProduct = async (req, res) => {
     // Create product
     const product = new Product({
       storeId: store._id,
-      name,
+      name: name.trim(),
       price: parseFloat(price),
-      stock: parseInt(stock) || 0,
       image: imageUrl,
-      categoryId: categoryId || category || null,
-      description,
+      categoryId: categoryId || category,
+      description: description || "",
       isAvailable: isAvailable === "true" || isAvailable === true,
       isActive: true,
     });
@@ -141,6 +147,12 @@ const addProduct = async (req, res) => {
     });
   } catch (error) {
     console.error("Add product error:", error);
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "اسم المنتج موجود بالفعل"
+      });
+    }
     res.status(500).json({ success: false, message: "خطأ في الخادم" });
   }
 };
@@ -155,7 +167,7 @@ const updateProduct = async (req, res) => {
     if (!approvedStore) {
       return res
         .status(404)
-        .json({ success: false, message: "لا توجد متاجر معتمدة" });
+        .json({ success: false, message: "المحل غير موجود أو غير معتمد" });
     }
 
     // Verify product exists and belongs to store
@@ -210,7 +222,7 @@ const updateProductImage = async (req, res) => {
     if (!approvedStore) {
       return res
         .status(404)
-        .json({ success: false, message: "لا توجد متاجر معتمدة" });
+        .json({ success: false, message: "المحل غير موجود أو غير معتمد" });
     }
 
     // Verify product exists and belongs to store
@@ -297,7 +309,7 @@ const toggleAvailability = async (req, res) => {
     if (!approvedStore) {
       return res
         .status(404)
-        .json({ success: false, message: "لا توجد متاجر معتمدة" });
+        .json({ success: false, message: "المحل غير موجود أو غير معتمد" });
     }
 
     // Verify product exists and belongs to store
@@ -337,7 +349,7 @@ const deleteProduct = async (req, res) => {
     if (!approvedStore) {
       return res
         .status(404)
-        .json({ success: false, message: "لا توجد متاجر معتمدة" });
+        .json({ success: false, message: "المحل غير موجود أو غير معتمد" });
     }
 
     // Verify product exists and belongs to store
@@ -372,7 +384,7 @@ const getProductById = async (req, res) => {
     if (!approvedStore) {
       return res
         .status(404)
-        .json({ success: false, message: "لا توجد متاجر معتمدة" });
+        .json({ success: false, message: "المحل غير موجود أو غير معتمد" });
     }
 
     // Verify product exists and belongs to store
