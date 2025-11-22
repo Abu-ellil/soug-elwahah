@@ -8,36 +8,40 @@ import {
   FlatList,
   StyleSheet,
   Alert,
-  ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocation } from '../../context/LocationProvider';
 import { useCart } from '../../context/CartContext';
-import { useAnalyticsStore } from '../../stores/analyticsStore';
+import { useAuth } from '../../context/AuthContext';
+import { useAnalytics } from '../../context/AnalyticsContext';
 import { API } from '../../services/api';
-import fetchAllAPIData from '../../utils/apiDataFetcher';
 import StoreCard from '../../components/StoreCard';
 import CategoryCard from '../../components/CategoryCard';
 import ProductCard from '../../components/ProductCard';
 import SearchBar from '../../components/SearchBar';
+import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
+import RangeSelector from '../../components/RangeSelector';
 import COLORS from '../../constants/colors';
 import SIZES from '../../constants/sizes';
 import HomeScreenSkeleton from '../../components/HomeScreenSkeleton';
+import { formatDistance, calculateDistance } from '../../utils/distance';
+import { getStoresByVillage } from '../../utils/locationHelpers';
 
 const HomeScreen = ({ navigation }) => {
   const {
     userLocation,
+    deliveryRadius,
     availableStores,
     loading,
     error,
     gpsEnabled,
     getCurrentLocation,
-    getVillageNameFromCoordinates,
+    updateDeliveryRadius,
   } = useLocation();
   const { addToCart } = useCart();
-  const analyticsStore = useAnalyticsStore();
-  const getTopProducts = analyticsStore.getTopProducts || (() => []);
+  const { isAuthenticated } = useAuth();
+  const { getTopProducts } = useAnalytics();
 
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -46,28 +50,11 @@ const HomeScreen = ({ navigation }) => {
   const [randomProducts, setRandomProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
-  const [villageName, setVillageName] = useState('');
-  const [showDebugSection, setShowDebugSection] = useState(false);
-  const [apiDataLoading, setApiDataLoading] = useState(false);
-  const [apiDataResults, setApiDataResults] = useState(null);
 
   useEffect(() => {
     // Use availableStores from context instead of local filtering
     setNearbyStores(availableStores);
   }, [availableStores]);
-
-  // Update village name when location changes
-  useEffect(() => {
-    if (userLocation) {
-      const fetchVillageName = async () => {
-        const village = await getVillageNameFromCoordinates(userLocation);
-        setVillageName(village || '');
-      };
-      fetchVillageName();
-    } else {
-      setVillageName('');
-    }
-  }, [userLocation, getVillageNameFromCoordinates]);
 
   // Fetch categories from API
   useEffect(() => {
@@ -146,36 +133,27 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
-  // Debug function to fetch and log all API data
-  const handleFetchAllAPIData = async () => {
-    setApiDataLoading(true);
-    try {
-      console.log('\n🚀 Starting API Data Collection from HomeScreen...');
-      console.log('📅 Timestamp:', new Date().toISOString());
-      
-      const results = await fetchAllAPIData();
-      setApiDataResults(results);
-      
+  const handleAddToCart = (product) => {
+    if (!isAuthenticated) {
       Alert.alert(
-        'API Data Collection Complete',
-        `Successfully fetched ${Object.keys(results.data).length} data types\nFailed: ${Object.keys(results.errors).length} requests\n\nCheck console for detailed logs.`,
-        [{ text: 'OK' }]
+        'تسجيل الدخول مطلوب',
+        'يرجى تسجيل الدخول لإضافة منتجات إلى السلة',
+        [
+          { text: 'إلغاء', style: 'cancel' },
+          { text: 'تسجيل الدخول', onPress: () => navigation.navigate('Auth') },
+        ]
       );
-      
-    } catch (error) {
-      console.error('❌ API Data Collection Failed:', error);
-      Alert.alert('Error', 'Failed to fetch API data. Check console for details.');
-    } finally {
-      setApiDataLoading(false);
+      return;
     }
+    addToCart(product);
   };
 
-  const filteredStores = nearbyStores ? nearbyStores.filter((store) => {
+  const filteredStores = nearbyStores.filter((store) => {
     const matchesSearch =
       searchQuery === '' || store.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = !selectedCategory || store.categoryId === selectedCategory.id;
     return matchesSearch && matchesCategory;
-  }) : [];
+  });
 
   if (loading && !userLocation) {
     return <HomeScreenSkeleton />;
@@ -189,23 +167,19 @@ const HomeScreen = ({ navigation }) => {
       rows.push(
         <View key={i} style={styles.productsRow}>
           <ProductCard
-            key={randomProducts[i].id}
             product={randomProducts[i]}
             onPress={() =>
               navigation.navigate('StoreDetails', { storeId: randomProducts[i].storeId })
             }
-            onAddToCart={addToCart}
-            navigation={navigation}
+            onAddToCart={handleAddToCart}
           />
           {randomProducts[i + 1] && (
             <ProductCard
-              key={randomProducts[i + 1].id}
               product={randomProducts[i + 1]}
               onPress={() =>
                 navigation.navigate('StoreDetails', { storeId: randomProducts[i + 1].storeId })
               }
-              onAddToCart={addToCart}
-              navigation={navigation}
+              onAddToCart={handleAddToCart}
             />
           )}
         </View>
@@ -221,13 +195,7 @@ const HomeScreen = ({ navigation }) => {
         <View style={styles.locationContainer}>
           <MaterialIcons name="location-on" size={20} color={COLORS.primary} />
           <Text style={styles.locationText} numberOfLines={1}>
-            {userLocation
-              ? villageName
-                ? ` ${villageName}`
-                : `موقعك الحالي: ${userLocation.lat.toFixed(4)}, ${userLocation.lng.toFixed(4)}`
-              : gpsEnabled
-                ? 'تحديد الموقع...'
-                : 'GPS غير متاح'}
+            {userLocation ? 'موقعك الحالي' : gpsEnabled ? 'تحديد الموقع...' : 'GPS غير متاح'}
           </Text>
         </View>
 
@@ -235,62 +203,6 @@ const HomeScreen = ({ navigation }) => {
           <MaterialIcons name="notifications-none" size={24} color={COLORS.text} />
         </TouchableOpacity>
       </View>
-
-      {/* Debug Section Toggle */}
-      <View style={styles.debugToggleContainer}>
-        <TouchableOpacity
-          style={styles.debugToggle}
-          onPress={() => setShowDebugSection(!showDebugSection)}>
-          <Text style={styles.debugToggleText}>
-            🔧 Debug Tools {showDebugSection ? '▼' : '▶'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Debug Section */}
-      {showDebugSection && (
-        <View style={styles.debugSection}>
-          <Text style={styles.debugSectionTitle}>API Data Collection</Text>
-          
-          <TouchableOpacity
-            style={[
-              styles.debugButton,
-              apiDataLoading && styles.debugButtonDisabled
-            ]}
-            onPress={handleFetchAllAPIData}
-            disabled={apiDataLoading}>
-            {apiDataLoading ? (
-              <View style={styles.debugButtonContent}>
-                <ActivityIndicator size="small" color={COLORS.primary} />
-                <Text style={styles.debugButtonText}>Fetching API Data...</Text>
-              </View>
-            ) : (
-              <View style={styles.debugButtonContent}>
-                <MaterialIcons name="cloud-download" size={20} color={COLORS.primary} />
-                <Text style={styles.debugButtonText}>Fetch All API Data & Console Log</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-
-          {apiDataResults && (
-            <View style={styles.debugResults}>
-              <Text style={styles.debugResultsTitle}>Last Collection Results:</Text>
-              <Text style={styles.debugResultsText}>
-                ✅ Successful: {Object.keys(apiDataResults.data || {}).length}
-              </Text>
-              <Text style={styles.debugResultsText}>
-                ❌ Failed: {Object.keys(apiDataResults.errors || {}).length}
-              </Text>
-              <Text style={styles.debugResultsText}>
-                🌐 Network: {apiDataResults.networkStatus}
-              </Text>
-              <Text style={styles.debugResultsText}>
-                🔑 Authenticated: {apiDataResults.authenticated ? 'Yes' : 'No'}
-              </Text>
-            </View>
-          )}
-        </View>
-      )}
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
@@ -300,6 +212,8 @@ const HomeScreen = ({ navigation }) => {
           placeholder="البحث في المحلات والمنتجات..."
         />
       </View>
+
+      {/* Delivery Radius Selector - Removed as we show all stores */}
 
       <FlatList
         style={styles.content}
@@ -330,7 +244,9 @@ const HomeScreen = ({ navigation }) => {
             {/* Stores Section Header */}
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>
-                {selectedCategory ? `${selectedCategory.name} في منطقتك` : 'جميع المتاجر المتاحة'}
+                {selectedCategory
+                  ? `${selectedCategory.name}`
+                  : 'المتاجر المتاحة'}
               </Text>
               <Text style={styles.storesCountText}>{filteredStores.length} متجر</Text>
             </View>
@@ -378,15 +294,7 @@ const HomeScreen = ({ navigation }) => {
               <EmptyState
                 icon="storefront"
                 title="لا توجد متاجر"
-                message={
-                  gpsEnabled
-                    ? 'لا توجد متاجر متاحة حالياً'
-                    : 'GPS غير متاح. يرجى تفعيل GPS لعرض المتاجر المتاحة'
-                }
-                actionText={gpsEnabled ? 'إعادة المحاولة' : 'تفعيل GPS'}
-                onActionPress={() => {
-                  getCurrentLocation();
-                }}
+                message="لا توجد متاجر متاحة حالياً"
               />
             )}
 
@@ -477,6 +385,11 @@ const styles = StyleSheet.create({
     padding: SIZES.padding,
     backgroundColor: COLORS.card,
   },
+  radiusContainer: {
+    paddingHorizontal: SIZES.padding,
+    paddingVertical: SIZES.base,
+    backgroundColor: COLORS.card,
+  },
   content: {
     flex: 1,
   },
@@ -540,74 +453,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.primary,
     marginRight: SIZES.base,
-  },
-  
-  // Debug section styles
-  debugToggleContainer: {
-    backgroundColor: COLORS.card,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.lightGray,
-  },
-  debugToggle: {
-    paddingHorizontal: SIZES.padding,
-    paddingVertical: SIZES.base,
-  },
-  debugToggleText: {
-    fontSize: SIZES.body2,
-    color: COLORS.gray,
-    fontWeight: '500',
-  },
-  debugSection: {
-    backgroundColor: COLORS.lightGray,
-    padding: SIZES.padding,
-    marginBottom: SIZES.base,
-  },
-  debugSectionTitle: {
-    fontSize: SIZES.h6,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    marginBottom: SIZES.base,
-    textAlign: 'center',
-  },
-  debugButton: {
-    backgroundColor: COLORS.card,
-    borderRadius: SIZES.borderRadius,
-    padding: SIZES.base,
-    marginBottom: SIZES.base,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-  },
-  debugButtonDisabled: {
-    opacity: 0.6,
-  },
-  debugButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SIZES.base,
-  },
-  debugButtonText: {
-    fontSize: SIZES.body2,
-    color: COLORS.primary,
-    fontWeight: '600',
-  },
-  debugResults: {
-    backgroundColor: COLORS.card,
-    borderRadius: SIZES.borderRadius,
-    padding: SIZES.base,
-    borderWidth: 1,
-    borderColor: COLORS.lightGray,
-  },
-  debugResultsTitle: {
-    fontSize: SIZES.body2,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    marginBottom: SIZES.base,
-  },
-  debugResultsText: {
-    fontSize: SIZES.body3,
-    color: COLORS.text,
-    marginBottom: 4,
   },
 });
 

@@ -6,13 +6,15 @@ import { useLocation } from '../../context/LocationProvider';
 import StoreCard from '../../components/StoreCard';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
+import RangeSelector from '../../components/RangeSelector';
 import COLORS from '../../constants/colors';
 import { calculateDistance } from '../../utils/distance';
 import { API } from '../../services/api';
 
 const CategoryStoresScreen = ({ route }) => {
   const navigation = useNavigation();
-  const { userLocation, availableStores, gpsEnabled } = useLocation();
+  const { userLocation, deliveryRadius, availableStores, gpsEnabled, updateDeliveryRadius } =
+    useLocation();
   const { categoryId } = route.params;
 
   const [refreshing, setRefreshing] = useState(false);
@@ -86,6 +88,8 @@ const CategoryStoresScreen = ({ route }) => {
           </View>
         </View>
       )}
+
+      {/* Radius Selector Removed */}
     </View>
   );
 
@@ -97,11 +101,7 @@ const CategoryStoresScreen = ({ route }) => {
     <EmptyState
       icon="storefront-outline"
       title="لا توجد متاجر"
-      message={
-        gpsEnabled
-          ? `لا توجد متاجر متاحة في فئة ${category?.name || ''}`
-          : `لا توجد متاجر متاحة في فئة ${category?.name || ''}. GPS غير متاح`
-      }
+      message={`لا توجد متاجر متاحة في فئة ${category?.name || ''}`}
     />
   );
 
@@ -202,6 +202,11 @@ const styles = StyleSheet.create({
   },
   emptyListContainer: {
     flex: 1,
+  },
+  radiusContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: COLORS.card,
   },
   errorText: {
     fontSize: 18,

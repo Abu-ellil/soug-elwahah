@@ -91,7 +91,7 @@ class ApiService {
           const errorData = await response.json().catch(() => ({}));
 
           // Handle specific error codes
-          if (response.status === 500) {
+          if (response.status === 50) {
             throw new Error("خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.");
           } else if (response.status === 404) {
             throw new Error(
@@ -148,7 +148,7 @@ class ApiService {
   // Authentication methods
   login(credentials: { phone: string; password: string; role?: string }) {
     return this.request(
-      "/store/auth/login",
+      "/auth/login",
       {
         method: "POST",
         body: JSON.stringify(credentials),
@@ -160,7 +160,7 @@ class ApiService {
 
   register(merchantData: { name: string; phone: string; password: string }) {
     return this.request(
-      "/store/auth/register",
+      "/auth/register",
       {
         method: "POST",
         body: JSON.stringify(merchantData),
@@ -172,13 +172,13 @@ class ApiService {
 
   // Get current user profile
   getProfile() {
-    return this.request("/store/auth/profile");
+    return this.request("/auth/me");
   }
 
   // Password reset methods
   requestPasswordReset(phone: string) {
     return this.request(
-      "/store/auth/request-password-reset",
+      "/auth/request-password-reset",
       {
         method: "POST",
         body: JSON.stringify({ phone }),
@@ -194,7 +194,7 @@ class ApiService {
     newPassword: string;
   }) {
     return this.request(
-      "/store/auth/reset-password",
+      "/auth/reset-password",
       {
         method: "POST",
         body: JSON.stringify(data),
@@ -206,7 +206,7 @@ class ApiService {
 
   async logout() {
     try {
-      const url = `${this.baseUrl}/store/auth/logout`;
+      const url = `${this.baseUrl}/auth/logout`;
       const response = await fetch(url, {
         method: "POST",
         headers: {
@@ -232,7 +232,7 @@ class ApiService {
   }
 
   updateProfile(profileData: any) {
-    return this.request("/store/profile", {
+    return this.request("/auth/profile", {
       method: "PUT",
       body: JSON.stringify(profileData),
     });
@@ -329,7 +329,7 @@ class ApiService {
 
   // Get all stores for the current owner
   getMyStores() {
-    return this.request("/store/my-store/all");
+    return this.request("/store/my-store");
   }
 
   // Upload image

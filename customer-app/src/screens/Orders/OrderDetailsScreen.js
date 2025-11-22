@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, Fragment } from 'react';
 import { View, StyleSheet, FlatList, TouchableOpacity, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useRoute } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 
 import Header from '../../components/Header';
@@ -9,12 +9,9 @@ import RTLText from '../../components/RTLText';
 import CartItem from '../../components/CartItem'; // Re-using for order items
 import COLORS from '../../constants/colors';
 import SIZES from '../../constants/sizes';
-import { useAuth } from '../../context/AuthContext';
 
 const OrderDetailsScreen = () => {
   const route = useRoute();
-  const navigation = useNavigation();
-  const { isAuthenticated } = useAuth();
   const { order, focusOnDriverLocation } = route.params || {};
   const scrollViewRef = useRef(null);
 
@@ -25,7 +22,7 @@ const OrderDetailsScreen = () => {
     // Driver location map has been removed
 
     // Add items list
-    if (order.items && Array.isArray(order.items) && order.items.length > 0) {
+    if (order.items && order.items.length > 0) {
       data.push({ type: 'items', items: order.items.filter(Boolean) });
     }
 
@@ -96,7 +93,7 @@ const OrderDetailsScreen = () => {
             {item.items.map((item) => (
               <CartItem
                 item={item}
-                key={item.id || item.productId || item.product?.id || Math.random()}
+                key={item.id || item.productId || Math.random()}
                 isCartScreen={false}
               />
             ))}
@@ -207,7 +204,7 @@ const OrderDetailsScreen = () => {
             <RTLText style={styles.sectionTitle}>تتبع الطلب</RTLText>
             {order.statusHistory && order.statusHistory.length > 0
               ? order.statusHistory.map((item, index) => (
-                  <Fragment key={item.id || item.date || item.timestamp || index}>
+                  <Fragment key={item.id || item.date || index}>
                     {renderTimelineStep({ item, index })}
                   </Fragment>
                 ))

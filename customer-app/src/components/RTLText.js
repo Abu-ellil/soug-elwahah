@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, StyleSheet } from 'react-native';
-import { useLocalizationStore } from '../stores/localizationStore';
+import { useLocalization } from '../context/LocalizationContext';
 import COLORS from '../constants/colors';
 
 const RTLText = ({
@@ -11,9 +11,7 @@ const RTLText = ({
   align = 'auto', // auto, left, right, center
   ...props
 }) => {
-  const localizationStore = useLocalizationStore();
-  const isRTL = localizationStore.isRTL;
-  const getTextAlign = localizationStore.getTextAlign || (() => (isRTL ? 'right' : 'left'));
+  const { getTextAlign, getLocalizedStyles, isRTL } = useLocalization();
 
   const variantStyles = {
     body: { fontSize: 16, fontWeight: 'normal' },

@@ -1,15 +1,8 @@
 // API Service for Customer App
 import { BASE_URL } from '../config/api';
-import { getToken, removeToken } from '../utils/storage';
-import { networkManager } from '../utils/network';
 
 // Create a base API request function with retry mechanism
 const apiRequest = async (endpoint, options = {}) => {
-  // Check network connectivity using our network manager
-  if (!networkManager.isInternetReachable()) {
-    throw new Error('Network request failed: Device is offline.');
-  }
-
   const {
     method = 'GET',
     body,
@@ -17,7 +10,7 @@ const apiRequest = async (endpoint, options = {}) => {
     timeout = 30000,
     retries = 3,
     ...restOptions
-  } = options;
+  } = options; // Increased timeout from 10000 to 30000, added retries
 
   const config = {
     method,
@@ -40,6 +33,7 @@ const apiRequest = async (endpoint, options = {}) => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeout);
 
+      console.log(`Fetching: ${BASE_URL}${endpoint}`);
       const response = await fetch(`${BASE_URL}${endpoint}`, {
         ...config,
         signal: controller.signal,
@@ -49,59 +43,20 @@ const apiRequest = async (endpoint, options = {}) => {
       if (!response.ok) {
         // Handle different response status codes
         const errorData = await response.json().catch(() => ({}));
-
-        // If token is invalid or expired (401), log out the user
-        if (response.status === 401) {
-          // Check if the error is related to token
-          if (
-            errorData.message &&
-            (errorData.message.includes('Token') ||
-              errorData.message.toLowerCase().includes('token') ||
-              errorData.message.includes('jwt') ||
-              errorData.message.toLowerCase().includes('invalid') ||
-              errorData.message.toLowerCase().includes('expired'))
-          ) {
-            // Remove the invalid token from storage
-            await removeToken();
-            // Re-throw the error so the calling function can handle the error
-            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-          }
-        }
-
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-
-      // Add validation for the expected data structure
-      if (data === null || data === undefined) {
-        throw new Error('Invalid response: Server returned null or undefined data');
-      }
-
       return data;
     } catch (error) {
       console.error(`API request error (attempt ${attempt + 1}/${retries + 1}):`, error);
-      lastError = error; // Store the original error
+      lastError = error;
 
       if (error.name === 'AbortError') {
-        lastError = new Error(
-          `Request timed out after ${timeout / 1000} seconds. Please check your internet connection and try again.`
-        );
-      } else if (
-        error.name === 'TypeError' &&
-        (error.message === 'Network request failed' || error.message.includes('fetch'))
-      ) {
-        lastError = new Error(
-          'Network request failed: Device is offline. Please check your internet connection.'
-        );
-      } else if (error.message && error.message.includes('forEach')) {
-        // Handle the specific forEach error by providing a more descriptive message
-        lastError = new Error(
-          'Invalid response format received from server. Please try again later.'
-        );
+        lastError = new Error('Request timeout');
       }
 
-      // If this was the last attempt, or it's an error we don't want to retry, throw the error
+      // If this was the last attempt, throw the error
       if (attempt === retries) {
         break;
       }
@@ -118,7 +73,7 @@ const apiRequest = async (endpoint, options = {}) => {
 // Authentication API
 export const authAPI = {
   login: (credentials) =>
-    apiRequest('/auth/customer/login', {
+    apiRequest('/auth/login', {
       method: 'POST',
       body: credentials,
     }),
@@ -146,15 +101,7 @@ export const storesAPI = {
     const queryParams = new URLSearchParams(params).toString();
     return apiRequest(`/customer/stores/nearby${queryParams ? `?${queryParams}` : ''}`, {
       method: 'GET',
-      timeout: 60000, // Specific timeout for location-based requests (increased to 60 seconds)
-      retries: 3,
-    });
-  },
-
-  getAllStores: () => {
-    return apiRequest('/customer/stores', {
-      method: 'GET',
-      timeout: 60000,
+      timeout: 60000, // Increased to 60 seconds
       retries: 3,
     });
   },
@@ -164,7 +111,9 @@ export const storesAPI = {
     if (query) params.append('query', query);
     if (villageId) params.append('villageId', villageId);
     const queryParams = params.toString();
-    return apiRequest(`/customer/stores/search${queryParams ? `?${queryParams}` : ''}`);
+    return apiRequest(`/customer/stores/search${queryParams ? `?${queryParams}` : ''}`, {
+      timeout: 60000, // Increase timeout to 60 seconds
+    });
   },
 
   getStoreDetails: (storeId) => apiRequest(`/customer/stores/${storeId}`),

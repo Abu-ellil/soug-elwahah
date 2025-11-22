@@ -1,189 +1,85 @@
+require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
-const cookieParser = require("cookie-parser");
-const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
-const mongoSanitize = require("express-mongo-sanitize");
-const xss = require("xss-clean");
-const hpp = require("hpp");
-const compression = require("compression");
-const dotenv = require("dotenv");
+const connectDB = require("../src/config/database");
+const errorHandler = require("../src/middlewares/error.middleware");
 
-// Load environment variables
-dotenv.config();
+// Connect to database
+connectDB();
 
-// Import database connection
-const connectDB = require("../config/database");
-
-// Import middleware
-const errorHandler = require("../middleware/errorHandler");
-const notFound = require("../middleware/notFound");
-
-// Import routes
-const authRoutes = require("../routes/auth");
-const userRoutes = require("../routes/users");
-const productRoutes = require("../routes/products");
-const serviceRoutes = require("../routes/services");
-const storeRoutes = require("../routes/stores");
-const orderRoutes = require("../routes/orders");
-const messageRoutes = require("../routes/messages");
-const reviewRoutes = require("../routes/reviews");
-const notificationRoutes = require("../routes/notifications");
-const categoryRoutes = require("../routes/categories");
-const uploadRoutes = require("../routes/upload");
-const testRoutes = require("../routes/test");
-
-// Create Express app
 const app = express();
 
-// Connect to database only if not already connected
-if (!global.mongooseConnection) {
-  connectDB()
-    .then(() => {
-      global.mongooseConnection = true;
-    })
-    .catch((err) => {
-      console.error("Database connection failed:", err);
-    });
-}
-
-// Trust proxy (important for Vercel deployment)
-app.set("trust proxy", 1);
-
 // Security middleware
-app.use(
-  helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-  })
-);
-
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
-  message: {
-    success: false,
-    message: "تم تجاوز الحد المسموح من الطلبات، يرجى المحاولة لاحقاً",
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-app.use("/api/", limiter);
+app.use(helmet());
 
 // CORS configuration
 const corsOptions = {
   origin: function (origin, callback) {
-    const allowedOrigins = [
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "https://elsoug.vercel.app",
-      "https://elsoug-frontend.vercel.app",
-      process.env.FRONTEND_URL,
-      process.env.CORS_ORIGIN,
-      process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
-    ].filter(Boolean);
-
-    // Allow requests with no origin (like mobile apps, Postman, curl)
+    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
 
-    // Allow if origin is in the whitelist
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
+    // In production, add your frontend domains here
+    const allowedOrigins = [*];
 
-    // Otherwise, disable CORS for this request without throwing to avoid 500s
-    return callback(null, false);
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
   },
   credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
 };
 
 app.use(cors(corsOptions));
 
-// Cookie parsing middleware
-app.use(cookieParser());
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: {
+    success: false,
+    message: "عدد الطلبات كبيرة جداً، يرجى المحاولة لاحقاً",
+  },
+});
+
+app.use(limiter);
 
 // Body parsing middleware
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// Data sanitization against NoSQL query injection
-app.use(mongoSanitize());
+// Create API router
+const router = express.Router();
 
-// Data sanitization against XSS
-app.use(xss());
-
-// Prevent parameter pollution
-app.use(hpp());
-
-// Compression middleware
-app.use(compression());
-
-// Logging middleware
-if (process.env.NODE_ENV === "development") {
-  app.use(morgan("dev"));
-} else {
-  app.use(morgan("combined"));
-}
-
-// Health check endpoint
-app.get("/health", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "ElSoug API is running successfully",
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || "development",
-  });
+// Public routes
+router.get("/health", (req, res) => {
+  res.json({ success: true, message: "API is running" });
 });
 
-// API routes
-const API_VERSION = process.env.API_VERSION || "v1";
+router.use("/categories", require("../src/routes/category.routes"));
+router.use("/upload", require("../src/routes/upload.routes"));
 
-app.use(`/api/${API_VERSION}/auth`, authRoutes);
-app.use(`/api/${API_VERSION}/users`, userRoutes);
-app.use(`/api/${API_VERSION}/products`, productRoutes);
-app.use(`/api/${API_VERSION}/services`, serviceRoutes);
-app.use(`/api/${API_VERSION}/stores`, storeRoutes);
-app.use(`/api/${API_VERSION}/orders`, orderRoutes);
-app.use(`/api/${API_VERSION}/messages`, messageRoutes);
-app.use(`/api/${API_VERSION}/reviews`, reviewRoutes);
-app.use(`/api/${API_VERSION}/notifications`, notificationRoutes);
-app.use(`/api/${API_VERSION}/categories`, categoryRoutes);
-app.use(`/api/${API_VERSION}/upload`, uploadRoutes);
-app.use(`/api/${API_VERSION}/test`, testRoutes);
+// Auth routes
+router.use("/auth", require("../src/routes/auth.routes"));
 
-// Root endpoint
-app.get("/", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "مرحباً بك في ElSoug API - نظام السوق المحلي",
-    version: API_VERSION,
-    endpoints: {
-      health: "/health",
-      auth: `/api/${API_VERSION}/auth`,
-      users: `/api/${API_VERSION}/users`,
-      products: `/api/${API_VERSION}/products`,
-      services: `/api/${API_VERSION}/services`,
-      stores: `/api/${API_VERSION}/stores`,
-      orders: `/api/${API_VERSION}/orders`,
-      messages: `/api/${API_VERSION}/messages`,
-      reviews: `/api/${API_VERSION}/reviews`,
-      notifications: `/api/${API_VERSION}/notifications`,
-      categories: `/api/${API_VERSION}/categories`,
-      upload: `/api/${API_VERSION}/upload`,
-    },
-    documentation: "https://github.com/ElSoug/backend-api#readme",
-  });
-});
+// User-specific routes
+router.use("/customer", require("../src/routes/customer"));
+router.use("/store", require("../src/routes/store"));
+router.use("/driver", require("../src/routes/driver"));
+
+// Apply router to app
+app.use("/api", router);
 
 // 404 handler
-app.use(notFound);
+app.use("*", (req, res) => {
+  res.status(404).json({ success: false, message: "Route not found" });
+});
 
-// Global error handler
+// Error handler
 app.use(errorHandler);
 
-// Export the Express app for Vercel
+// Export the handler for Vercel
 module.exports = app;

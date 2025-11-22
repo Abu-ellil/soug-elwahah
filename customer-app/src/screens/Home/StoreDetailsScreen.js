@@ -23,11 +23,13 @@ import { formatDistance, calculateDistance } from '../../utils/distance';
 import StoreDetailsScreenSkeleton from '../../components/StoreDetailsScreenSkeleton';
 import Toast from 'react-native-toast-message';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 
 const StoreDetailsScreen = ({ navigation, route }) => {
   const { storeId } = route.params;
   const { getCartItemsCount, addToCart } = useCart();
-  const { userLocation, gpsEnabled } = useLocation();
+  const { isAuthenticated } = useAuth();
+  const { userLocation, deliveryRadius, gpsEnabled } = useLocation();
 
   const [store, setStore] = useState(null);
   const [storeProducts, setStoreProducts] = useState([]);
@@ -43,28 +45,45 @@ const StoreDetailsScreen = ({ navigation, route }) => {
   );
 
   const loadStoreData = useCallback(async () => {
-    // Check if storeId is valid before making API calls
-    if (!storeId || storeId === 'undefined') {
-      Toast.show({
-        type: 'error',
-        text1: 'خطأ',
-        text2: 'رقم المتجر غير صحيح',
-      });
-      navigation.goBack();
-      return;
-    }
-
     setLoading(true);
     try {
       // Get store details from API
       const storeResponse = await API.storesAPI.getStoreDetails(storeId);
       if (!storeResponse.success) {
-        Alert.alert('خطأ', storeResponse.message || 'المتجر غير موجود');
+        Alert.alert('خطأ', 'المتجر غير موجود');
         navigation.goBack();
         return;
       }
 
-      const foundStore = storeResponse.data.store;
+      let foundStore = storeResponse.data.store;
+
+      // Normalize store coordinates if in GeoJSON format
+      if (
+        foundStore.coordinates &&
+        foundStore.coordinates.coordinates &&
+        Array.isArray(foundStore.coordinates.coordinates)
+      ) {
+        foundStore = {
+          ...foundStore,
+          coordinates: {
+            lat: foundStore.coordinates.coordinates[1],
+            lng: foundStore.coordinates.coordinates[0],
+          },
+        };
+      }
+
+      // Map _id to id if id is missing
+      if (foundStore._id && !foundStore.id) {
+        foundStore.id = foundStore._id;
+      }
+
+      // Normalize categoryId if it's an object
+      if (foundStore.categoryId && typeof foundStore.categoryId === 'object' && foundStore.categoryId.$oid) {
+        foundStore.categoryId = foundStore.categoryId.$oid;
+      } else if (foundStore.categoryId && typeof foundStore.categoryId === 'object' && foundStore.categoryId._id) {
+        foundStore.categoryId = foundStore.categoryId._id;
+      }
+
       setStore(foundStore);
 
       // Calculate distance from user location
@@ -81,34 +100,21 @@ const StoreDetailsScreen = ({ navigation, route }) => {
       // Get products for this store from API
       const productsResponse = await API.storesAPI.getStoreProducts(storeId);
       if (productsResponse.success) {
-        // Ensure products exist in the response before processing
-        const products = productsResponse.data?.products || [];
-        setStoreProducts(products);
+        setStoreProducts(productsResponse.data.products);
 
-        // Get unique category IDs from products if products exist
-        let uniqueCategoryIds = [];
-        if (Array.isArray(products) && products.length > 0) {
-          uniqueCategoryIds = [
-            ...new Set(
-              products.map((p) => p.categoryId).filter((id) => id !== undefined && id !== null)
-            ),
-          ];
-        }
+        // Get unique category IDs from products
+        const uniqueCategoryIds = [
+          ...new Set(productsResponse.data.products.map((p) => p.categoryId)),
+        ];
 
         // Get categories from API
         const categoriesResponse = await API.categoriesAPI.getCategories();
         if (categoriesResponse.success) {
-          const allCategories = categoriesResponse.data?.categories || [];
-          const storeCategories = Array.isArray(allCategories)
-            ? allCategories.filter((cat) => uniqueCategoryIds.includes(cat.id))
-            : [];
+          const storeCategories = categoriesResponse.data.categories.filter((cat) =>
+            uniqueCategoryIds.includes(cat.id)
+          );
           setCategories(storeCategories);
         }
-      } else {
-        // Handle case where API call was not successful
-        setStoreProducts([]);
-        setCategories([]);
-        console.error('Failed to fetch products:', productsResponse.message || 'Unknown error');
       }
     } catch (error) {
       console.error('Error loading store data:', error);
@@ -131,6 +137,18 @@ const StoreDetailsScreen = ({ navigation, route }) => {
   };
 
   const handleAddToCart = (product, quantity = 1) => {
+    if (!isAuthenticated) {
+      Alert.alert(
+        'تسجيل الدخول مطلوب',
+        'يرجى تسجيل الدخول لإضافة منتجات إلى السلة',
+        [
+          { text: 'إلغاء', style: 'cancel' },
+          { text: 'تسجيل الدخول', onPress: () => navigation.navigate('Auth') },
+        ]
+      );
+      return;
+    }
+
     try {
       addToCart(product, quantity);
       Toast.show({
@@ -139,11 +157,6 @@ const StoreDetailsScreen = ({ navigation, route }) => {
         text2: `تم إضافة ${product.name} إلى السلة`,
       });
     } catch (error) {
-      // Check if the error is due to authentication
-      if (error.message === 'يجب تسجيل الدخول أولاً') {
-        // The error is already handled in the auth check in ProductCard
-        return;
-      }
       Toast.show({
         type: 'error',
         text1: 'خطأ',
@@ -284,7 +297,6 @@ const StoreDetailsScreen = ({ navigation, route }) => {
                   product={item}
                   onPress={() => console.log('Product pressed:', item.name)}
                   onAddToCart={(product) => handleAddToCart(product)}
-                  navigation={navigation}
                 />
               )}
               keyExtractor={(item) => item.id}
@@ -317,7 +329,13 @@ const StoreDetailsScreen = ({ navigation, route }) => {
           </Text>
           <Text style={styles.storeInfoText}>وقت التوصيل: {store.deliveryTime}</Text>
           {storeDistance !== null && (
-            <Text style={styles.storeInfoText}>المسافة: {storeDistance.toFixed(1)} كم</Text>
+            <Text style={styles.storeInfoText}>
+              المسافة: {storeDistance.toFixed(1)} كم
+              {storeDistance <= deliveryRadius ? ' (داخل نطاق التوصيل)' : ' (خارج نطاق التوصيل)'}
+            </Text>
+          )}
+          {gpsEnabled && (
+            <Text style={styles.storeInfoText}>نطاق التوصيل الحالي: {deliveryRadius} كم</Text>
           )}
         </TouchableOpacity>
       </ScrollView>

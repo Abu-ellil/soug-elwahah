@@ -55,6 +55,14 @@ const RegisterScreen = ({ navigation }) => {
         Alert.alert('خطأ', result.error);
       }
       // Navigation will be handled by the auth context
+      if (result.success) {
+        // If we can go back (e.g. came from Main), go back. Otherwise navigate to Main.
+        if (navigation.canGoBack()) {
+          navigation.goBack();
+        } else {
+          navigation.navigate('Main');
+        }
+      }
     } catch (error) {
       Alert.alert('خطأ', 'حدث خطأ أثناء التسجيل');
     } finally {

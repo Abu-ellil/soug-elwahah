@@ -3,8 +3,8 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text, Animated } from 'react-native';
-import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import HomeScreen2 from '../screens/Home/HomeScreen';
 import StoreDetailsScreen2 from '../screens/Home/StoreDetailsScreen';
 import CategoryStoresScreen from '../screens/Categories/CategoryStoresScreen';
@@ -18,7 +18,6 @@ import SettingsScreen from '../screens/Settings/SettingsScreen';
 import AddressesScreen from '../screens/Profile/AddressesScreen';
 import AddAddressScreen from '../screens/Profile/AddAddressScreen';
 import CheckoutScreen from '../screens/Checkout/CheckoutScreen';
-import LoginPromptModal from '../components/LoginPromptModal';
 
 // Placeholder screens - will be replaced with actual screens
 
@@ -34,42 +33,35 @@ const HomeStackNavigator = () => (
   </HomeStack.Navigator>
 );
 
+
 // Order Stack Navigator
 const OrderStack = createNativeStackNavigator();
-const OrderStackNavigator = () => {
-  const { isAuthenticated } = useAuth();
-  return (
-    <OrderStack.Navigator
-      screenOptions={{ headerShown: false, statusBarStyle: 'dark', animation: 'slide_from_right' }}>
-      <OrderStack.Screen name="OrdersList" component={OrdersScreen} />
-      <OrderStack.Screen name="OrderDetails" component={OrderDetailsScreen} />
-      {!isAuthenticated && <OrderStack.Screen name="LoginPrompt" component={LoginPromptModal} />}
-    </OrderStack.Navigator>
-  );
-};
+const OrderStackNavigator = () => (
+  <OrderStack.Navigator
+    screenOptions={{ headerShown: false, statusBarStyle: 'dark', animation: 'slide_from_right' }}>
+    <OrderStack.Screen name="OrdersList" component={OrdersScreen} />
+    <OrderStack.Screen name="OrderDetails" component={OrderDetailsScreen} />
+  </OrderStack.Navigator>
+);
 
 // Profile Stack Navigator
 const ProfileStack = createNativeStackNavigator();
-const ProfileStackNavigator = () => {
-  const { isAuthenticated } = useAuth();
-  return (
-    <ProfileStack.Navigator
-      screenOptions={{ headerShown: false, statusBarStyle: 'dark', animation: 'slide_from_right' }}>
-      <ProfileStack.Screen name="Settings" component={SettingsScreen} />
-      <ProfileStack.Screen name="Addresses" component={AddressesScreen} />
-      <ProfileStack.Screen name="AddAddress" component={AddAddressScreen} />
-      {!isAuthenticated && <ProfileStack.Screen name="LoginPrompt" component={LoginPromptModal} />}
-    </ProfileStack.Navigator>
-  );
-};
+const ProfileStackNavigator = () => (
+  <ProfileStack.Navigator
+    screenOptions={{ headerShown: false, statusBarStyle: 'dark', animation: 'slide_from_right' }}>
+    <ProfileStack.Screen name="Settings" component={SettingsScreen} />
+    <ProfileStack.Screen name="Addresses" component={AddressesScreen} />
+    <ProfileStack.Screen name="AddAddress" component={AddAddressScreen} />
+  </ProfileStack.Navigator>
+);
 
 const Tab = createBottomTabNavigator();
 
 const MainTabNavigator = () => {
+  const { isAuthenticated } = useAuth();
   const { getCartItemsCount } = useCart();
   const cartCount = getCartItemsCount();
   const bounceAnim = useRef(new Animated.Value(1)).current;
-  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     if (cartCount > 0) {
@@ -92,7 +84,6 @@ const MainTabNavigator = () => {
 
   return (
     <Tab.Navigator
-      initialRouteName="Home"
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarStyle: {
@@ -156,6 +147,14 @@ const MainTabNavigator = () => {
         options={{
           tabBarLabel: 'الطلبات',
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            if (!isAuthenticated) {
+              e.preventDefault();
+              navigation.navigate('Auth');
+            }
+          },
+        })}
       />
       <Tab.Screen
         name="Profile"
@@ -163,6 +162,14 @@ const MainTabNavigator = () => {
         options={{
           tabBarLabel: 'الحساب',
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            if (!isAuthenticated) {
+              e.preventDefault();
+              navigation.navigate('Auth');
+            }
+          },
+        })}
       />
     </Tab.Navigator>
   );

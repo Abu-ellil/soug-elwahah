@@ -8,10 +8,8 @@ import RTLText from '../../components/RTLText';
 import COLORS from '../../constants/colors';
 import SIZES from '../../constants/sizes';
 import { API } from '../../services/api';
-import { useAuth } from '../../context/AuthContext';
 
 const AddressesScreen = ({ navigation, route }) => {
-  const { token } = useAuth();
   const [addresses, setAddresses] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -23,7 +21,7 @@ const AddressesScreen = ({ navigation, route }) => {
   // Check if a new address was added
   React.useEffect(() => {
     if (route.params?.newAddress) {
-      setAddresses((prev) => [...prev, route.params.newAddress]);
+      setAddresses(prev => [...prev, route.params.newAddress]);
       // Clear the param
       navigation.setParams({ newAddress: undefined });
     }
@@ -31,7 +29,7 @@ const AddressesScreen = ({ navigation, route }) => {
 
   const loadAddresses = async () => {
     try {
-      const response = await API.addressesAPI.getMyAddresses(token);
+      const response = await API.addressesAPI.getAddresses();
       if (response.success) {
         setAddresses(response.data.addresses);
       } else {

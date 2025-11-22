@@ -1,276 +1,253 @@
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const cookieParser = require('cookie-parser');
-const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
-const mongoSanitize = require('express-mongo-sanitize');
-const xss = require('xss-clean');
-const hpp = require('hpp');
-const compression = require('compression');
-const dotenv = require('dotenv');
- 
-// Load environment variables
-dotenv.config({ path: '.env.local' }); // Load local env file first
-// If local file doesn't exist, load default .env
-if (!process.env.MONGODB_URI) {
-  dotenv.config(); // Load default .env as fallback
-} 
+const path = require('path');
+require("dotenv").config({ path: path.resolve(__dirname, '.env') });
 
-// Import database connection
-const connectDB = require('./config/database'); 
+console.log("MONGODB_URI from .env:", process.env.MONGODB_URI); // Add this line for debugging
 
-// Import Socket.IO configuration 
-const { initializeSocket } = require('./config/socket');
+const express = require("express");
+const http = require("http");
+const socketIo = require("socket.io");
+const connectDB = require("./src/config/database");
 
-// Import scheduler
-const DeliveryScheduler = require('./utils/scheduler');
+// Connect to database first
+connectDB()
+  .then(async () => {
+    // Import app after DB connection is established
+    const app = require("./src/app.js");
 
-// Import Swagger configuration
-const { specs, swaggerUi, swaggerOptions } = require('./config/swagger');
+    // Create HTTP server
+    const server = http.createServer(app);
 
-// Import middleware
-const errorHandler = require('./middleware/errorHandler');
-const notFound = require('./middleware/notFound');
-  
-// Import routes
-const authRoutes = require('./routes/auth');
-// Replace users routes import with safe require to avoid crash during testing
-let userRoutes; try { userRoutes = require('./routes/users'); } catch (e) { console.warn('Users routes module not found, skipping users routes.'); }
-const adminRoutes = require('./routes/admin');
-const customerRoutes = require('./routes/customer');
-const driverRoutes = require('./routes/driver');
-const productRoutes = require('./routes/products');
-const serviceRoutes = require('./routes/services');
-const storeRoutes = require('./routes/store');
-const orderRoutes = require('./routes/orders');
-const paymentRoutes = require('./routes/payment');
-const messageRoutes = require('./routes/messages');
-const reviewRoutes = require('./routes/reviews');
-const notificationRoutes = require('./routes/notifications');
-const categoryRoutes = require('./routes/categories');
-const uploadRoutes = require('./routes/upload');
-const testRoutes = require('./routes/test');
-const deliveryRoutes = require('./routes/deliveries');
-
-// Create Express app
-const app = express();
-
-// Connect to database
-connectDB();
-
-// Trust proxy (important for Vercel deployment)
-app.set('trust proxy', 1);
-
-// Security middleware
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" }
-}));
-
-// Rate limiting - DISABLED
-// const limiter = rateLimit({
-//   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 10 * 60 * 1000, // 15 minutes
-//   max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 250, // limit each IP to 100 requests per windowMs
-//   message: {
-//     success: false,
-//     message: 'تم تجاوز الحد المسموح من الطلبات، يرجى المحاولة لاحقاً'
-//   },
-//   standardHeaders: true,
-//   legacyHeaders: false,
-// });
-
-// app.use('/api/', limiter);
-
-// CORS configuration
-const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) return callback(null, true);
-    
-    const allowedOrigins = [
-      'http://localhost:8081',
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:19006', // Expo dev server
-      'https://your-frontend-domain.vercel.app',
-      'http://192.168.1.4:8081', // Local IP for mobile devices
-      'http://192.168.1.4:3000', // Local IP for mobile devices
-      'http://192.168.1.4:3001', // Local IP for mobile devices
-      'http://192.168.1.4:19006', // Local IP for Expo dev server
-      'http://10.0.2.2:19006', // Android emulator to access host machine
-      'http://10.0.2.2:8081', // Android emulator to access host machine
-      'http://10.0.2.2:3000', // Android emulator to access host machine
-      'http://10.0.2.2:3001' // Android emulator to access host machine
-    ];
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('غير مسموح بالوصول من هذا المصدر'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-};
-
-app.use(cors(corsOptions));
-
-// Cookie parsing middleware
-app.use(cookieParser());
-
-// Body parsing middleware
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-// Data sanitization against NoSQL query injection
-app.use(mongoSanitize());
-
-// Data sanitization against XSS
-app.use(xss());
-
-// Prevent parameter pollution
-app.use(hpp());
-
-// Compression middleware
-app.use(compression());
-
-// Logging middleware
-if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
-} else {
-  app.use(morgan('combined'));
-}
-
-// Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'ElSoug API is running successfully! 🚀',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV,
-    version: '1.0.0'
-  });
-});
-
-// API routes
-const API_VERSION = process.env.API_VERSION || 'v1';
-
-app.use(`/api/${API_VERSION}/auth`, authRoutes);
-// Conditionally mount users routes only if available
-if (userRoutes) { app.use(`/api/${API_VERSION}/users`, userRoutes); }
-app.use(`/api/${API_VERSION}/customer`, customerRoutes);
-app.use(`/api/${API_VERSION}/products`, productRoutes);
-app.use(`/api/${API_VERSION}/services`, serviceRoutes);
-app.use(`/api/${API_VERSION}/stores`, storeRoutes);
-app.use(`/api/${API_VERSION}/orders`, orderRoutes);
-app.use(`/api/${API_VERSION}/payment`, paymentRoutes);
-app.use(`/api/${API_VERSION}/messages`, messageRoutes);
-app.use(`/api/${API_VERSION}/reviews`, reviewRoutes);
-app.use(`/api/${API_VERSION}/notifications`, notificationRoutes);
-app.use(`/api/${API_VERSION}/categories`, categoryRoutes);
-app.use(`/api/${API_VERSION}/upload`, uploadRoutes);
-app.use(`/api/${API_VERSION}/test`, testRoutes);
-app.use(`/api/${API_VERSION}/drivers`, driverRoutes);
-app.use(`/api/${API_VERSION}/deliveries`, deliveryRoutes);
-
-// Mount admin routes
-app.use(`/api/${API_VERSION}/admin`, adminRoutes);
-
-// API Documentation with Swagger
-app.use(`/api/${API_VERSION}/docs`, swaggerUi.serve, swaggerUi.setup(specs, swaggerOptions));
-
-// Base API route
-app.get(`/api/${API_VERSION}`, (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'ElSoug API - السوق المحلي 🇪🇬',
-    version: '1.0.0',
-    documentation: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/docs`,
-    endpoints: {
-      auth: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/auth`,
-      users: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/users`,
-      customer: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/customer`,
-      products: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/products`,
-      services: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/services`,
-      stores: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/stores`,
-      orders: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/orders`,
-      payment: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/payment`,
-      deliveries: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/deliveries`,
-      drivers: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/drivers`,
-      messages: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/messages`,
-      reviews: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/reviews`,
-      notifications: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/notifications`,
-      categories: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/categories`,
-      upload: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/upload`,
-      admin: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/admin`
-    },
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Welcome route
-app.get('/', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'مرحباً بك في ElSoug API - السوق المحلي للقرى المصرية 🇪🇬',
-    documentation: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/docs`,
-    health: `${req.protocol}://${req.get('host')}/health`,
-    version: '1.0.0',
-    endpoints: {
-      auth: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/auth`,
-      users: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/users`,
-      products: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/products`,
-      services: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/services`,
-      stores: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/stores`,
-      orders: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/orders`,
-      deliveries: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/deliveries`,
-      drivers: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/drivers`,
-      messages: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/messages`,
-      reviews: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/reviews`,
-      notifications: `${req.protocol}://${req.get('host')}/api/${API_VERSION}/notifications`
-    }
-  });
-});
-
-// 404 handler
-app.use(notFound);
-
-// Global error handler
-app.use(errorHandler);
-
-// Start server
-// Only start server if not in serverless environment
-if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
-  const PORT = process.env.PORT || 5000;
-
-  const server = app.listen(PORT, '0.0.0.0', () => console.log(`API running on port ${PORT}`));
-  
-  // Initialize Socket.IO only if not in serverless environment
-  if (!process.env.VERCEL) {
-    initializeSocket(server);
-  }
-  
-  // Initialize delivery scheduler only if not in serverless environment
-  if (!process.env.VERCEL) {
-    DeliveryScheduler.initialize();
-  }
-  
-  // Handle unhandled promise rejections
-  process.on('unhandledRejection', (err, promise) => {
-    console.log(`❌ Unhandled Rejection: ${err.message}`);
-    // Close server & exit process
-    server.close(() => {
-      process.exit(1);
+    // Initialize Socket.IO with CORS configuration
+    const io = socketIo(server, {
+      cors: {
+        origin: [
+          "http://localhost:3000", // Admin app
+          "http://localhost:3001", // Alternative port for admin app
+          "http://localhost:19006", // Expo development server (for merchant app)
+          "http://localhost:19000", // Alternative Expo port
+          "http://localhost:3002", // Alternative port for admin app
+          "http://localhost:19001", // Alternative Expo port
+          process.env.ADMIN_URL || "", // Production admin URL from environment
+          process.env.MERCHANT_URL || "", // Production merchant URL from environment
+          "https://soug-elwahah.vercel.app", // Production deployment
+        ].filter((url) => url), // Remove empty strings
+        methods: ["GET", "POST"],
+        credentials: true,
+      },
+      transports: ["websocket", "polling"],
+      allowEIO3: true, // Allow Engine.IO v3 clients (for compatibility)
     });
-  });
 
-  // Handle uncaught exceptions
-  process.on('uncaughtException', (err) => {
-    console.log(`❌ Uncaught Exception: ${err.message}`);
-    console.log('🔒 Shutting down the server due to uncaught exception');
+    // Initialize WebSocket service
+    const webSocketService = require("./src/services/websocket.service");
+    webSocketService.init(io);
+
+    // Initialize real-time order assignment service
+    const realTimeOrderAssignmentService = require("./src/services/realtime-order-assignment.service");
+    realTimeOrderAssignmentService.init(io);
+
+    // Store connected clients with their user info
+    const connectedClients = new Map();
+
+    // Socket.IO connection handler
+    io.use((socket, next) => {
+      const token = socket.handshake.auth.token || socket.handshake.query.token;
+
+      if (!token) {
+        return next(new Error("Authentication token required"));
+      }
+
+      try {
+        const { verifyToken } = require("./src/utils/jwt");
+        const decoded = verifyToken(token);
+        socket.userId = decoded.userId;
+        socket.userRole = decoded.role;
+        socket.userPhone = decoded.phone;
+        next();
+      } catch (error) {
+        console.error("Socket authentication error:", error);
+        next(new Error("Authentication failed"));
+      }
+    });
+
+    io.on("connection", (socket) => {
+      console.log(
+        `User connected: ${socket.id} (User ID: ${socket.userId}, Role: ${socket.userRole})`
+      );
+
+      // Store user info with socket connection
+      connectedClients.set(socket.id, {
+        userId: socket.userId,
+        role: socket.userRole,
+        phone: socket.userPhone,
+        socketId: socket.id,
+      });
+
+      // Join specific rooms based on user role and ID
+      socket.join(`user_${socket.userId}`);
+      socket.join(`${socket.userRole}_${socket.userId}`);
+      console.log(`User authenticated: ${socket.userId} (${socket.userRole})`);
+
+      // Handle driver availability status
+      if (socket.userRole === "driver") {
+        socket.on("driverStatusUpdate", (status) => {
+          if (typeof status === "object" && status.isAvailable !== undefined) {
+            // Update driver availability in database
+            require("./src/models/Driver")
+              .findByIdAndUpdate(socket.userId, {
+                isAvailable: status.isAvailable,
+              })
+              .then(() => {
+                console.log(
+                  `Driver ${socket.userId} availability updated to ${status.isAvailable}`
+                );
+
+                // Join or leave the available drivers room based on status
+                if (status.isAvailable) {
+                  socket.join("available_drivers");
+                  console.log(
+                    `Driver ${socket.userId} joined available_drivers room`
+                  );
+                } else {
+                  socket.leave("available_drivers");
+                  console.log(
+                    `Driver ${socket.userId} left available_drivers room`
+                  );
+                }
+              })
+              .catch((err) => {
+                console.error("Error updating driver availability:", err);
+              });
+          }
+        });
+
+        // Handle order acceptance
+        socket.on("acceptOrder", async (orderId) => {
+          const realTimeOrderAssignmentService = require("./src/services/realtime-order-assignment.service");
+          const result =
+            await realTimeOrderAssignmentService.handleOrderAcceptance(
+              socket.userId,
+              orderId
+            );
+
+          if (result.success) {
+            // Join driver to order-specific room for updates
+            socket.join(`order_${orderId}`);
+            socket.join(`driver_orders_${socket.userId}`);
+
+            // Notify the driver that order was accepted
+            socket.emit("orderAcceptanceSuccess", {
+              orderId: orderId,
+              message: "تم قبول الطلب بنجاح",
+              timestamp: new Date().toISOString(),
+            });
+          } else {
+            socket.emit("orderAcceptanceFailed", {
+              orderId: orderId,
+              message: result.message,
+              timestamp: new Date().toISOString(),
+            });
+          }
+        });
+
+        // Handle location updates
+        socket.on("locationUpdate", (location) => {
+          if (location && location.lat && location.lng) {
+            // Update driver location in database
+            require("./src/models/Driver")
+              .findByIdAndUpdate(socket.userId, {
+                coordinates: { lat: location.lat, lng: location.lng },
+                lastLocationUpdate: new Date(),
+              })
+              .then(() => {
+                console.log(`Driver ${socket.userId} location updated`);
+
+                // Broadcast location update to relevant parties
+                webSocketService.broadcastDriverLocation(socket.userId, {
+                  lat: location.lat,
+                  lng: location.lng,
+                  timestamp: new Date().toISOString(),
+                });
+              })
+              .catch((err) => {
+                console.error("Error updating driver location:", err);
+              });
+          }
+        });
+      }
+
+      // Handle disconnection
+      socket.on("disconnect", () => {
+        console.log(`User disconnected: ${socket.id}`);
+        connectedClients.delete(socket.id);
+      });
+
+      // Handle errors
+      socket.on("error", (error) => {
+        console.error("Socket error:", error);
+      });
+    });
+
+    // Make io available globally or pass to routes that need it
+    app.set("io", io);
+
+    const DEFAULT_PORT = 5000;
+    const PORT = process.env.PORT || DEFAULT_PORT;
+
+    // Function to start server with fallback ports
+    function startServer(port, maxRetries = 5, retryCount = 0) {
+      server.on("error", (error) => {
+        if (error.code === "EADDRINUSE") {
+          if (retryCount < maxRetries) {
+            const newPort = parseInt(port) + 1;
+            console.log(
+              `Port ${port} is already in use. Trying port ${newPort}...`
+            );
+            // Close the current server before attempting to listen on a new port
+            server.close(() => {
+              startServer(newPort, maxRetries, retryCount + 1);
+            });
+          } else {
+            console.error(
+              `Could not start server after trying ${maxRetries + 1} ports`
+            );
+            process.exit(1);
+          }
+        } else {
+          console.error("Server error:", error);
+        }
+      });
+
+      server.listen(port, "0.0.0.0", () => {
+        console.log(`Server running on port ${port}`);
+        console.log(`API available at http://localhost:${port}/api`);
+        console.log(`API also available at http://192.168.1.4:${port}/api`);
+        console.log(`WebSocket available at ws://localhost:${port}`);
+      });
+
+      // Handle graceful shutdown
+      process.on("SIGTERM", () => {
+        console.log("SIGTERM received, shutting down gracefully");
+        server.close(() => {
+          console.log("Process terminated");
+        });
+      });
+
+      process.on("SIGINT", () => {
+        console.log("SIGINT received, shutting down gracefully");
+        server.close(() => {
+          console.log("Process terminated");
+        });
+      });
+
+      return server;
+    }
+
+    // Start the server with fallback logic
+    const serverInstance = startServer(PORT);
+    module.exports = serverInstance;
+  })
+  .catch((error) => {
+    console.error("Failed to connect to database:", error);
     process.exit(1);
   });
-}
-
-module.exports = app;

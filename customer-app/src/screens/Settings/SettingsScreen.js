@@ -17,7 +17,6 @@ export const SETTINGS_TYPES = {
   PRIVACY: 'privacy',
   BACKUP: 'backup',
   ADVANCED: 'advanced',
-  HELP: 'help',
 };
 
 // إعدادات التطبيق الافتراضية - Default Application Settings
@@ -97,10 +96,6 @@ export const DEFAULT_SETTINGS = {
     maxRetries: 3,
     requestTimeout: 30000, // milliseconds
     networkTimeout: 10000,
-  },
-
-  help: {
-    troubleshootingEnabled: true,
   },
 };
 
@@ -282,9 +277,11 @@ export class SettingsManager {
       case 'twoFactorAuth':
         // تفعيل/إلغاء المصادقة الثنائية - Enable/disable 2FA
         if (value) {
-          Alert.alert('تفعيل المصادقة الثنائية', 'سيتم إرسال رمز التحقق إلى رقم هاتفك المسجل', [
-            { text: 'موافق' },
-          ]);
+          Alert.alert(
+            'تفعيل المصادقة الثنائية',
+            'سيتم إرسال رمز التحقق إلى رقم هاتفك المسجل',
+            [{ text: 'موافق' }]
+          );
         }
         break;
       case 'autoLock':
@@ -710,59 +707,6 @@ const SettingsScreen = ({ navigation }) => {
       </TouchableOpacity>
     </View>
   );
-  const renderHelpSettings = () => (
-    <View style={styles.settingsSection}>
-      <Text style={styles.sectionTitle}>المساعدة والدعم</Text>
-
-      <View style={styles.helpSection}>
-        <Text style={styles.helpTitle}>مشاكل شائعة في التسجيل</Text>
-        <Text style={styles.helpDescription}>
-          إذا واجهت شاشة فارغة أثناء التسجيل، جرب الخطوات التالية:
-        </Text>
-
-        <View style={styles.troubleshootingItem}>
-          <Text style={styles.troubleshootingTitle}>🔗 مشاكل الشبكة أو الاتصال:</Text>
-          <Text style={styles.troubleshootingText}>
-            • تحقق من اتصال الإنترنت{'\n'}• جرب التبديل إلى شبكة Wi-Fi مستقرة أو بيانات محمولة{'\n'}
-            • أعد تحميل الصفحة أو أعد تشغيل التطبيق
-          </Text>
-        </View>
-
-        <View style={styles.troubleshootingItem}>
-          <Text style={styles.troubleshootingTitle}>💾 مشاكل ذاكرة التخزين المؤقت:</Text>
-          <Text style={styles.troubleshootingText}>
-            • امسح ذاكرة التخزين المؤقت للمتصفح{'\n'}• أعد تثبيت التطبيق إذا لزم الأمر
-          </Text>
-        </View>
-
-        <View style={styles.troubleshootingItem}>
-          <Text style={styles.troubleshootingTitle}>⚙️ مشاكل JavaScript:</Text>
-          <Text style={styles.troubleshootingText}>
-            • تأكد من تفعيل JavaScript في إعدادات المتصفح{'\n'}• حدث المتصفح إلى أحدث إصدار
-          </Text>
-        </View>
-
-        <View style={styles.troubleshootingItem}>
-          <Text style={styles.troubleshootingTitle}>🖥️ مشاكل الخادم:</Text>
-          <Text style={styles.troubleshootingText}>
-            • تحقق من حالة الخادم من خلال الموقع الرسمي{'\n'}• انتظر بضع ساعات وحاول مرة أخرى{'\n'}•
-            اتصل بدعم التطبيق للمساعدة
-          </Text>
-        </View>
-
-        <View style={styles.troubleshootingItem}>
-          <Text style={styles.troubleshootingTitle}>📝 مشاكل البيانات:</Text>
-          <Text style={styles.troubleshootingText}>
-            • تأكد من صحة جميع الحقول المدخلة{'\n'}• جرب التسجيل ببيانات مختلفة لعزل المشكلة
-          </Text>
-        </View>
-
-        <Text style={styles.helpNote}>
-          إذا استمرت المشكلة، شارك تفاصيل الخطأ مع فريق الدعم الفني.
-        </Text>
-      </View>
-    </View>
-  );
 
   const renderActiveTab = () => {
     switch (activeTab) {
@@ -774,8 +718,6 @@ const SettingsScreen = ({ navigation }) => {
         return renderNotificationSettings();
       case 'account':
         return renderAccountSettings();
-      case SETTINGS_TYPES.HELP:
-        return renderHelpSettings();
       default:
         return renderGeneralSettings();
     }
@@ -793,7 +735,6 @@ const SettingsScreen = ({ navigation }) => {
         {renderTabButton(SETTINGS_TYPES.SECURITY, 'أمان', '🔒')}
         {renderTabButton(SETTINGS_TYPES.NOTIFICATIONS, 'إشعارات', '🔔')}
         {renderTabButton('account', 'الحساب', '👤')}
-        {renderTabButton(SETTINGS_TYPES.HELP, 'مساعدة', '❓')}
       </View>
 
       {/* محتوى الإعدادات - Settings Content */}
@@ -954,53 +895,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
-  },
-
-  // Help section styles
-  helpSection: {
-    marginTop: 10,
-  },
-
-  helpTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2D3436',
-    marginBottom: 8,
-  },
-
-  helpDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 16,
-    lineHeight: 20,
-  },
-
-  troubleshootingItem: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-  },
-
-  troubleshootingTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#2D3436',
-    marginBottom: 6,
-  },
-
-  troubleshootingText: {
-    fontSize: 13,
-    color: '#666',
-    lineHeight: 18,
-  },
-
-  helpNote: {
-    fontSize: 13,
-    color: '#666',
-    fontStyle: 'italic',
-    marginTop: 16,
-    textAlign: 'center',
   },
 });
 

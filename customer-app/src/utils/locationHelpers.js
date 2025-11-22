@@ -37,24 +37,46 @@ export const getStoresWithinRadius = (stores, userLocation, radius = 5) => {
     .filter((store) => {
       if (!store.isOpen) return false;
 
+      let storeLat, storeLng;
+      if (store.coordinates && store.coordinates.coordinates && Array.isArray(store.coordinates.coordinates)) {
+        storeLat = store.coordinates.coordinates[1];
+        storeLng = store.coordinates.coordinates[0];
+      } else if (store.coordinates) {
+        storeLat = store.coordinates.lat;
+        storeLng = store.coordinates.lng;
+      } else {
+        return false;
+      }
+
       const distance = calculateDistance(
         userLocation.lat,
         userLocation.lng,
-        store.coordinates.lat,
-        store.coordinates.lng
+        storeLat,
+        storeLng
       );
 
       return distance <= radius;
     })
-    .map((store) => ({
-      ...store,
-      distance: calculateDistance(
-        userLocation.lat,
-        userLocation.lng,
-        store.coordinates.lat,
-        store.coordinates.lng
-      ),
-    }))
+    .map((store) => {
+      let storeLat, storeLng;
+      if (store.coordinates && store.coordinates.coordinates && Array.isArray(store.coordinates.coordinates)) {
+        storeLat = store.coordinates.coordinates[1];
+        storeLng = store.coordinates.coordinates[0];
+      } else {
+        storeLat = store.coordinates.lat;
+        storeLng = store.coordinates.lng;
+      }
+
+      return {
+        ...store,
+        distance: calculateDistance(
+          userLocation.lat,
+          userLocation.lng,
+          storeLat,
+          storeLng
+        ),
+      };
+    })
     .sort((a, b) => a.distance - b.distance);
 };
 
@@ -85,23 +107,45 @@ export const getAvailableVillages = (villages, userLocation, radius = 50) => {
     .filter((village) => {
       if (!village.isActive) return false;
 
+      let villageLat, villageLng;
+      if (village.coordinates && village.coordinates.coordinates && Array.isArray(village.coordinates.coordinates)) {
+        villageLat = village.coordinates.coordinates[1];
+        villageLng = village.coordinates.coordinates[0];
+      } else if (village.coordinates) {
+        villageLat = village.coordinates.lat;
+        villageLng = village.coordinates.lng;
+      } else {
+        return false;
+      }
+
       const distance = calculateDistance(
         userLocation.lat,
         userLocation.lng,
-        village.coordinates.lat,
-        village.coordinates.lng
+        villageLat,
+        villageLng
       );
 
       return distance <= radius;
     })
-    .map((village) => ({
-      ...village,
-      distance: calculateDistance(
-        userLocation.lat,
-        userLocation.lng,
-        village.coordinates.lat,
-        village.coordinates.lng
-      ),
-    }))
+    .map((village) => {
+      let villageLat, villageLng;
+      if (village.coordinates && village.coordinates.coordinates && Array.isArray(village.coordinates.coordinates)) {
+        villageLat = village.coordinates.coordinates[1];
+        villageLng = village.coordinates.coordinates[0];
+      } else {
+        villageLat = village.coordinates.lat;
+        villageLng = village.coordinates.lng;
+      }
+
+      return {
+        ...village,
+        distance: calculateDistance(
+          userLocation.lat,
+          userLocation.lng,
+          villageLat,
+          villageLng
+        ),
+      };
+    })
     .sort((a, b) => a.distance - b.distance);
 };

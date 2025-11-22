@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   View,
@@ -12,10 +13,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { useCart } from '../../context/CartContext';
 import { useLocation } from '../../context/LocationProvider';
-import { useAuth } from '../../context/AuthContext';
 import { API } from '../../services/api';
 import Header from '../../components/Header';
-import LoginPromptModal from '../../components/LoginPromptModal';
 import COLORS from '../../constants/colors';
 import SIZES from '../../constants/sizes';
 import { formatPrice } from '../../utils/helpers';
@@ -30,10 +29,8 @@ export const DELIVERY_SLOTS = [
 
 const CheckoutScreen = ({ navigation }) => {
   const { cartItems, getCartSubtotal, getTotalWithDelivery, clearCart, addOrder } = useCart();
-  const { isAuthenticated, currentUser } = useAuth();
-  const [showLoginModal, setShowLoginModal] = useState(false);
 
-  const { userLocation, getCurrentLocation } = useLocation();
+  const { userLocation, deliveryRadius, getCurrentLocation } = useLocation();
 
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
@@ -90,11 +87,6 @@ const CheckoutScreen = ({ navigation }) => {
   };
 
   const handlePlaceOrder = async () => {
-    if (!isAuthenticated) {
-      setShowLoginModal(true);
-      return;
-    }
-
     if (!validateForm()) return;
 
     // Validate cart items
@@ -129,13 +121,11 @@ const CheckoutScreen = ({ navigation }) => {
 
       // Get store details from API
       const storeResponse = await API.storesAPI.getStoreDetails(firstItem.storeId);
-      const storeName = storeResponse.success
-        ? storeResponse.data.store.name
-        : `متجر ${firstItem.storeId}`;
+      const storeName = storeResponse.success ? storeResponse.data.store.name : `متجر ${firstItem.storeId}`;
 
       const newOrder = {
         id: orderId,
-        userId: currentUser.id, // Use actual logged-in user ID
+        userId: 'user1', // Assuming a logged-in user
         storeId: firstItem.storeId,
         storeName: storeName,
         customerInfo: {
@@ -165,30 +155,26 @@ const CheckoutScreen = ({ navigation }) => {
 
       // Add order and wait for it to complete
       console.log('➕ Calling addOrder function...');
-      const result = await addOrder(newOrder);
-      console.log('✅ Order created successfully!', result);
+      await addOrder(newOrder);
+      console.log('✅ Order created successfully!');
 
-      if (result.success) {
-        // Clear cart after successful order creation
-        clearCart();
+      // Clear cart after successful order creation
+      clearCart();
 
-        // Show success message
-        Toast.show({
-          type: 'success',
-          text1: 'تم إنشاء الطلب',
-          text2: 'سيتم التواصل معك قريباً لتأكيد الطلب',
-        });
+      // Show success message
+      Toast.show({
+        type: 'success',
+        text1: 'تم إنشاء الطلب',
+        text2: 'سيتم التواصل معك قريباً لتأكيد الطلب',
+      });
 
-        // Navigate to orders screen
-        navigation.navigate('Orders');
-      } else {
-        throw new Error(result.error || 'فشل في إنشاء الطلب');
-      }
+      // Navigate to orders screen
+      navigation.navigate('Orders');
     } catch (error) {
       console.error('❌ Error creating order:', error);
       console.error('Error details:', error.message);
       console.error('Error stack:', error.stack);
-      Alert.alert('خطأ', error.message || 'حدث خطأ أثناء إنشاء الطلب. يرجى المحاولة مرة أخرى.');
+      Alert.alert('خطأ', 'حدث خطأ أثناء إنشاء الطلب. يرجى المحاولة مرة أخرى.');
     }
   };
 
@@ -337,6 +323,13 @@ const CheckoutScreen = ({ navigation }) => {
             </Text>
           </View>
 
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>نطاق التوصيل</Text>
+            <Text style={styles.summaryValue}>
+              {userLocation ? `${deliveryRadius} كم` : 'غير محدد'}
+            </Text>
+          </View>
+
           <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={styles.totalLabel}>المجموع الكلي</Text>
             <Text style={styles.totalValue}>{formatPrice(total)}</Text>
@@ -352,14 +345,6 @@ const CheckoutScreen = ({ navigation }) => {
           <Text style={styles.placeOrderTotal}>{formatPrice(total)}</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Login Prompt Modal */}
-      <LoginPromptModal
-        visible={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-        onLogin={() => navigation.navigate('Auth', { screen: 'Login' })}
-        message="يجب تسجيل الدخول أولاً لتنفيذ هذه العملية"
-      />
     </View>
   );
 };
