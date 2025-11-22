@@ -10,20 +10,25 @@ import "../global.css";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { useEffect } from "react";
-import { useAuthStore } from "../stores/authStore";
+import { useAuth } from "../src/redux/hooks";
+import { loadUserAsync } from "../src/redux/slices/authSlice";
+import { useAppDispatch } from "../src/redux/hooks";
+import { ReduxProvider } from "../src/redux/Provider";
+import SessionMonitor from "../components/SessionMonitor";
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  const { currentUser, isLoading, loadUser } = useAuthStore();
+  const { currentUser, isLoading, isAuthenticated } = useAuth();
   const pathname = usePathname();
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
-    loadUser();
-  }, [loadUser]);
+    dispatch(loadUserAsync() as any);
+  }, [dispatch]);
 
   useEffect(() => {
     if (!isLoading) {
-      if (!currentUser) {
+      if (!isAuthenticated || !currentUser) {
         // Only redirect to login if not already on an auth screen
         if (!pathname.includes("/(auth)/")) {
           router.replace("/(auth)/login");
@@ -57,7 +62,7 @@ function RootLayoutNav() {
         }
       }
     }
-  }, [currentUser, isLoading]); // Removed loadUser from dependency array as it's not from useAuth
+  }, [currentUser, isLoading, isAuthenticated]); // Removed loadUser from dependency array as it's not from useAuth
 
   if (isLoading) {
     return null; // Render nothing while loading
@@ -65,6 +70,13 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+      <SessionMonitor 
+        onSessionExpired={() => {
+          if (!pathname.includes("/(auth)/")) {
+            router.replace("/(auth)/login");
+          }
+        }}
+      />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="(auth)" />
@@ -75,5 +87,9 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-  return <RootLayoutNav />;
+  return (
+    <ReduxProvider>
+      <RootLayoutNav />
+    </ReduxProvider>
+  );
 }

@@ -11,7 +11,9 @@ import {
 import React, { useState, useEffect } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useAuthStore } from "../../stores/authStore";
+import { useAppDispatch } from "../../src/redux/hooks";
+import { registerAsync } from "../../src/redux/slices/authSlice";
+import { useAuth } from "../../src/redux/hooks";
 
 const RegisterScreen = () => {
   const [name, setName] = useState("");
@@ -21,11 +23,8 @@ const RegisterScreen = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
-  const { register, isLoading, loadUser } = useAuthStore();
-
-  useEffect(() => {
-    loadUser();
-  }, []);
+  const dispatch = useAppDispatch();
+  const { isLoading } = useAuth();
 
   const handleRegister = async () => {
     if (!name.trim()) {
@@ -53,11 +52,15 @@ const RegisterScreen = () => {
       return;
     }
 
-    const result = await register({ name: name.trim(), phone: phone.trim(), password });
-    if (result.success) {
-      router.replace("/(tabs)/setup/store-application");
-    } else {
-      Alert.alert("خطأ", result.error || "حدث خطأ أثناء التسجيل");
+    try {
+      const result = await dispatch(registerAsync({ name: name.trim(), phone: phone.trim(), password }) as any).unwrap();
+      if (result) {
+        router.replace("/(tabs)/setup/store-application");
+      } else {
+        Alert.alert("خطأ", "حدث خطأ أثناء التسجيل");
+      }
+    } catch (error: any) {
+      Alert.alert("خطأ", error.message || "حدث خطأ أثناء التسجيل");
     }
   };
 

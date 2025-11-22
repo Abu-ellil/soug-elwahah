@@ -13,12 +13,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import * as ImagePicker from "expo-image-picker";
-import apiService from "../../../services/api";
 import Toast from "react-native-toast-message";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Product } from "../../../types/product";
+import { useAppDispatch, useAuth, useProducts } from "../../../src/redux/hooks";
+import { addProductAsync, updateProductAsync, fetchProductByIdAsync } from "../../../src/redux/slices/productsSlice";
 
 const ProductFormScreen = () => {
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const { currentUser } = useAuth();
   const { id } = useLocalSearchParams(); // Get product ID from URL params if editing
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -32,34 +36,28 @@ const ProductFormScreen = () => {
     category: "",
   });
 
-  // Fetch product if editing
+  // Fetch product if editing (from Redux state)
   useEffect(() => {
-    if (id) {
+    if (id && currentUser) {
       setIsEditing(true);
-      fetchProduct();
+      fetchProductDetails();
     }
-  }, [id]);
+  }, [id, currentUser]);
 
-  const fetchProduct = async () => {
+  const fetchProductDetails = async () => {
     try {
       setLoading(true);
-      const response = await apiService.getProductById(id as string);
-      if (response.success && response.data) {
+      const response = await dispatch(fetchProductByIdAsync(id as string)).unwrap();
+      if (response) {
         setProduct({
-          _id: response.data._id,
-          name: response.data.name || "",
-          price: response.data.price || 0,
-          description: response.data.description || "",
-          stock: response.data.stock || 0,
-          image: response.data.image || undefined,
-          isAvailable: response.data.isAvailable ?? true,
-          category: response.data.category || "",
-        });
-      } else {
-        Toast.show({
-          type: "error",
-          text1: "خطأ",
-          text2: response.message || "فشل في تحميل المنتج",
+          _id: response._id,
+          name: response.name || "",
+          price: response.price || 0,
+          description: response.description || "",
+          stock: response.stock || 0,
+          image: response.image || undefined,
+          isAvailable: response.isAvailable ?? true,
+          category: response.category || "",
         });
       }
     } catch (error: any) {
@@ -172,12 +170,17 @@ const ProductFormScreen = () => {
     try {
       let response;
       if (isEditing && product._id) {
-        response = await apiService.updateProduct(product._id, product);
+        // Use Redux for updating product
+        response = await dispatch(updateProductAsync({ 
+          productId: product._id, 
+          productData: product 
+        }) as any).unwrap();
       } else {
-        response = await apiService.addProduct(product);
+        // Use Redux for adding product
+        response = await dispatch(addProductAsync(product) as any).unwrap();
       }
 
-      if (response.success) {
+      if (response) {
         Toast.show({
           type: "success",
           text1: "نجاح",
@@ -188,9 +191,7 @@ const ProductFormScreen = () => {
         Toast.show({
           type: "error",
           text1: "خطأ",
-          text2:
-            response.message ||
-            (isEditing ? "فشل في تحديث المنتج" : "فشل في إضافة المنتج"),
+          text2: isEditing ? "فشل في تحديث المنتج" : "فشل في إضافة المنتج",
         });
       }
     } catch (error: any) {
@@ -198,9 +199,7 @@ const ProductFormScreen = () => {
       Toast.show({
         type: "error",
         text1: "خطأ",
-        text2:
-          error.message ||
-          (isEditing ? "فشل في تحديث المنتج" : "فشل في إضافة المنتج"),
+        text2: error.message || (isEditing ? "فشل في تحديث المنتج" : "فشل في إضافة المنتج"),
       });
     } finally {
       setLoading(false);
@@ -342,11 +341,15 @@ const ProductFormScreen = () => {
               التوفر
             </Text>
             <TouchableOpacity
-              className={`flex-row items-center p-3 rounded-xl border ${product.isAvailable ? "border-green-500 bg-green-50" : "border-red-500 bg-red-50"}`}
+              className={`flex-row items-center p-3 rounded-xl border ${
+                product.isAvailable ? "border-green-500 bg-green-50" : "border-red-500 bg-red-50"
+              }`}
               onPress={() => handleChange("isAvailable", !product.isAvailable)}
             >
               <View
-                className={`w-5 h-5 rounded border mr-3 ${product.isAvailable ? "bg-green-500 border-green-500" : "border-gray-400"}`}
+                className={`w-5 h-5 rounded border mr-3 ${
+                  product.isAvailable ? "bg-green-500 border-green-500" : "border-gray-400"
+                }`}
               >
                 {product.isAvailable && (
                   <Ionicons
@@ -393,6 +396,19 @@ const ProductFormScreen = () => {
       <Toast />
     </LinearGradient>
   );
+};
+
+// Helper function to get auth token
+const getAuthToken = async (): Promise<string> => {
+  // In a real implementation, you would get this from your Redux auth state
+  // or from AsyncStorage where it's stored
+  try {
+    const token = await AsyncStorage.getItem('token');
+    return token || '';
+  } catch (error) {
+    console.error('Error getting auth token:', error);
+    return '';
+  }
 };
 
 export default ProductFormScreen;

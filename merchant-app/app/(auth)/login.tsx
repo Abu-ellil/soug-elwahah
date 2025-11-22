@@ -13,7 +13,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAuthStore } from '../../stores/authStore';
+import { useAppDispatch } from '../../src/redux/hooks';
+import { loginAsync } from '../../src/redux/slices/authSlice';
+import { useAuth } from '../../src/redux/hooks';
 import { useRouter } from 'expo-router';
 
 const { width, height } = Dimensions.get('window');
@@ -25,7 +27,8 @@ const LoginScreen = () => {
   const [isValidating, setIsValidating] = useState(false);
 
   const router = useRouter();
-  const { login, isLoading, currentUser } = useAuthStore();
+  const dispatch = useAppDispatch();
+  const { isLoading, currentUser, isAuthenticated } = useAuth();
 
   const validateInputs = () => {
     if (!phone.trim()) {
@@ -71,45 +74,35 @@ const LoginScreen = () => {
       console.log('🚀 Calling login API...');
       const normalizedPhone = phone.trim().replace(/\s/g, '').replace(/^(\+20|0)/, '');
       console.log('📱 Normalized phone:', normalizedPhone);
-      const result = await login(normalizedPhone, password.trim());
+      const result = await dispatch(loginAsync({ phone: normalizedPhone, password: password.trim() })).unwrap();
       console.log('📡 Login API response:', result);
 
-      if (result.success) {
+      if (result) {
         console.log('✅ Login successful');
 
-        if (result.verificationStatus === 'pending') {
-          console.log('⏳ Navigating to pending approval');
+        // Check stores from currentUser
+        const stores = currentUser?.stores || [];
+        console.log('🏪 User stores:', stores);
+
+        const approvedStores = stores.filter((store: any) =>
+          store.verificationStatus === 'approved'
+        );
+        console.log('✅ Approved stores:', approvedStores.length);
+
+        if (approvedStores.length > 0) {
+          console.log('🏠 Navigating to main app (approved stores)');
+          router.replace('/');
+        } else if (stores.length > 0) {
+          console.log('⏳ Navigating to pending approval (has stores but not approved)');
           router.replace('/(tabs)/setup/pending-approval');
         } else {
-          // Check stores from currentUser
-          const stores = currentUser?.stores || [];
-          console.log('🏪 User stores:', stores);
-
-          const approvedStores = stores.filter((store: any) =>
-            store.verificationStatus === 'approved'
-          );
-          console.log('✅ Approved stores:', approvedStores.length);
-
-          if (approvedStores.length > 0) {
-            console.log('🏠 Navigating to main app (approved stores)');
-            router.replace('/');
-          } else if (stores.length > 0) {
-            console.log('⏳ Navigating to pending approval (has stores but not approved)');
-            router.replace('/(tabs)/setup/pending-approval');
-          } else {
-            console.log('📝 Navigating to store application (no stores)');
-            router.replace('/(tabs)/setup/store-application');
-          }
+          console.log('📝 Navigating to store application (no stores)');
+          router.replace('/(tabs)/setup/store-application');
         }
       } else {
         console.log('❌ Login failed:', result);
 
         let errorMessage = 'فشل في تسجيل الدخول';
-
-        if (result.error) {
-          errorMessage = result.error;
-          console.log('🚨 Error message:', result.error);
-        }
 
         console.log('🚨 Showing error alert:', errorMessage);
         Alert.alert('خطأ في تسجيل الدخول', errorMessage);
@@ -142,9 +135,7 @@ const LoginScreen = () => {
   };
 
   const handlePhoneChange = (text: string) => {
-    console.log('Phone input change:', text);
     const formatted = formatPhoneNumber(text);
-    console.log('Formatted phone:', formatted);
     setPhone(formatted);
   };
 
@@ -180,7 +171,7 @@ const LoginScreen = () => {
             <View className="rounded-3xl bg-white p-8 shadow-2xl">
               {/* Phone Input */}
               <View className="mb-6">
-                <Text className="mb-3 text-sm font-semibold text-gray-700">
+                <Text className="mb-3 text-sm font-semibold text-gray-70">
                   رقم الهاتف
                 </Text>
                 <View className="flex-row items-center rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-4">

@@ -6,15 +6,63 @@ import { testConnectivity, testApiConnectivity } from "../utils/network";
 class ApiService {
   private baseUrl: string;
   private token: string | null = null;
+  private refreshTokenPromise: Promise<string> | null = null;
+  private isSessionValid: boolean = false;
+  private sessionCheckInterval: ReturnType<typeof setInterval> | null = null;
 
   constructor() {
     this.baseUrl = BASE_URL;
+    this.initializeSessionMonitoring();
+  }
+
+  // Initialize session monitoring
+  private initializeSessionMonitoring() {
+    // Check session validity every 5 minutes
+    this.sessionCheckInterval = setInterval(async () => {
+      await this.validateSession();
+    }, 5 * 60 * 1000);
+  }
+
+  // Validate current session
+  private async validateSession(): Promise<boolean> {
+    try {
+      const token = await this.getToken();
+      if (!token) {
+        this.isSessionValid = false;
+        return false;
+      }
+
+      // Try to get user profile to validate token
+      const profile = await this.getProfileInternal();
+      this.isSessionValid = !!(profile && profile.success);
+      return this.isSessionValid;
+    } catch (error) {
+      this.isSessionValid = false;
+      return false;
+    }
+  }
+
+  // Internal method to get profile without the full request wrapper
+  private async getProfileInternal() {
+    const url = `${this.baseUrl}/auth/me`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.token}`,
+      },
+    });
+    return response.ok ? response.json() : null;
   }
 
   // Set authentication token
   async setToken(token: string) {
     this.token = token;
+    this.isSessionValid = true;
     await AsyncStorage.setItem("merchant_token", token);
+    
+    // Clear any existing refresh promise when new token is set
+    this.refreshTokenPromise = null;
   }
 
   // Get authentication token
@@ -28,16 +76,88 @@ class ApiService {
   // Remove authentication token
   async clearToken() {
     this.token = null;
+    this.isSessionValid = false;
+    this.refreshTokenPromise = null;
     await AsyncStorage.removeItem("merchant_token");
   }
 
-  // Generic API request method with retry logic
+  // Cleanup resources
+  destroy() {
+    if (this.sessionCheckInterval) {
+      clearInterval(this.sessionCheckInterval);
+      this.sessionCheckInterval = null;
+    }
+  }
+
+  // Force session validation (useful for manual checks)
+  async validateAndRefreshIfNeeded(): Promise<boolean> {
+    const isValid = await this.validateSession();
+    if (!isValid) {
+      try {
+        await this.refreshToken();
+        return true;
+      } catch (error) {
+        await this.clearToken();
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // Check if session is still valid
+  async isSessionValidAsync(): Promise<boolean> {
+    return await this.validateSession();
+  }
+
+  // Refresh token (you'll need to implement refresh token endpoint)
+  private async refreshToken(): Promise<string> {
+    // If refresh is already in progress, return the existing promise
+    if (this.refreshTokenPromise) {
+      return this.refreshTokenPromise;
+    }
+
+    this.refreshTokenPromise = this.performTokenRefresh();
+    
+    try {
+      const newToken = await this.refreshTokenPromise;
+      this.refreshTokenPromise = null;
+      return newToken;
+    } catch (error) {
+      this.refreshTokenPromise = null;
+      await this.clearToken();
+      throw error;
+    }
+  }
+
+  private async performTokenRefresh(): Promise<string> {
+    // This would typically call a refresh endpoint
+    // For now, we'll just throw an error to force re-login
+    throw new Error("Session expired. Please login again.");
+  }
+
+  // Proactive session check before making requests
+  private async ensureValidSession(): Promise<void> {
+    if (!this.isSessionValid) {
+      await this.validateSession();
+    }
+    
+    if (!this.isSessionValid) {
+      throw new Error("انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.");
+    }
+  }
+
+  // Generic API request method with retry logic and session management
   async request(
     endpoint: string,
     options: RequestInit = {},
     maxRetries: number = 3,
     skipAuth: boolean = false
   ) {
+    // Proactive session validation for authenticated requests
+    if (!skipAuth) {
+      await this.ensureValidSession();
+    }
+
     const url = `${this.baseUrl}${endpoint}`;
 
     // Check if body is FormData to handle Content-Type appropriately
@@ -108,9 +228,27 @@ class ApiService {
               "الخدمة غير متوفرة. يرجى التحقق من إعدادات التطبيق."
             );
           } else if (response.status === 401) {
-            // Clear invalid token
-            await this.clearToken();
-            throw new Error("انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.");
+            // Handle session expiration more gracefully
+            this.isSessionValid = false;
+            
+            // Don't automatically clear token, let the refresh logic handle it
+            // This gives a chance to try token refresh first
+            
+            // If this isn't the first attempt, clear the token
+            if (attempt > 0) {
+              await this.clearToken();
+              throw new Error("انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.");
+            }
+            
+            // Try to refresh token on first 401
+            try {
+              await this.refreshToken();
+              // If refresh succeeds, the retry logic will continue
+              throw new Error("Token refreshed, retrying request...");
+            } catch (refreshError) {
+              await this.clearToken();
+              throw new Error("انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.");
+            }
           } else if (response.status >= 400 && response.status < 500) {
             throw new Error(
               errorData.message || `خطأ في الطلب: ${response.status}`

@@ -47,8 +47,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const token = await apiService.getToken();
       if (token) {
         try {
+          // First validate the session
+          const isSessionValid = await apiService.validateAndRefreshIfNeeded();
+          
+          if (!isSessionValid) {
+            console.log('Session validation failed during loadUser');
+            set({ currentUser: null, isAuthenticated: false });
+            return;
+          }
+
           const profile = await apiService.getProfile();
-          console.log('LoadUser profile response:', profile);
           if (profile && profile.success && profile.data && profile.data.user) {
             console.log('Setting user from profile data:', profile.data.user);
             // Debug: Check stores data
@@ -66,13 +74,29 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             set({ currentUser: profile.data, isAuthenticated: true });
             await AsyncStorage.setItem('user', JSON.stringify(profile.data));
           }
-        } catch (error) {
-          await apiService.clearToken();
-          console.error('Error getting user profile:', error);
+        } catch (error: any) {
+          // Handle session expiration specifically
+          if (error.message?.includes('انتهت صلاحية الجلسة') || 
+              error.message?.includes('Session expired') ||
+              error.message?.includes('Please login again')) {
+            console.log('Session expired during loadUser, clearing auth state');
+            await apiService.clearToken();
+            set({ currentUser: null, isAuthenticated: false });
+            await AsyncStorage.removeItem('user');
+          } else {
+            console.error('Error getting user profile:', error);
+            // For other errors, also clear auth state to be safe
+            await apiService.clearToken();
+            set({ currentUser: null, isAuthenticated: false });
+          }
         }
+      } else {
+        console.log('No token found, user not authenticated');
+        set({ currentUser: null, isAuthenticated: false });
       }
     } catch (error) {
       console.error('Error loading user:', error);
+      set({ currentUser: null, isAuthenticated: false });
     } finally {
       set({ isLoading: false });
     }

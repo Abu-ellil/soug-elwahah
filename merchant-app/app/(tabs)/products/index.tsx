@@ -14,35 +14,29 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { useProductsStore } from '../../../stores/productsStore';
-import { useAuthStore } from '../../../stores/authStore';
+import { useAppDispatch, useAuth, useProducts } from '../../../src/redux/hooks';
+import { fetchProductsAsync, deleteProductAsync, toggleProductAvailabilityAsync, initializeProducts } from '../../../src/redux/slices/productsSlice';
 import { StoreStatusChecker } from '../../../components/StoreStatusChecker';
 
 export default function ProductsIndex() {
   const router = useRouter();
-  const { currentUser } = useAuthStore();
+  const dispatch = useAppDispatch();
+  const { currentUser } = useAuth();
+  const { products, isLoading, refreshing, hasApprovedStore } = useProducts() as { products: any[], isLoading: boolean, refreshing: boolean, hasApprovedStore: boolean };
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<'all' | 'available' | 'unavailable'>('all');
-  
-  const { 
-    products, 
-    isLoading, 
-    refreshing, 
-    hasApprovedStore, 
-    fetchProducts, 
-    handleRefresh,
-    deleteProduct,
-    toggleAvailability,
-    initialize 
-  } = useProductsStore();
 
   useEffect(() => {
     if (currentUser) {
       // Initialize the store with current user data
-      initialize();
-      fetchProducts();
+      dispatch(initializeProducts());
+      dispatch(fetchProductsAsync() as any);
     }
-  }, [currentUser, initialize, fetchProducts]);
+  }, [currentUser, dispatch]);
+
+  const handleRefresh = () => {
+    dispatch(fetchProductsAsync() as any);
+  };
 
   const handleDeleteProduct = (productId: string, productName: string) => {
     Alert.alert(
@@ -53,7 +47,7 @@ export default function ProductsIndex() {
         { 
           text: 'حذف', 
           style: 'destructive',
-          onPress: () => deleteProduct(productId)
+          onPress: () => dispatch(deleteProductAsync(productId))
         }
       ]
     );
@@ -64,6 +58,10 @@ export default function ProductsIndex() {
       pathname: '/(tabs)/products/add',
       params: { id: productId }
     });
+  };
+
+  const toggleAvailability = (productId: string) => {
+    dispatch(toggleProductAvailabilityAsync(productId));
   };
 
   const filteredProducts = products.filter(product => {
@@ -212,7 +210,7 @@ export default function ProductsIndex() {
         </View>
 
         {/* Store Status Checker */}
-        <StoreStatusChecker />
+        {/* <StoreStatusChecker /> */}
 
         {/* Search and Filter */}
         <View className="px-4 mb-4">
@@ -257,7 +255,7 @@ export default function ProductsIndex() {
         <View className="flex-1 px-4">
           {filteredProducts.length === 0 ? (
             <View className="flex-1 items-center justify-center py-16">
-              <Ionicons name="cube-outline" size={64} color="rgba(255,255,255,0.5)" />
+              <Ionicons name="cube-outline" size={64} color="rgba(255,255,0.5)" />
               <Text className="text-white text-xl font-bold mt-4 mb-2">لا توجد منتجات</Text>
               <Text className="text-white/70 text-center px-8 mb-6">
                 {searchQuery || filter !== 'all' 
@@ -305,4 +303,3 @@ export default function ProductsIndex() {
     </LinearGradient>
   );
 }
-
